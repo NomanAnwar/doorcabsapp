@@ -1,0 +1,82 @@
+name: doorcab
+
+description: "A Ride Healing Flutter project."
+
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.7.0
+
+
+# ---------- Packages ---------
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # utility packages
+
+  # icons packages
+
+  iconsax_flutter: ^1.0.1
+  cupertino_icons: ^1.0.8
+
+
+  # state management packages
+
+  get: ^4.7.2
+
+  #pusher_channels_flutter: ^2.5.0
+
+
+  # Url specific packages
+
+  url_launcher: ^6.3.2
+
+  # Utility packages
+
+  intl: ^0.20.2
+  http: ^1.4.0
+  get_storage: ^2.1.1
+  logger: ^2.6.1
+
+  # ----------- Packages End ----------
+
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^5.0.0
+
+
+flutter:
+  uses-material-design: true
+
+  # ---------- Local Assets -----------
+
+
+
+  # ---------- Local Fonts ------------
+
+  fonts:
+    - family: Poppins
+      fonts:
+        - asset: assets/fonts/Poppins-Light.ttf
+          weight: 300
+        - asset: assets/fonts/Poppins-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Poppins-Italic.ttf
+          style: italic
+        - asset: assets/fonts/Poppins-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Poppins-MediumItalic.ttf
+          weight: 500
+          style: italic
+        - asset: assets/fonts/Poppins-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Poppins-Bold.ttf
+          weight: 800
+

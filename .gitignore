@@ -1,0 +1,62 @@
+# Dart & Flutter
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+generated_plugin_registrant.dart
+
+# Flutter specific files
+**/doc/api/
+**/ios/Flutter/.last_build_id
+
+# Android related
+android/.gradle/
+android/captures/
+android/.idea/
+android/local.properties
+android/app/debug/
+android/app/profile/
+android/app/release/
+*.jks
+
+# iOS related
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/.generated/
+ios/.idea/
+ios/Runner.xcworkspace/
+ios/Flutter/App.framework
+ios/Flutter/engine/
+
+# macOS related
+macos/Flutter/ephemeral/
+macos/.generated/
+macos/Pods/
+
+# Xcode
+*.xcworkspace
+*.xcuserstate
+*.xcuserdata
+*.xccheckout
+*.xcodeproj/*
+!*.xcodeproj/project.pbxproj
+!*.xcodeproj/xcshareddata/
+!*.xcodeproj/xcshareddata/**/*
+*.xcworkspace/xcuserdata/
+
+# VS Code / IntelliJ / Android Studio settings
+.idea/
+.vscode/
+*.iml
+
+# Misc
+*.log
+*.tmp
+*.swp
+*.lock
+.DS_Store
