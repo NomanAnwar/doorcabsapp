@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "147024698002",
+    "project_id": "doorcabs-f7a3e",
+    "storage_bucket": "doorcabs-f7a3e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:147024698002:android:2cf350e162de71c945a44b",
+        "android_client_info": {
+          "package_name": "com.tricasol.doorcabs"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyASYeq21zfVvYTgcaeaxqg0pTqx2oqEwns"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,4 +1,4 @@
-package com.example.doorcab
+package com.tricasol.doorcabs
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -9,7 +9,6 @@ version: 1.0.0+1
 environment:
   sdk: ^3.7.0
 
-
 # ---------- Packages ---------
 
 dependencies:
@@ -19,48 +18,54 @@ dependencies:
   # utility packages
 
   # icons packages
-
   iconsax_flutter: ^1.0.1
   cupertino_icons: ^1.0.8
 
-
   # state management packages
-
   get: ^4.7.2
 
-  #pusher_channels_flutter: ^2.5.0
 
+  # firebase packages
+
+  firebase_core: ^4.0.0
+  firebase_messaging: ^16.0.0
+  permission_handler: ^12.0.1
+
+  # pusher packages
+  pusher_beams: ^1.1.2
 
   # Url specific packages
-
   url_launcher: ^6.3.2
 
   # Utility packages
-
   intl: ^0.20.2
   http: ^1.4.0
   get_storage: ^2.1.1
   logger: ^2.6.1
 
-  # ----------- Packages End ----------
-
+# ----------- Packages End ----------
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
   flutter_lints: ^5.0.0
+  change_app_package_name: ^1.5.0
 
+dependency_overrides:
+  pusher_beams_android:
+    path: plugins/pusher_beams_android
 
 flutter:
   uses-material-design: true
 
   # ---------- Local Assets -----------
-
-
+  assets:
+    - assets/logos/
+    - assets/icons/
+    - assets/images/
 
   # ---------- Local Fonts ------------
-
   fonts:
     - family: Poppins
       fonts:
@@ -79,4 +84,3 @@ flutter:
           weight: 600
         - asset: assets/fonts/Poppins-Bold.ttf
           weight: 800
-
