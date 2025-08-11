@@ -1,48 +1,120 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:io';
 
-class FHttpHelper{
+class FHttpHelper {
+  static String _baseUrl = '';
 
-  static const String _baseurl = '';
+  /// Call this at app startup to set base URL dynamically
+  static void setBaseUrl(String url) {
+    _baseUrl = url;
+  }
 
+  /// Optional auth token
+  static String? _authToken;
+  static void setAuthToken(String token) {
+    _authToken = token;
+  }
+
+  /// GET request
   static Future<Map<String, dynamic>> get(String endpoint) async {
-
-    final response = await http.get(Uri.parse('$_baseurl/$endpoint'));
-    return _handleResponse(response);
+    return _request(
+      method: 'GET',
+      endpoint: endpoint,
+    );
   }
 
+  /// POST request
   static Future<Map<String, dynamic>> post(String endpoint, dynamic data) async {
-    final response = await http.post(
-      Uri.parse('$_baseurl/$endpoint'),
-      headers: {'Content-type': 'application/json'},
-      body: json.encode(data),
+    return _request(
+      method: 'POST',
+      endpoint: endpoint,
+      body: data,
     );
-    return _handleResponse(response);
   }
 
+  /// PUT request
   static Future<Map<String, dynamic>> put(String endpoint, dynamic data) async {
-    final response = await http.put(
-      Uri.parse('$_baseurl/$endpoint'),
-      headers: {'Content-type': 'application/json'},
-      body: json.encode(data),
+    return _request(
+      method: 'PUT',
+      endpoint: endpoint,
+      body: data,
     );
-    return _handleResponse(response);
   }
 
+  /// DELETE request
   static Future<Map<String, dynamic>> delete(String endpoint) async {
-    final response = await http.delete(Uri.parse('$_baseurl/$endpoint'));
-    return _handleResponse(response);
+    return _request(
+      method: 'DELETE',
+      endpoint: endpoint,
+    );
   }
 
+  /// Core request handler
+  static Future<Map<String, dynamic>> _request({
+    required String method,
+    required String endpoint,
+    dynamic body,
+  }) async {
+    final uri = Uri.parse('$_baseUrl/$endpoint');
+
+    final headers = {
+      HttpHeaders.contentTypeHeader: 'application/json',
+      if (_authToken != null) HttpHeaders.authorizationHeader: 'Bearer $_authToken',
+    };
+
+    http.Response response;
+
+    try {
+      if (kDebugMode) {
+        print('[FHttpHelper] $method $uri');
+        if (body != null) print('Body: $body');
+      }
+
+      switch (method) {
+        case 'POST':
+          response = await http
+              .post(uri, headers: headers, body: json.encode(body))
+              .timeout(const Duration(seconds: 15));
+          break;
+        case 'PUT':
+          response = await http
+              .put(uri, headers: headers, body: json.encode(body))
+              .timeout(const Duration(seconds: 15));
+          break;
+        case 'DELETE':
+          response = await http
+              .delete(uri, headers: headers)
+              .timeout(const Duration(seconds: 15));
+          break;
+        default:
+          response = await http
+              .get(uri, headers: headers)
+              .timeout(const Duration(seconds: 15));
+      }
+
+      return _handleResponse(response);
+    } on SocketException {
+      throw Exception('No internet connection');
+    } on HttpException {
+      throw Exception('HTTP error occurred');
+    } on FormatException {
+      throw Exception('Invalid response format');
+    } on TimeoutException {
+      throw Exception('Request timed out');
+    }
+  }
+
+  /// Handle API response
   static Map<String, dynamic> _handleResponse(http.Response response) {
-    if(response.statusCode == 200) {
+    if (response.statusCode >= 200 && response.statusCode < 300) {
       return json.decode(response.body);
     } else {
-      throw Exception('Failed to load data: ${response.statusCode}');
+      final error = json.decode(response.body);
+      throw Exception(error['message'] ?? 'Error: ${response.statusCode}');
     }
-
   }
-
-
 }

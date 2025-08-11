@@ -1,8 +1,8 @@
-
+import 'package:intl/intl.dart';
 
 class FValidator {
-
-  static String? validateEmail( String? value) {
+  /// Email validation (only if needed in the future)
+  static String? validateEmail(String? value) {
     if (value == null || value.isEmpty) {
       return 'Email is required.';
     }
@@ -16,13 +16,13 @@ class FValidator {
     return null;
   }
 
-  static String? validatePassword(String? value){
-
+  /// Strong password validation (optional for admin or USA expansion)
+  static String? validatePassword(String? value) {
     if (value == null || value.isEmpty) {
       return 'Password is required.';
     }
 
-    if (value.length < 8 ) {
+    if (value.length < 8) {
       return 'Password must be at least 8 characters long.';
     }
 
@@ -41,20 +41,45 @@ class FValidator {
     return null;
   }
 
-  static String? validatePhoneNumber(String? value){
-
-    if (value == null || value.isEmpty) {
-      return 'Phone Number is required.';
+  /// Phone validation for Pakistan + USA
+  static String? validatePhoneNumber(String? value, {String? countryCode}) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Phone number is required.';
     }
 
-    final emailRegExp = RegExp(r'^\d{10}$');
+    value = value.replaceAll(RegExp(r'\s+'), ''); // Remove spaces
+    countryCode ??= _detectCountryCode();
 
-    if (!emailRegExp.hasMatch(value)) {
-      return 'Invalid Phone number format 10 digits required.';
+    if (countryCode == 'PK') {
+      // Accepts formats: 03XXXXXXXXX or +923XXXXXXXXX
+      final pkRegExp = RegExp(r'^(?:\+92|0)?3\d{9}$');
+      if (!pkRegExp.hasMatch(value)) {
+        return 'Invalid Pakistan phone number format.';
+      }
+    } else if (countryCode == 'US') {
+      // Accepts formats: XXXXXXXXXX or +1XXXXXXXXXX
+      final usRegExp = RegExp(r'^(?:\+1)?\d{10}$');
+      if (!usRegExp.hasMatch(value)) {
+        return 'Invalid USA phone number format.';
+      }
+    } else {
+      // Fallback: 10–15 digits international format
+      final intlRegExp = RegExp(r'^\+?\d{10,15}$');
+      if (!intlRegExp.hasMatch(value)) {
+        return 'Invalid phone number format.';
+      }
     }
 
     return null;
   }
 
-
+  /// Detect country from device locale
+  static String _detectCountryCode() {
+    try {
+      final locale = Intl.getCurrentLocale();
+      if (locale.endsWith('_PK')) return 'PK';
+      if (locale.endsWith('_US')) return 'US';
+    } catch (_) {}
+    return 'INTL'; // Default to international format
+  }
 }

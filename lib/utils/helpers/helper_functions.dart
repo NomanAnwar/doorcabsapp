@@ -3,113 +3,106 @@ import 'package:get/route_manager.dart';
 import 'package:intl/intl.dart';
 
 class FHelperFunctions {
+  /// Get a color from theme-based mapping
+  /// This ensures your colors adapt to the current ThemeData and Dark Mode
+  static Color? getColor(BuildContext context, String value) {
+    final scheme = Theme.of(context).colorScheme;
 
-  static Color? getColor(String value) {
+    final Map<String, Color> colorMap = {
+      'Primary': scheme.primary,
+      'OnPrimary': scheme.onPrimary,
+      'Secondary': scheme.secondary,
+      'OnSecondary': scheme.onSecondary,
+      'Error': scheme.error,
+      'OnError': scheme.onError,
+      'Background': scheme.background,
+      'OnBackground': scheme.onBackground,
+      'Surface': scheme.surface,
+      'OnSurface': scheme.onSurface,
+    };
 
-    if(value == 'Green'){
-      return Colors.green;
-    } else if( value == 'Red'){
-      return Colors.red;
-    } else if( value == 'Blue'){
-      return Colors.blue;
-    } else if( value == 'Pink'){
-      return Colors.pink;
-    } else if( value == 'Grey'){
-      return Colors.grey;
-    } else if( value == 'Purple'){
-      return Colors.purple;
-    } else if( value == 'Black'){
-      return Colors.black;
-    } else if( value == 'White'){
-      return Colors.white;
-    } else if( value == 'Yellow'){
-      return Colors.yellow;
-    } else if( value == 'Orange'){
-      return Colors.orange;
-    } else if( value == 'Brown'){
-      return Colors.brown;
-    } else if( value == 'Teal'){
-      return Colors.teal;
-    } else if( value == 'Indigo'){
-      return Colors.indigo;
-    } else {
-      return null;
-    }
+    return colorMap[value];
   }
 
-  static void showAlert(String title, String message){
-    
-    showDialog(
-        context: Get.context!,
-        builder: (BuildContext context ){
-          return AlertDialog(
-            title: Text(title),
-            content: Text(message),
-            actions: [
-              TextButton(
-                  onPressed: () => {
-                    Navigator.of(context).pop(),
-                  },
-                  child: const Text('Ok'))
-            ],
-          );
-        }
+  /// Show an alert dialog
+  static Future<void> showAlert(String title, String message) async {
+    final context = Get.context;
+    if (context == null) return; // Safety check
+
+    return showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Ok'),
+          ),
+        ],
+      ),
     );
   }
 
-  static void showSnackBar(String message){
-    ScaffoldMessenger.of(Get.context!).showSnackBar(SnackBar(content: Text(message)),
+  /// Show a snackbar
+  static void showSnackBar(String message) {
+    final context = Get.context;
+    if (context == null) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
     );
   }
 
-  static void navigateToScreen(BuildContext context, Widget screen){
-
-    Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
-
+  /// Navigate to another screen
+  static Future<T?> navigateToScreen<T>(
+      BuildContext context, Widget screen) {
+    return Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => screen),
+    );
   }
 
-  static String truncateText(String text, int maxLength){
-
-    if(text.length <= maxLength){
-      return text;
-    } else {
-      return '${text.substring(0, maxLength)}...';
-    }
-
+  /// Truncate text to max length
+  static String truncateText(String text, int maxLength) {
+    return (text.length <= maxLength)
+        ? text
+        : '${text.substring(0, maxLength)}...';
   }
 
-  static bool isDarkMode(BuildContext context){
+  /// Check dark mode
+  static bool isDarkMode(BuildContext context) {
     return Theme.of(context).brightness == Brightness.dark;
   }
 
-  static Size screenSize(){
-    return MediaQuery.of(Get.context!).size;
+  /// Screen size utilities
+  static Size? screenSize() => Get.context?.size;
+  static double? screenHeight() => Get.context?.size?.height;
+  static double? screenWidth() => Get.context?.size?.width;
+
+  /// Format date
+  static String getFormattedDate(
+      DateTime date, {
+        String format = 'dd MMM yyyy',
+      }) {
+    return DateFormat(format).format(date);
   }
 
-  static double screenHeight(){
-    return MediaQuery.of(Get.context!).size.height;
-  }
-
-  static double screenWidth(){
-    return MediaQuery.of(Get.context!).size.width;
-  }
-
-  static String getFormatedDate(DateTime date, {String formate = 'dd MMM yyyy'}) {
-    return DateFormat(formate).format(date);
-  }
-
-  static List<F> removeDuplicates<F>(List<F> list){
+  /// Remove duplicates from list
+  static List<F> removeDuplicates<F>(List<F> list) {
     return list.toSet().toList();
   }
 
-  static List<Widget> wrapWidget(List<Widget> widgets, int rowSize){
+  /// Wrap widgets in rows
+  static List<Widget> wrapWidget(List<Widget> widgets, int rowSize) {
     final wrappedList = <Widget>[];
-    for (var i=0; i < widgets.length; i += rowSize){
-      final rowChildren = widgets.sublist(i, i + rowSize > widgets.length ? widgets.length : i + rowSize);
-      wrappedList.add(Row(children: rowChildren,));
+    for (var i = 0; i < widgets.length; i += rowSize) {
+      final rowChildren = widgets.sublist(
+        i,
+        (i + rowSize > widgets.length) ? widgets.length : i + rowSize,
+      );
+      wrappedList.add(Row(children: rowChildren));
     }
     return wrappedList;
   }
-
-
 }

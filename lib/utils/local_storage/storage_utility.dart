@@ -1,30 +1,26 @@
 import 'package:get_storage/get_storage.dart';
 
 class FLocalStorage {
+  static late GetStorage _storage;
 
-  static final FLocalStorage _instanse = FLocalStorage._internal();
-
-  factory FLocalStorage(){
-    return _instanse;
+  static Future<void> init() async {
+    await GetStorage.init();
+    _storage = GetStorage();
   }
 
-  FLocalStorage._internal();
-
-  final _storage = GetStorage();
-
-  Future<void> saveData<F>(String key, F value) async{
-    await _storage.write(key, value);
+  static void writeData(String key, dynamic value) {
+    _storage.write(key, value);
   }
 
-  F? readData<F>(String key) {
-    return _storage.read<F>(key);
+  static dynamic readData(String key) {
+    return _storage.read(key);
   }
 
-  Future<void> removeData(String key) async{
-    await _storage.remove(key);
+  static bool hasData(String key) {
+    return _storage.hasData(key);
   }
 
-  Future<void> clearAll() async {
-    await _storage.erase();
+  static void removeData(String key) {
+    _storage.remove(key);
   }
 }

@@ -5,30 +5,31 @@ import 'package:flutter/services.dart';
 import 'package:get/route_manager.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
-class FDeviceUtils{
-
-  static void hideKeyboard(BuildContext context){
+class FDeviceUtils {
+  static void hideKeyboard(BuildContext context) {
     FocusScope.of(context).requestFocus(FocusNode());
   }
 
   static Future<void> setStatusBarColor(Color color) async {
     SystemChrome.setSystemUIOverlayStyle(
-        SystemUiOverlayStyle(statusBarColor: color)
+      SystemUiOverlayStyle(statusBarColor: color),
     );
   }
 
-  static bool isLandScapOriantation(BuildContext context){
+  static bool isLandScapOriantation(BuildContext context) {
     final viewInsets = View.of(context).viewInsets;
     return viewInsets.bottom == 0;
   }
 
-  static bool isPortraitOriantation(BuildContext context){
+  static bool isPortraitOriantation(BuildContext context) {
     final viewInsets = View.of(context).viewInsets;
     return viewInsets.bottom == 0;
   }
 
-  static void fullScreen(bool enable){
-    SystemChrome.setEnabledSystemUIMode(enable ? SystemUiMode.immersiveSticky : SystemUiMode.edgeToEdge);
+  static void fullScreen(bool enable) {
+    SystemChrome.setEnabledSystemUIMode(
+      enable ? SystemUiMode.immersiveSticky : SystemUiMode.edgeToEdge,
+    );
   }
 
   static double getScreenHeight() {
@@ -60,55 +61,63 @@ class FDeviceUtils{
     return viewInsets.bottom;
   }
 
-  static Future<bool> isKeyboardVisibale() async{
+  static Future<bool> isKeyboardVisibale() async {
     final viewInsets = View.of(Get.context!).viewInsets;
     return viewInsets.bottom > 0;
   }
 
-  static Future<bool> isPhysicalDevice() async{
-    return defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS;
+  static Future<bool> isPhysicalDevice() async {
+    return defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.iOS;
   }
 
-  static void vibrate(Duration duration){
+  static void vibrate(Duration duration) {
     HapticFeedback.vibrate();
     Future.delayed(duration, () => HapticFeedback.vibrate());
   }
 
-  static Future<void> setPreferredOrientations(List<DeviceOrientation> orientations) async{
+  static Future<void> setPreferredOrientations(
+      List<DeviceOrientation> orientations) async {
     await SystemChrome.setPreferredOrientations(orientations);
   }
 
-  static hideStatusBar(){
+  static hideStatusBar() {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
   }
 
-  static showStatusBar(){
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: SystemUiOverlay.values);
+  static showStatusBar() {
+    SystemChrome.setEnabledSystemUIMode(
+        SystemUiMode.manual, overlays: SystemUiOverlay.values);
   }
 
-  static Future<bool> hasInternetConnection() async{
-    try{
+  static Future<bool> hasInternetConnection() async {
+    try {
       final result = await InternetAddress.lookup('example.com');
       return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
-    } on SocketException catch (_){
+    } on SocketException catch (_) {
       return false;
     }
   }
 
-  static bool isIOS(){
+  static bool isIOS() {
     return Platform.isIOS;
   }
 
-  static bool isAndroid(){
+  static bool isAndroid() {
     return Platform.isAndroid;
   }
 
-  static void launchUrl(String url) async{
-    if(await canLaunchUrlString(url)){
+  /// Opens URLs, phone numbers, and email addresses.
+  static void launchUrl(String url) async {
+    if (!url.startsWith('http') &&
+        !url.startsWith('mailto') &&
+        !url.startsWith('tel')) {
+      url = 'https://$url';
+    }
+    if (await canLaunchUrlString(url)) {
       await launchUrlString(url);
     } else {
       throw 'Could not launch $url';
     }
   }
-
 }

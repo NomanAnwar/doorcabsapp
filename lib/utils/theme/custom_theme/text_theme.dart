@@ -1,46 +1,58 @@
 import 'package:flutter/material.dart';
-
 import '../../constants/colors.dart';
 
 class FTextTheme {
-  FTextTheme._();
+    FTextTheme._();
 
-  static TextTheme lightTextTheme = TextTheme(
-      headlineLarge: const TextStyle().copyWith(fontSize: 31, fontFamily: 'MadaRegular', color: FColors.black,),
-      headlineMedium: const TextStyle().copyWith(fontSize: 24, fontFamily: 'MadaRegular', color: FColors.black,),
-      headlineSmall: const TextStyle().copyWith(fontSize: 16, fontFamily: 'MadaRegular', color: FColors.black,),
+    static TextTheme lightTextTheme = TextTheme(
+        // Headlines
+        displayLarge: const TextStyle(fontFamily: 'Koulen', fontSize: 57, fontWeight: FontWeight.w400, color: FColors.black),
+        displayMedium: const TextStyle(fontFamily: 'Koulen', fontSize: 45, fontWeight: FontWeight.w400, color: FColors.black),
+        displaySmall: const TextStyle(fontFamily: 'Koulen', fontSize: 36, fontWeight: FontWeight.w400, color: FColors.black),
 
+        headlineLarge: const TextStyle(fontFamily: 'Koulen', fontSize: 31, fontWeight: FontWeight.w400, color: FColors.black), // your original
+        headlineMedium: const TextStyle(fontFamily: 'Koulen', fontSize: 24, fontWeight: FontWeight.w400, color: FColors.black), // your original
+        headlineSmall: const TextStyle(fontFamily: 'Koulen', fontSize: 16, fontWeight: FontWeight.w400, color: FColors.black), // your original
 
-      titleLarge: const TextStyle().copyWith(fontSize: 16, fontFamily: 'MadaRegular', fontWeight: FontWeight.w600, color: FColors.black,),
-      titleMedium: const TextStyle().copyWith(fontSize: 16, fontFamily: 'MadaRegular', fontWeight: FontWeight.w500, color: FColors.black,),
-      titleSmall: const TextStyle().copyWith(fontSize: 16, fontFamily: 'MadaRegular', fontWeight: FontWeight.w400, color: FColors.black,),
+        // Titles
+        titleLarge: const TextStyle(fontFamily: 'Poppins', fontSize: 16, fontWeight: FontWeight.w600, color: FColors.black), // your original
+        titleMedium: const TextStyle(fontFamily: 'Poppins', fontSize: 16, fontWeight: FontWeight.w500, color: FColors.black), // your original
+        titleSmall: const TextStyle(fontFamily: 'Poppins', fontSize: 14, fontWeight: FontWeight.w400, color: FColors.black),
 
-      bodyLarge: const TextStyle().copyWith(fontSize: 14, fontFamily: 'MadaRegular', fontWeight: FontWeight.w500, color: FColors.black,),
-      bodyMedium: const TextStyle().copyWith(fontSize: 14, fontFamily: 'MadaRegular', fontWeight: FontWeight.normal, color: FColors.black,),
-      bodySmall: const TextStyle().copyWith(fontSize: 14, fontFamily: 'MadaRegular', fontWeight: FontWeight.w500, color: FColors.black.withOpacity(0.5),),
+        // Body
+        bodyLarge: const TextStyle(fontFamily: 'Poppins', fontSize: 14, fontWeight: FontWeight.w500, color: FColors.black), // your original
+        bodyMedium: const TextStyle(fontFamily: 'Poppins', fontSize: 14, fontWeight: FontWeight.normal, color: FColors.black), // your original
+        bodySmall: TextStyle(fontFamily: 'Poppins', fontSize: 14, fontWeight: FontWeight.w500, color: FColors.black.withOpacity(0.5)), // your original
 
+        // Labels
+        labelLarge: const TextStyle(fontFamily: 'Poppins', fontSize: 12, fontWeight: FontWeight.w500, color: FColors.black), // your original
+        labelMedium: TextStyle(fontFamily: 'Poppins', fontSize: 12, fontWeight: FontWeight.w500, color: FColors.black.withOpacity(0.5)), // your original
+        labelSmall: const TextStyle(fontFamily: 'Poppins', fontSize: 11, fontWeight: FontWeight.w400, color: FColors.black),
+    );
 
-      labelLarge: const TextStyle().copyWith(fontSize: 12, fontFamily: 'MadaRegular', fontWeight: FontWeight.w500, color: FColors.black,),
-      labelMedium: const TextStyle().copyWith(fontSize: 12, fontFamily: 'MadaRegular', fontWeight: FontWeight.w500, color: FColors.black.withOpacity(0.5),),
-  );
+    static TextTheme darkTextTheme = TextTheme(
+        // Headlines
+        displayLarge: const TextStyle(fontFamily: 'Koulen', fontSize: 57, fontWeight: FontWeight.w400, color: FColors.white),
+        displayMedium: const TextStyle(fontFamily: 'Koulen', fontSize: 45, fontWeight: FontWeight.w400, color: FColors.white),
+        displaySmall: const TextStyle(fontFamily: 'Koulen', fontSize: 36, fontWeight: FontWeight.w400, color: FColors.white),
 
-  static TextTheme darkTextTheme = TextTheme(
-      headlineLarge: const TextStyle().copyWith(fontSize: 31, fontFamily: 'MadaRegular', color: FColors.white,),
-      headlineMedium: const TextStyle().copyWith(fontSize: 24, fontFamily: 'MadaRegular', color: FColors.white,),
-      headlineSmall: const TextStyle().copyWith(fontSize: 16, fontFamily: 'MadaRegular', color: FColors.white,),
+        headlineLarge: const TextStyle(fontFamily: 'Koulen', fontSize: 31, fontWeight: FontWeight.w400, color: FColors.white), // your original
+        headlineMedium: const TextStyle(fontFamily: 'Koulen', fontSize: 24, fontWeight: FontWeight.w400, color: FColors.white), // your original
+        headlineSmall: const TextStyle(fontFamily: 'Koulen', fontSize: 16, fontWeight: FontWeight.w400, color: FColors.white), // your original
 
+        // Titles
+        titleLarge: const TextStyle(fontFamily: 'Poppins', fontSize: 16, fontWeight: FontWeight.w600, color: FColors.white), // your original
+        titleMedium: const TextStyle(fontFamily: 'Poppins', fontSize: 16, fontWeight: FontWeight.w500, color: FColors.white), // your original
+        titleSmall: const TextStyle(fontFamily: 'Poppins', fontSize: 14, fontWeight: FontWeight.w400, color: FColors.white),
 
-      titleLarge: const TextStyle().copyWith(fontSize: 16, fontFamily: 'MadaRegular', fontWeight: FontWeight.w600, color: FColors.white,),
-      titleMedium: const TextStyle().copyWith(fontSize: 16, fontFamily: 'MadaRegular', fontWeight: FontWeight.w500, color: FColors.white,),
-      titleSmall: const TextStyle().copyWith(fontSize: 16, fontFamily: 'MadaRegular', fontWeight: FontWeight.w400, color: FColors.white,),
+        // Body
+        bodyLarge: const TextStyle(fontFamily: 'Poppins', fontSize: 14, fontWeight: FontWeight.w500, color: FColors.white), // your original
+        bodyMedium: const TextStyle(fontFamily: 'Poppins', fontSize: 14, fontWeight: FontWeight.normal, color: FColors.white), // your original
+        bodySmall: TextStyle(fontFamily: 'Poppins', fontSize: 14, fontWeight: FontWeight.w500, color: FColors.white.withOpacity(0.5)), // your original
 
-      bodyLarge: const TextStyle().copyWith(fontSize: 14, fontFamily: 'MadaRegular', fontWeight: FontWeight.w500, color: FColors.white,),
-      bodyMedium: const TextStyle().copyWith(fontSize: 14, fontFamily: 'MadaRegular', fontWeight: FontWeight.normal, color: FColors.white,),
-      bodySmall: const TextStyle().copyWith(fontSize: 14, fontFamily: 'MadaRegular', fontWeight: FontWeight.w500, color: FColors.white.withOpacity(0.5),),
-
-
-      labelLarge: const TextStyle().copyWith(fontSize: 12, fontFamily: 'MadaRegular', fontWeight: FontWeight.w500, color: FColors.white,),
-      labelMedium: const TextStyle().copyWith(fontSize: 12, fontFamily: 'MadaRegular', fontWeight: FontWeight.w500, color: FColors.white.withOpacity(0.5),),
-  );
-
+        // Labels
+        labelLarge: const TextStyle(fontFamily: 'Poppins', fontSize: 12, fontWeight: FontWeight.w500, color: FColors.white), // your original
+        labelMedium: TextStyle(fontFamily: 'Poppins', fontSize: 12, fontWeight: FontWeight.w500, color: FColors.white.withOpacity(0.5)), // your original
+        labelSmall: const TextStyle(fontFamily: 'Poppins', fontSize: 11, fontWeight: FontWeight.w400, color: FColors.white),
+    );
 }
