@@ -11,10 +11,15 @@ class FColors {
   static const Color secondaryColor = Color(0xFF003566); // Deep Navy
   static const Color accentColor = Color(0xFF4285F4); // Accent Blue
 
+  // Input Fields Colors
+  static const Color phoneInputField = Color(0xFFe3e3e3);
+  static const Color rideTypeBg = Color(0xFFd9d9d9);
+
   // Button Colors
   static const Color buttonPrimary = Color(0xFFbd2c26);
   static const Color buttonSecondary = Color(0xFF6C757D);
   static const Color buttonDisabled = Color(0xFFC4C4C4);
+  static const Color buttonWhatsApp = Color(0xFF089F00);
 
   // -------------------------------------------------
   // Hailey Shades (Brand-specific shades)
@@ -31,7 +36,7 @@ class FColors {
   // Neutral & Grayscale
   // -------------------------------------------------
   static const Color white = Color(0xFFFFFFFF);
-  static const Color black = Color(0xFF232323);
+  static const Color black = Color(0xFF000000);
   static const Color black12 = Color(0x1F000000); // For shadows/overlays
   static const Color grey100 = Color(0xFFF8F9FA);
   static const Color grey200 = Color(0xFFeeeeee);

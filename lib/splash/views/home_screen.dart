@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:pusher_beams/pusher_beams.dart';
+// import 'package:pusher_beams/pusher_beams.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -51,8 +51,8 @@ class _HomeScreenState extends State<HomeScreen> {
     await Permission.notification.request();
 
     try {
-      await PusherBeams.instance.start("1aeaf0d9-e6ba-4132-bee8-b152fe62ad54"); // replace with your ID
-      await PusherBeams.instance.addDeviceInterest("passenger");
+      // await PusherBeams.instance.start("1aeaf0d9-e6ba-4132-bee8-b152fe62ad54"); // replace with your ID
+      // await PusherBeams.instance.addDeviceInterest("passenger");
       debugPrint("✅ Pusher Beams initialized");
     } catch (e) {
       debugPrint("❌ Pusher Beams initialization failed: $e");

@@ -1,38 +1,21 @@
-class FImages{
+class FImages {
 
   static const String splash = "assets/images/Splash.png";
+  static const String splash_bg_down = "assets/images/splash_bg_down.png";
+  static const String started_bg_down = "assets/images/started_bg.png";
+  static const String profile_img_sample = "assets/images/profile_img_sample.png";
+  static const String logo = "assets/images/logo.png";
 
-  static const String serviceImage = "assets/images/service_image.png";
-  static const String certificate = "assets/images/certificate.png";
+  static const String english_flag = "assets/images/flag_en.png";
+  static const String urdu_flag = "assets/images/flag_pk.png";
 
-  static const String banner = "assets/images/banner.png";
+  static const String bike = "assets/images/bike.png";
+  static const String rickshaw = "assets/images/rickshaw.png";
+  static const String ride_ac = "assets/images/ride_ac.png";
+  static const String ride_mini = "assets/images/ride_mini.png";
+  static const String city_to_city = "assets/images/city_to_city.png";
 
-  static const String chatBG = "assets/images/chat_bg.png";
 
 
-  static const String onBoardingOne = "assets/images/group_one.png";
-  static const String onBoardingTwo = "assets/images/group_two.png";
-  static const String onBoardingThree = "assets/images/group_three.png";
-
-  static const String firstonBoarding = "assets/images/onboarding1.png";
-  static const String secondonBoarding = "assets/images/onboarding2.png";
-  static const String thirdonBoarding = "assets/images/onboarding3.png";
-
-  static const String google = "assets/images/Google.png";
-  static const String mailIcon = "assets/images/mail-01.png";
-
-  static const String home = "assets/images/home.png";
-
-  static const String logo = "assets/images/Logo.png";
-  static const String country_flag = "assets/images/nigeria_flag.png";
-  static const String nin_icon = "assets/images/nin_icon.png";
-  static const String account_name_icon = "assets/images/account_name.png";
-  static const String account_number_icon = "assets/images/account_number.png";
-
-  static const String successGif = "assets/images/success.gif";
-  static const String resetPassword = "assets/images/password_reset.png";
-
-  static const String almostDone = "assets/images/setup_shop_onboarding.png";
-  static const String uploadPhoto = "assets/images/upload_image.png";
 
 }

@@ -1,3 +1,4 @@
+import 'package:doorcab/utils/theme/custom_theme/text_theme.dart';
 import 'package:flutter/material.dart';
 import '../../constants/colors.dart';
 
@@ -7,17 +8,13 @@ class FElevatedButtonTheme {
   // Light theme buttons
   static final lightElevatedButtonTheme = ElevatedButtonThemeData(
     style: ElevatedButton.styleFrom(
-      backgroundColor: FColors.buttonPrimary,
+      backgroundColor: FColors.secondaryColor,
       foregroundColor: FColors.textWhite,
-      textStyle: const TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-        fontFamily: 'Poppins',
-      ),
+      // textStyle: FTextTheme.lightTextTheme.headlineLarge!.copyWith(),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
       ),
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
+      padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
       elevation: 0,
     ),
   );
@@ -27,15 +24,11 @@ class FElevatedButtonTheme {
     style: ElevatedButton.styleFrom(
       backgroundColor: FColors.buttonPrimary,
       foregroundColor: FColors.textWhite,
-      textStyle: const TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-        fontFamily: 'Poppins',
-      ),
+      // textStyle: FTextTheme.darkTextTheme.headlineLarge!.copyWith(),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
       ),
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
+      padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
       elevation: 0,
     ),
   );

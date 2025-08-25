@@ -1,4 +1,5 @@
 import 'package:doorcab/splash/views/splash_screen.dart';
+import 'package:doorcab/utils/http/http_client.dart';
 import 'package:doorcab/utils/local_storage/storage_utility.dart';
 import 'package:doorcab/utils/routes/app_pages.dart';
 import 'package:flutter/material.dart';
@@ -16,6 +17,8 @@ void main() async {
 
   // ✅ Firebase initialization
   await Firebase.initializeApp();
+
+  FHttpHelper.setBaseUrl("http://192.168.100.109:4000");
 
   // ✅ Pusher init
   // await PusherService.init();

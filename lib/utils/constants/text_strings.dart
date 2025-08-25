@@ -14,7 +14,28 @@ class FTextStrings {
   static const String appName = "DoorCabs";
 
   // -------------------
-  // Common
+  // Splash
+
+  static const String splahTagLine = "Pakistan’s 1st Actual Ride Hailing App";
+  static const String wellcomeTagLine = "Get Start With DoorCabs";
+  static const String wellcomeSubheading = "With Your Phone Number";
+  static const String otpTagLine = "PHone Verificatrion";
+  static const String otpSubheading = "Enter Your OTP Code Here";
+
+  // -------------------
+  // Roles
+  static const String selectUserType = "Select Your Role";
+  static const String driver = "Driver";
+  static const String passenger = "Passenger";
+
+
+  // -------------------
+  // Languages
+  static const String english = "English";
+  static const String urdu = "Urdu";
+
+
+
   // -------------------
   static const String home = "Home";
   static const String done = "Done";
@@ -56,10 +77,6 @@ class FTextStrings {
   static const String firstName = "First Name";
   static const String lastName = "Last Name";
   static const String uploadProfilePhoto = "Upload Profile Photo";
-  static const String selectUserType = "Select Your Role";
-  static const String driver = "Driver";
-  static const String passenger = "Passenger";
-
   // -------------------
   // Ride Booking (Passenger)
   // -------------------

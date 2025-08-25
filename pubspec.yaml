@@ -32,7 +32,7 @@ dependencies:
   permission_handler: ^12.0.1
 
   # pusher packages
-  pusher_beams: ^1.1.2
+#  pusher_beams: ^1.1.2
 
   # Url specific packages
   url_launcher: ^6.3.2
@@ -42,6 +42,16 @@ dependencies:
   http: ^1.4.0
   get_storage: ^2.1.1
   logger: ^2.6.1
+  pinput: ^5.0.1
+
+  # google maps packages
+  google_maps_flutter: ^2.12.3
+  geolocator: ^14.0.2
+  geocoding: ^4.0.0
+  location: ^8.0.1
+
+  # Google Places Autocomplete
+  google_places_flutter: ^2.1.1
 
 # ----------- Packages End ----------
 
@@ -84,3 +94,9 @@ flutter:
           weight: 600
         - asset: assets/fonts/Poppins-Bold.ttf
           weight: 800
+
+
+    - family: Koulen
+      fonts:
+        - asset: assets/fonts/Koulen-Regular.ttf
+          weight: 400
