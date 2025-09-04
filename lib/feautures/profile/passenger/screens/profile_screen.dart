@@ -1,5 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
+import '../../../../common/widgets/buttons/responsive_button.dart';
 import '../../../../utils/constants/colors.dart';
 import '../../../../utils/constants/image_strings.dart';
 import '../../../../utils/constants/text_strings.dart';
@@ -12,7 +15,16 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = Get.put(ProfileController());
-    final size = MediaQuery.of(context).size;
+
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    /// Reference device size (iPhone 16 Pro Max)
+    const baseWidth = 440.0;
+    const baseHeight = 956.0;
+
+    double sw(double w) => w * screenWidth / baseWidth;
+    double sh(double h) => h * screenHeight / baseHeight;
 
     return Scaffold(
       backgroundColor: FColors.primaryColor,
@@ -20,47 +32,49 @@ class ProfileScreen extends StatelessWidget {
         key: c.formKey,
         child: SingleChildScrollView(
           child: SizedBox(
-            height: size.height,
-            width: size.width,
+            height: screenHeight,
+            width: screenWidth,
             child: Stack(
               children: [
                 /// Header Image
                 Positioned(
-                  top: 14,
+                  top: sh(14),
                   left: 0,
                   right: 0,
                   child: Image.asset(
                     FImages.started_bg_down,
                     fit: BoxFit.cover,
-                    height: 200,
+                    height: sh(200),
                   ),
                 ),
 
-                /// Edit Button
+                /// Edit Button (commented but responsive)
+                /*
                 Positioned(
-                  top: 38,
-                  right: 20,
+                  top: sh(38),
+                  right: sw(20),
                   child: TextButton(
                     onPressed: () {},
-                    child: const Text(
+                    child: Text(
                       "Edit",
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                        fontSize: sw(16),
                       ),
                     ),
                   ),
                 ),
+                */
 
                 /// White Background Container
                 Positioned(
-                  top: 131,
+                  top: sh(131),
                   left: 0,
                   right: 0,
                   child: Container(
-                    width: size.width,
-                    height: size.height,
+                    width: screenWidth,
+                    height: screenHeight,
                     decoration: const BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.only(
@@ -73,23 +87,34 @@ class ProfileScreen extends StatelessWidget {
 
                 /// Profile Avatar
                 Positioned(
-                  top: 180,
-                  left: size.width * 0.35,
-                  child: Image.asset(
-                    FImages.profile_img_sample,
-                    fit: BoxFit.cover,
-                    height: 100,
-                    width: 100,
-                  ),
+                  top: sh(160),
+                  left: screenWidth * 0.35,
+                  child: Obx(() {
+                    return GestureDetector(
+                      onTap: () => _showImagePicker(context, c),
+                      child: CircleAvatar(
+                        radius: sw(55),
+                        backgroundColor: Colors.grey.shade300,
+                        backgroundImage: c.profileImage.value != null
+                            ? FileImage(c.profileImage.value!)
+                            : const AssetImage(FImages.profile_img_sample)
+                        as ImageProvider,
+                        child: c.profileImage.value == null
+                            ? Icon(Icons.camera_alt,
+                            color: Colors.white, size: sw(40))
+                            : null,
+                      ),
+                    );
+                  }),
                 ),
 
                 /// First Name
                 Positioned(
-                  top: 349,
-                  left: 21,
+                  top: sh(349),
+                  left: sw(21),
                   child: _buildField(
-                    width: 190,
-                    height: 52,
+                    width: sw(190),
+                    height: sh(52),
                     controller: c.firstNameCtrl,
                     hint: "First Name",
                     icon: Icons.person,
@@ -98,11 +123,11 @@ class ProfileScreen extends StatelessWidget {
 
                 /// Last Name
                 Positioned(
-                  top: 349,
-                  left: 224,
+                  top: sh(349),
+                  left: sw(224),
                   child: _buildField(
-                    width: 190,
-                    height: 52,
+                    width: sw(190),
+                    height: sh(52),
                     controller: c.lastNameCtrl,
                     hint: "Last Name",
                     icon: Icons.person_outline,
@@ -111,11 +136,11 @@ class ProfileScreen extends StatelessWidget {
 
                 /// Email
                 Positioned(
-                  top: 445,
-                  left: 25,
+                  top: sh(445),
+                  left: sw(25),
                   child: _buildField(
-                    width: 393,
-                    height: 52,
+                    width: sw(393),
+                    height: sh(52),
                     controller: c.emailCtrl,
                     hint: "Email",
                     icon: Icons.email,
@@ -125,11 +150,11 @@ class ProfileScreen extends StatelessWidget {
 
                 /// Contact
                 Positioned(
-                  top: 541,
-                  left: 25,
+                  top: sh(541),
+                  left: sw(25),
                   child: _buildField(
-                    width: 393,
-                    height: 52,
+                    width: sw(393),
+                    height: sh(52),
                     controller: c.contactCtrl,
                     hint: "Contact Number",
                     icon: Icons.phone,
@@ -139,11 +164,11 @@ class ProfileScreen extends StatelessWidget {
 
                 /// Emergency Contact
                 Positioned(
-                  top: 637,
-                  left: 25,
+                  top: sh(637),
+                  left: sw(25),
                   child: _buildField(
-                    width: 393,
-                    height: 52,
+                    width: sw(393),
+                    height: sh(52),
                     controller: c.emergencyCtrl,
                     hint: "Emergency Contact",
                     icon: Icons.contact_phone,
@@ -153,11 +178,11 @@ class ProfileScreen extends StatelessWidget {
 
                 /// Country
                 Positioned(
-                  top: 733,
-                  left: 25,
+                  top: sh(733),
+                  left: sw(25),
                   child: _buildField(
-                    width: 190,
-                    height: 52,
+                    width: sw(190),
+                    height: sh(52),
                     controller: c.countryCtrl,
                     hint: "Country",
                     icon: Icons.flag,
@@ -166,11 +191,11 @@ class ProfileScreen extends StatelessWidget {
 
                 /// City
                 Positioned(
-                  top: 733,
-                  left: 229,
+                  top: sh(733),
+                  left: sw(229),
                   child: _buildField(
-                    width: 190,
-                    height: 52,
+                    width: sw(190),
+                    height: sh(52),
                     controller: c.cityCtrl,
                     hint: "City",
                     icon: Icons.location_city,
@@ -179,20 +204,25 @@ class ProfileScreen extends StatelessWidget {
 
                 /// Continue Button
                 Positioned(
-                  bottom: 40,
-                  left: 25,
-                  right: 25,
-                  child: SizedBox(
+                  bottom: sh(40),
+                  left: sw(25),
+                  right: sw(25),
+                  child: ResponsiveButton(
+                    text: FTextStrings.submit,
+                    onPressed: c.saveAndContinue,
+                    backgroundColor: FColors.secondaryColor,
+                    textColor: Colors.white,
+                    sw: sw,
+                    sh: sh,
+                    baseWidth: baseWidth,
+                    screenWidth: screenWidth,
+                    width: 343, // original iPhone 16 Pro Max width (393 - 2*25) if you want strict match
                     height: 52,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: FColors.primaryColor,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                      onPressed: c.saveAndContinue,
-                      child: const Text(FTextStrings.submit),
+                    borderRadius: 14,
+                    textStyle: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16, // will scale responsively inside the widget
+                      color: Colors.white,
                     ),
                   ),
                 ),
@@ -236,4 +266,90 @@ class ProfileScreen extends StatelessWidget {
       ),
     );
   }
+
+  /// Image picker options dialog
+  void _showImagePicker(BuildContext context, ProfileController c) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            /// Title
+            Text(
+              "Upload Profile Picture",
+              style: FTextTheme.lightTextTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: FColors.primaryColor,
+              ),
+            ),
+            const SizedBox(height: 15),
+
+            /// Divider
+            Divider(color: Colors.grey.shade300, thickness: 1),
+
+            /// Gallery option
+            ListTile(
+              leading: Icon(Icons.photo_library, color: FColors.primaryColor),
+              title: Text(
+                "Pick from Gallery",
+                style: FTextTheme.lightTextTheme.titleMedium?.copyWith(
+                  color: Colors.black87,
+                ),
+              ),
+              onTap: () {
+                c.pickImage(ImageSource.gallery);
+                Navigator.pop(context);
+              },
+            ),
+
+            /// Camera option
+            ListTile(
+              leading: Icon(Icons.camera_alt, color: FColors.primaryColor),
+              title: Text(
+                "Take a Photo",
+                style: FTextTheme.lightTextTheme.titleMedium?.copyWith(
+                  color: Colors.black87,
+                ),
+              ),
+              onTap: () {
+                c.pickImage(ImageSource.camera);
+                Navigator.pop(context);
+              },
+            ),
+
+            const SizedBox(height: 10),
+
+            /// Cancel button
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: FColors.primaryColor,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                onPressed: () => Navigator.pop(context),
+                child: Text(
+                  "Cancel",
+                  style: FTextTheme.lightTextTheme.titleMedium?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
 }

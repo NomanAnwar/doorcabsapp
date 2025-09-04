@@ -1,5 +1,10 @@
+// lib/features/profile/controllers/profile_controller.dart
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
+import '../../../../utils/http/http_client.dart';
 import '../../../shared/services/storage_service.dart';
 
 class ProfileController extends GetxController {
@@ -11,26 +16,111 @@ class ProfileController extends GetxController {
   final emailCtrl = TextEditingController();
   final contactCtrl = TextEditingController();
   final emergencyCtrl = TextEditingController();
-  final countryCtrl = TextEditingController(text: "Pakistan"); // Default
+  final countryCtrl = TextEditingController(text: "Pakistan");
   final cityCtrl = TextEditingController();
 
-  /// Save
-  void saveAndContinue() {
+  final isLoading = false.obs;
+
+  /// Image handling
+  final profileImage = Rx<File?>(null); // ✅ used directly in UI
+  final base64Image = ''.obs;
+  final _picker = ImagePicker();
+
+  /// Pick image from camera/gallery
+  Future<void> pickImage(ImageSource source) async {
+    try {
+      final pickedFile =
+      await _picker.pickImage(source: source, imageQuality: 80);
+      if (pickedFile == null) return;
+
+      final file = File(pickedFile.path);
+      profileImage.value = file;
+
+      final bytes = await file.readAsBytes();
+      final encoded = base64Encode(bytes);
+
+      // detect mime type from extension
+      final mime = _mimeFromPath(pickedFile.path);
+
+      base64Image.value = 'data:image/$mime;base64,$encoded';
+    } catch (e) {
+      Get.snackbar("Image Error", e.toString());
+    }
+  }
+
+  String _mimeFromPath(String path) {
+    final ext = path.split('.').last.toLowerCase();
+    if (ext == 'png') return 'png';
+    if (ext == 'jpg' || ext == 'jpeg') return 'jpeg';
+    if (ext == 'webp') return 'webp';
+    return 'jpeg';
+  }
+
+  void clearImage() {
+    profileImage.value = null;
+    base64Image.value = '';
+  }
+
+  /// --- VALIDATORS ---
+  String? validateEmail(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return "Email is required";
+    }
+    final regex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    if (!regex.hasMatch(value.trim())) {
+      return "Enter a valid email address";
+    }
+    return null;
+  }
+
+  /// Save profile API
+  Future<void> saveAndContinue() async {
     if (!formKey.currentState!.validate()) return;
 
-    final profileData = {
+    final token = StorageService.getAuthToken();
+    if (token == null) {
+      Get.snackbar("Error", "User token not found. Please login again.");
+      return;
+    }
+
+    /// 🔑 setAuthToken with useBearer: false so it goes in "token" header
+    FHttpHelper.setAuthToken(token, useBearer: true);
+
+    final body = {
       "firstName": firstNameCtrl.text.trim(),
       "lastName": lastNameCtrl.text.trim(),
       "email": emailCtrl.text.trim(),
       "contact": contactCtrl.text.trim(),
-      "emergency": emergencyCtrl.text.trim(),
+      "emergency_no": emergencyCtrl.text.trim(),
       "country": countryCtrl.text.trim(),
       "city": cityCtrl.text.trim(),
+      "language": StorageService.getLanguage() ?? "en",
+      "profileImage": base64Image.value,
     };
 
-    StorageService.saveProfile(profileData);
-    Get.offAllNamed('/ride-home');
+    try {
+      isLoading.value = true;
+
+      final response = await FHttpHelper.post("service/update-profile", body);
+
+      print("Update Profile API Response: $response");
+
+      if (response["message"]?.toString().toLowerCase().contains("profile updated") ==
+          true) {
+        StorageService.saveProfile(body);
+
+        Get.snackbar("Success", "Profile updated successfully.");
+        Get.offAllNamed('/ride-home');
+      } else {
+        Get.snackbar("Error", response["message"] ?? "Something went wrong");
+      }
+    } catch (e) {
+      Get.snackbar("Error", e.toString());
+    } finally {
+      isLoading.value = false;
+    }
   }
+
 
   @override
   void onClose() {

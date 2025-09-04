@@ -11,7 +11,7 @@ class PlaceSuggestion {
     this.latLng,
   });
 
-  PlaceSuggestion copyWith({LatLng? latLng}) {
+  PlaceSuggestion copyWith({LatLng? latLng, required description}) {
     return PlaceSuggestion(
       placeId: placeId,
       description: description,

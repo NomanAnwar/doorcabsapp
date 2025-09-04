@@ -1,10 +1,13 @@
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import '../../shared/models/place_suggestion.dart';
-import '../../shared/services/places_service.dart';
-import '../../shared/services/storage_service.dart';
+
+import '../../../shared/models/place_suggestion.dart';
+import '../../../shared/services/places_service.dart';
+import '../../../shared/services/storage_service.dart';
+
 
 enum ActiveField { pickup, dropoff }
 
@@ -22,10 +25,11 @@ class DropOffController extends GetxController {
 
   final activeField = ActiveField.dropoff.obs;
 
-  final suggestions = <PlaceSuggestion>[].obs;   // live suggestions
-  final recent      = <PlaceSuggestion>[].obs;   // shared recents
+  final suggestions = <PlaceSuggestion>[].obs;
+  final isLoading = false.obs;
+  final recent      = <PlaceSuggestion>[].obs;
 
-  final stops = <PlaceSuggestion>[].obs;         // max 3 stops
+  final stops = <PlaceSuggestion>[].obs; // max 3
 
   Timer? _debounce;
 
@@ -59,13 +63,16 @@ class DropOffController extends GetxController {
     }
 
     final q = field == ActiveField.pickup ? pickupCtrl.text : dropCtrl.text;
+
     if (_debounce?.isActive ?? false) _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 300), () async {
+    _debounce = Timer(const Duration(milliseconds: 400), () async {
       if (q.trim().isEmpty) {
         suggestions.clear();
-      } else {
-        suggestions.assignAll(await places.autocomplete(q.trim()));
+        return;
       }
+      isLoading.value = true;
+      suggestions.assignAll(await places.autocomplete(q.trim()));
+      isLoading.value = false;
       activeField.value = field;
     });
   }
@@ -95,7 +102,9 @@ class DropOffController extends GetxController {
   }
 
   Future<void> selectSuggestion(PlaceSuggestion s) async {
+    isLoading.value = true;
     final withLatLng = await places.placeDetails(s) ?? s;
+    isLoading.value = false;
 
     if (activeField.value == ActiveField.pickup) {
       pickupCtrl.text = withLatLng.description;
@@ -119,7 +128,6 @@ class DropOffController extends GetxController {
     }
   }
 
-  // ---- stops management (max 3) ----
   void addStop() {
     if (stops.length >= 3) {
       Get.snackbar('Limit reached', 'You can add up to 3 stops only.');
@@ -177,7 +185,12 @@ class DropOffController extends GetxController {
       Get.snackbar('Missing fields', 'Pickup and Drop-off are required.');
       return;
     }
-    Get.back(result: {
+    // Get.back(result: {
+    //   'pickup': pickupCtrl.text.trim(),
+    //   'dropoff': dropCtrl.text.trim(),
+    //   'stops': stops.map((e) => e.toJson()).toList(),
+    // });
+    Get.toNamed('/ride-request', arguments: {
       'pickup': pickupCtrl.text.trim(),
       'dropoff': dropCtrl.text.trim(),
       'stops': stops.map((e) => e.toJson()).toList(),

@@ -18,7 +18,8 @@ void main() async {
   // ✅ Firebase initialization
   await Firebase.initializeApp();
 
-  FHttpHelper.setBaseUrl("http://192.168.100.109:4000");
+  FHttpHelper.setBaseUrl("http://dc.tricasol.pk");
+  // FHttpHelper.setBaseUrl("http://192.168.100.109:4000");
 
   // ✅ Pusher init
   // await PusherService.init();

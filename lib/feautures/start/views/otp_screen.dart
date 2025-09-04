@@ -15,75 +15,103 @@ class OtpScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(OtpController());
-    final size = MediaQuery.of(context).size;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    // Base reference (iPhone 16 Pro Max)
+    final baseWidth = 440.0;
+    final baseHeight = 956.0;
+
+    double sw(double w) => w * screenWidth / baseWidth;
+    double sh(double h) => h * screenHeight / baseHeight;
 
     return Scaffold(
       body: SingleChildScrollView(
         child: SizedBox(
-          height: size.height,
+          height: screenHeight,
           width: double.infinity,
           child: Stack(
             children: [
               /// Logo
               Positioned(
-                top: 100,
-                left: 164, // center horizontally (99/2)
+                top: sh(100),
+                left: sw(164),
                 child: Image.asset(
                   FImages.logo,
-                  width: 99,
-                  height: 62,
+                  width: sw(99),
+                  height: sh(62),
                 ),
               ),
 
               /// First Text
               Positioned(
-                top: 198,
-                left: 83, // adjust to center
+                top: sh(198),
+                left: sw(83),
                 child: Text(
                   FTextStrings.otpTagLine.toUpperCase(),
                   style: FTextTheme.lightTextTheme.displayLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: Colors.blue.shade900,
+                    fontSize: FTextTheme
+                        .lightTextTheme.displayLarge!.fontSize! *
+                        screenWidth / baseWidth,
                   ),
                 ),
               ),
 
               /// Second Text
               Positioned(
-                top: 245,
-                left: 89, // adjust to center
+                top: sh(245),
+                left: sw(89),
                 child: Text(
                   FTextStrings.otpSubheading,
-                  style: FTextTheme.lightTextTheme.titleLarge,
+                  style: FTextTheme.lightTextTheme.titleLarge!.copyWith(
+                    fontSize: FTextTheme
+                        .lightTextTheme.titleLarge!.fontSize! *
+                        screenWidth / baseWidth,
+                  ),
                 ),
               ),
 
               /// OTP input fields
               Positioned(
-                top: 350,
-                left: 66, // adjust to center
+                top: sh(350),
+                left: sw(66),
                 child: SizedBox(
-                  width: 308,
-
+                  width: sw(308),
                   child: Pinput(
                     length: 4,
                     defaultPinTheme: PinTheme(
-                      width: 56,
-                      height: 57,
-                      textStyle: FTextTheme.lightTextTheme.displaySmall,
+                      width: sw(56),
+                      height: sh(57),
+                      textStyle: FTextTheme.lightTextTheme.displaySmall!.copyWith(
+                        fontSize: FTextTheme
+                            .lightTextTheme.displaySmall!.fontSize! *
+                            screenWidth / baseWidth,
+                      ),
                       decoration: BoxDecoration(
                         border: Border(
-                          bottom: BorderSide(color: FColors.buttonDisabled, width: 5),
+                          bottom: BorderSide(
+                            color: FColors.buttonDisabled,
+                            width: sh(5),
+                          ),
                         ),
                       ),
                     ),
                     focusedPinTheme: PinTheme(
-                      width: 56,
-                      height: 57,
-                      textStyle: FTextTheme.lightTextTheme.displaySmall,
+                      width: sw(56),
+                      height: sh(57),
+                      textStyle: FTextTheme.lightTextTheme.displaySmall!.copyWith(
+                        fontSize: FTextTheme
+                            .lightTextTheme.displaySmall!.fontSize! *
+                            screenWidth / baseWidth,
+                      ),
                       decoration: BoxDecoration(
                         border: Border(
-                          bottom: BorderSide(color: FColors.secondaryColor, width: 5),
+                          bottom: BorderSide(
+                            color: FColors.secondaryColor,
+                            width: sh(5),
+                          ),
                         ),
                       ),
                     ),
@@ -94,19 +122,27 @@ class OtpScreen extends StatelessWidget {
 
               /// Timer / Resend
               Positioned(
-                top: 440,
-                left: (size.width / 2) - 70, // center align
+                top: sh(440),
+                left: (screenWidth / 2) - sw(70),
                 child: Obx(
                       () => controller.secondsRemaining.value > 0
                       ? Text(
                     "Resend OTP in ${controller.secondsRemaining.value}s",
-                    style: FTextTheme.lightTextTheme.titleMedium,
+                    style: FTextTheme.lightTextTheme.titleMedium!.copyWith(
+                      fontSize: FTextTheme
+                          .lightTextTheme.titleMedium!.fontSize! *
+                          screenWidth / baseWidth,
+                    ),
                   )
                       : TextButton(
                     onPressed: controller.resendOtp,
                     child: Text(
                       "Resend OTP",
-                      style: FTextTheme.lightTextTheme.titleSmall,
+                      style: FTextTheme.lightTextTheme.titleSmall!.copyWith(
+                        fontSize: FTextTheme
+                            .lightTextTheme.titleSmall!.fontSize! *
+                            screenWidth / baseWidth,
+                      ),
                     ),
                   ),
                 ),

@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -15,8 +14,12 @@ class FHttpHelper {
 
   /// Optional auth token
   static String? _authToken;
-  static void setAuthToken(String token) {
+  static bool _useBearer = true; // default is Bearer
+
+  /// Configure token
+  static void setAuthToken(String token, {bool useBearer = true}) {
     _authToken = token;
+    _useBearer = useBearer;
   }
 
   /// GET request
@@ -63,8 +66,15 @@ class FHttpHelper {
 
     final headers = {
       HttpHeaders.contentTypeHeader: 'application/json',
-      if (_authToken != null) HttpHeaders.authorizationHeader: 'Bearer $_authToken',
     };
+
+    if (_authToken != null) {
+      if (_useBearer) {
+        headers[HttpHeaders.authorizationHeader] = 'Bearer $_authToken';
+      } else {
+        headers['token'] = _authToken!;
+      }
+    }
 
     http.Response response;
 
@@ -72,6 +82,7 @@ class FHttpHelper {
       if (kDebugMode) {
         print('[FHttpHelper] $method $uri');
         if (body != null) print('Body: $body');
+        print('Headers: $headers');
       }
 
       switch (method) {
@@ -114,6 +125,9 @@ class FHttpHelper {
       return json.decode(response.body);
     } else {
       final error = json.decode(response.body);
+      if (kDebugMode) {
+        print("API Error Response : $error");
+      }
       throw Exception(error['message'] ?? 'Error: ${response.statusCode}');
     }
   }

@@ -42,41 +42,80 @@ class FValidator {
   }
 
   /// Phone validation for Pakistan + USA
-  static String? validatePhoneNumber(String? value, {String? countryCode}) {
-    if (value == null || value.trim().isEmpty) {
-      return 'Phone number is required.';
-    }
 
-    value = value.replaceAll(RegExp(r'\s+'), ''); // Remove spaces
-    countryCode ??= _detectCountryCode();
+  /// Phone validation based on number prefix
+  static String? validatePhoneNumber(String? value) {
 
-    if (countryCode == 'PK') {
-      // Accepts formats: 03XXXXXXXXX or +923XXXXXXXXX
-      final pkRegExp = RegExp(r'^(?:\+92|0)?3\d{9}$');
-      if (!pkRegExp.hasMatch(value)) {
-        return 'Invalid Pakistan phone number format.';
-      }
-    } else if (countryCode == 'US') {
-      // Accepts formats: XXXXXXXXXX or +1XXXXXXXXXX
-      final usRegExp = RegExp(r'^(?:\+1)?\d{10}$');
-      if (!usRegExp.hasMatch(value)) {
-        return 'Invalid USA phone number format.';
-      }
-    } else {
-      // Fallback: 10–15 digits international format
-      final intlRegExp = RegExp(r'^\+?\d{10,15}$');
-      if (!intlRegExp.hasMatch(value)) {
-        return 'Invalid phone number format.';
-      }
-    }
-
+    print("Noman : "+value.toString());
     return null;
+  if (value == null || value.trim().isEmpty) {
+  return 'Phone number is required.';
   }
+
+  value = value.replaceAll(RegExp(r'\s+'), ''); // Remove spaces
+
+  // ✅ Detect country by prefix
+  if (value.startsWith('+92') || value.startsWith('03')) {
+  // Pakistan
+  final pkRegExp = RegExp(r'^(?:\+92|0)?3\d{9}$');
+  if (!pkRegExp.hasMatch(value)) {
+  return 'Invalid Pakistan phone number format.';
+  }
+  return null;
+  } else if (value.startsWith('+1')) {
+  // USA
+  final usRegExp = RegExp(r'^(?:\+1)?\d{10}$');
+  if (!usRegExp.hasMatch(value)) {
+  return 'Invalid USA phone number format.';
+  }
+
+  // 🌍 Fallback: International 10–15 digits
+  final intlRegExp = RegExp(r'^\+?\d{10,15}$');
+  if (!intlRegExp.hasMatch(value)) {
+  return 'Invalid phone number format.';
+  }
+
+  return null;
+  }
+  }
+
+
+  // static String? validatePhoneNumber(String? value, {String? countryCode}) {
+  //   if (value == null || value.trim().isEmpty) {
+  //     return 'Phone number is required.';
+  //   }
+  //
+  //   value = value.replaceAll(RegExp(r'\s+'), ''); // Remove spaces
+  //   countryCode ??= _detectCountryCode();
+  //
+  //   if (countryCode == 'US') {
+  //     // Accepts formats: XXXXXXXXXX or +1XXXXXXXXXX
+  //     final usRegExp = RegExp(r'^(?:\+1)?\d{10}$');
+  //     if (!usRegExp.hasMatch(value)) {
+  //       return 'Invalid USA phone number format.';
+  //     }
+  //   } else if (countryCode == 'PK') {
+  //     // Accepts formats: 03XXXXXXXXX or +923XXXXXXXXX
+  //     final pkRegExp = RegExp(r'^(?:\+92|0)?3\d{9}$');
+  //     if (!pkRegExp.hasMatch(value)) {
+  //       return 'Invalid Pakistan phone number format.';
+  //     }
+  //   } else {
+  //     // Fallback: 10–15 digits international format
+  //     final intlRegExp = RegExp(r'^\+?\d{10,15}$');
+  //     if (!intlRegExp.hasMatch(value)) {
+  //       return 'Invalid phone number format.';
+  //     }
+  //   }
+  //
+  //   return null;
+  // }
 
   /// Detect country from device locale
   static String _detectCountryCode() {
     try {
       final locale = Intl.getCurrentLocale();
+      print("Pakistan : "+locale.toString());
       if (locale.endsWith('_PK')) return 'PK';
       if (locale.endsWith('_US')) return 'US';
     } catch (_) {}

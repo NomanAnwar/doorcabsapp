@@ -13,27 +13,38 @@ class WelcomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Reference screen size (iPhone 16 Pro Max)
+    final baseWidth = 440.0;
+    final baseHeight = 956.0;
+
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    // Scale helpers
+    double sw(double w) => w * screenWidth / baseWidth;
+    double sh(double h) => h * screenHeight / baseHeight;
+
     return Scaffold(
       body: Container(
-        width: MediaQuery.of(context).size.width,
+        width: screenWidth,
         decoration: const BoxDecoration(color: FColors.primaryColor),
         child: Stack(
           children: [
             /// Logo
             Positioned(
-              top: 160,
-              left: 128,
+              top: sh(160),
+              left: sw(128),
               child: Image.asset(
                 FImages.logo,
-                width: 183,
-                height: 114,
+                width: sw(183),
+                height: sh(114),
               ),
             ),
 
             /// Language Dropdown
             Positioned(
-              top: 329,
-              left: 121,
+              top: sh(329),
+              left: sw(121),
               child: Obx(() {
                 if (controller.isLoading.value) {
                   return const CircularProgressIndicator(color: Colors.white);
@@ -47,7 +58,7 @@ class WelcomeScreen extends StatelessWidget {
                 }
 
                 return SizedBox(
-                  width: 197,
+                  width: sw(197),
                   child: FDropdown(
                     value: controller.selectedLanguage.value?.language,
                     items: controller.languages
@@ -56,8 +67,8 @@ class WelcomeScreen extends StatelessWidget {
                       "flag": lang.flag,
                     })
                         .toList(),
-                    width: 197,
-                    backgroundColor: Colors.grey.shade200,
+                    width: sw(197),
+                    backgroundColor: FColors.white,
                     onChanged: (val) {
                       final selected = controller.languages
                           .firstWhere((l) => l.language == val);
@@ -70,11 +81,11 @@ class WelcomeScreen extends StatelessWidget {
 
             /// Driver Button
             Positioned(
-              top: 445,
-              left: 128,
+              top: sh(445),
+              left: sw(150),
               child: FElevatedButton(
                 text: FTextStrings.driver.toUpperCase(),
-                width: 185,
+                width: sw(140),
                 onPressed: () {
                   controller.selectRole(FTextStrings.driver);
                   controller.saveAndContinue();
@@ -84,11 +95,11 @@ class WelcomeScreen extends StatelessWidget {
 
             /// Passenger Button
             Positioned(
-              top: 535,
-              left: 128,
+              top: sh(535),
+              left: sw(128),
               child: FElevatedButton(
                 text: FTextStrings.passenger.toUpperCase(),
-                width: 185,
+                width: sw(185),
                 onPressed: () {
                   controller.selectRole(FTextStrings.passenger);
                   controller.saveAndContinue();
@@ -98,12 +109,12 @@ class WelcomeScreen extends StatelessWidget {
 
             /// Bottom BG Image
             Positioned(
-              top: 630,
+              top: sh(630),
               left: 0,
               right: 0,
               child: Image.asset(
                 FImages.splash_bg_down,
-                width: MediaQuery.of(context).size.width,
+                width: screenWidth,
                 fit: BoxFit.fitWidth,
               ),
             ),

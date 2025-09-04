@@ -17,5 +17,10 @@ class FImages {
 
 
 
+  static const String selfie_placeholder = "assets/images/selfie_placeholder.png";
+  static const String car_placeholder = "assets/images/car_placeholder.png";
+
+
+
 
 }

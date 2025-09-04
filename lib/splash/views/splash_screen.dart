@@ -1,10 +1,9 @@
 import 'package:doorcab/utils/constants/colors.dart';
 import 'package:doorcab/utils/constants/image_strings.dart';
-import 'package:doorcab/utils/constants/sizes.dart';
-import 'package:doorcab/utils/constants/text_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../utils/constants/text_strings.dart';
 import '../../utils/theme/custom_theme/text_theme.dart';
 import '../controllers/splash_controller.dart';
 
@@ -15,26 +14,40 @@ class SplashScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     Get.put(SplashController());
 
+    // Reference screen size (iPhone 16 Pro Max)
+    final baseWidth = 440.0;
+    final baseHeight = 956.0;
+
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    // Scale helpers
+    double sw(double w) => w * screenWidth / baseWidth;
+    double sh(double h) => h * screenHeight / baseHeight;
+
     return Scaffold(
       backgroundColor: FColors.primaryColor,
       body: Stack(
         children: [
-          /// logo
+          /// Logo
           Positioned(
-            top: 231,
-            left: 98,
+            top: sh(231),
+            left: sw(98),
             child: Image.asset(
               FImages.logo,
+              width: sw(244), // optional scaling if needed
             ),
           ),
 
           /// Tag Line
           Positioned(
-            top: 396,
-            left: 76,
+            top: sh(396),
+            left: sw(76),
             child: Text(
               FTextStrings.splahTagLine,
-              style: FTextTheme.lightTextTheme.bodyMedium,
+              style: FTextTheme.lightTextTheme.bodyMedium?.copyWith(
+                fontSize: sw(16), // scale font size proportionally
+              ),
             ),
           ),
 
@@ -45,7 +58,7 @@ class SplashScreen extends StatelessWidget {
             bottom: 0,
             child: Image.asset(
               FImages.splash_bg_down,
-              width: MediaQuery.of(context).size.width,
+              width: screenWidth,
               fit: BoxFit.fitWidth,
             ),
           ),

@@ -1,4 +1,4 @@
-// map_selection_controller.dart
+
 import 'dart:async';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -25,10 +25,16 @@ class MapSelectionController extends GetxController {
 
   Future<void> onCameraIdle() async {
     try {
-      final placemarks = await geo.placemarkFromCoordinates(center.value.latitude, center.value.longitude);
+      final placemarks = await geo.placemarkFromCoordinates(
+        center.value.latitude,
+        center.value.longitude,
+      );
       if (placemarks.isNotEmpty) {
         final p = placemarks.first;
-        address.value = "${p.name}, ${p.locality}, ${p.administrativeArea}";
+        final name = [p.name, p.locality, p.administrativeArea]
+            .where((e) => (e ?? '').toString().trim().isNotEmpty)
+            .join(', ');
+        address.value = name.isEmpty ? "Selected location" : name;
       } else {
         address.value = "Selected location";
       }
