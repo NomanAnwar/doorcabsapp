@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../../../common/widgets/snakbar/snackbar.dart';
 import '../../../../utils/http/http_client.dart';
 import '../../../shared/services/storage_service.dart';
 
@@ -90,7 +91,7 @@ class ProfileController extends GetxController {
       "firstName": firstNameCtrl.text.trim(),
       "lastName": lastNameCtrl.text.trim(),
       "email": emailCtrl.text.trim(),
-      "contact": contactCtrl.text.trim(),
+      // "contact": contactCtrl.text.trim(),
       "emergency_no": emergencyCtrl.text.trim(),
       "country": countryCtrl.text.trim(),
       "city": cityCtrl.text.trim(),
@@ -109,8 +110,35 @@ class ProfileController extends GetxController {
           true) {
         StorageService.saveProfile(body);
 
-        Get.snackbar("Success", "Profile updated successfully.");
-        Get.offAllNamed('/ride-home');
+        // Get.snackbar("Success", "Profile updated successfully.");
+
+        final role = StorageService.getRole();
+
+        if(role == "driver" || role == "Driver") {
+
+          StorageService.setDriverStep("basic", true);
+
+          FSnackbar.show(
+            title: "Success",
+            message: "Profile updated successfully.",
+            isError: false,
+          );
+
+          Get.offAllNamed('/profile-completion');
+
+        } else if(role == "passenger" || role == "Passenger"){
+
+          FSnackbar.show(
+            title: "Success",
+            message: "Profile updated successfully.",
+            isError: false,
+          );
+
+          Get.offAllNamed('/ride-home');
+
+
+        }
+
       } else {
         Get.snackbar("Error", response["message"] ?? "Something went wrong");
       }

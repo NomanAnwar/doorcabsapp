@@ -205,8 +205,10 @@ class RideHomeScreen extends StatelessWidget {
             right: sw(23),
             child: Obx(() {
               if (c.recent.isEmpty) {
-                return const Text("No recent searches yet",
-                    style: TextStyle(color: Colors.grey));
+                return Center(
+                  child: Text("No recent searches yet ",
+                      style: TextStyle(color: Colors.grey)),
+                );
               }
               return Column(
                 children: [
@@ -255,20 +257,28 @@ class RideHomeScreen extends StatelessWidget {
                                             fontWeight: FontWeight.w600,
                                             fontSize: sw(14))),
                                     SizedBox(height: sh(2)),
+                                    // Text(
+                                    //   "Pakistan",
+                                    //   style: TextStyle(
+                                    //       fontSize: sw(12),
+                                    //       color: Colors.grey),
+                                    // ),
                                     Text(
-                                      "Pakistan",
-                                      style: TextStyle(
-                                          fontSize: sw(12),
-                                          color: Colors.grey),
+                                      "${c.recent[i].city ?? ''}, ${c.recent[i].province ?? ''}, ${c.recent[i].country ?? ''}",
+                                      style: TextStyle(fontSize: sw(12), color: Colors.grey),
                                     ),
                                   ],
                                 ),
                               ),
                               SizedBox(width: sw(8)),
-                              Text("25 min",
-                                  style: TextStyle(
-                                      fontSize: sw(12),
-                                      color: Colors.black54)),
+                              // Text("25 min",
+                              //     style: TextStyle(
+                              //         fontSize: sw(12),
+                              //         color: Colors.black54)),
+                              Text(
+                                c.recent[i].eta ?? '',
+                                style: TextStyle(fontSize: sw(12), color: Colors.black54),
+                              ),
                               SizedBox(width: sw(8)),
                               Icon(Icons.refresh_sharp,
                                   color: FColors.black, size: sw(22)),

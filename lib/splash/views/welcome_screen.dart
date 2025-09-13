@@ -47,7 +47,10 @@ class WelcomeScreen extends StatelessWidget {
               left: sw(121),
               child: Obx(() {
                 if (controller.isLoading.value) {
-                  return const CircularProgressIndicator(color: Colors.white);
+                  return Padding(
+                    padding: const EdgeInsets.only(left: 70),
+                    child: CircularProgressIndicator(color: Colors.white),
+                  );
                 }
 
                 if (controller.languages.isEmpty) {

@@ -15,6 +15,7 @@ class FColors {
   static const Color phoneInputField = Color(0xFFe3e3e3);
   static const Color radioField = Color(0xFFF2F2F2);
   static const Color rideTypeBg = Color(0xFFd9d9d9);
+  static const Color chipBg = Color(0xFF595959);
 
   // Button Colors
   static const Color buttonPrimary = Color(0xFFbd2c26);

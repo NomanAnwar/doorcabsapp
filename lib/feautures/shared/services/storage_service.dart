@@ -58,6 +58,7 @@ class StorageService {
 
   static void saveProfile(Map<String, dynamic> profile) {
     _box.write(_profileKey, profile);
+    print("profile sata saved");
   }
 
   static void setProfileCompleted(bool value) {
@@ -118,6 +119,17 @@ class StorageService {
     await _box.remove(_kRideTypesCache);
   }
 
+  static Future<void> saveCitiesCache(List<Map<String, dynamic>> cities) async {
+    await _box.write('cities_cache', cities);
+  }
+
+  static List<Map<String, dynamic>> getCitiesCache() {
+    return (_box.read('cities_cache') as List?)?.cast<Map<String, dynamic>>() ?? [];
+  }
+
+
+
+
   /// ================= DRIVER PROFILE STEPS =================
   static void setDriverStep(String step, bool value) {
     _box.write('driver_step_$step', value);
@@ -135,7 +147,7 @@ class StorageService {
       "selfie": getDriverStep("selfie"),
       "licence": getDriverStep("licence"),
       "vehicle": getDriverStep("vehicle"),
-      "referral": getDriverStep("referral"),
+      // "referral": getDriverStep("referral"),
       "registration": getDriverStep("registration"),
       "policy": getDriverStep("policy"),
     };

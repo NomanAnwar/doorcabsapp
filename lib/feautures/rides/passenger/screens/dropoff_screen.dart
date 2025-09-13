@@ -59,7 +59,7 @@ class DropOffScreen extends StatelessWidget {
               child: SingleChildScrollView(
                 padding: EdgeInsets.symmetric(horizontal: sw(23)),
                 child: Obx(
-                      () => Column(
+                  () => Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       /// Pickup
@@ -89,8 +89,7 @@ class DropOffScreen extends StatelessWidget {
                                   hintText: "Model Town Link Rd Zainab Tower",
                                   border: InputBorder.none,
                                 ),
-                                onTap: () =>
-                                    c.toggleField(ActiveField.pickup),
+                                onTap: () => c.toggleField(ActiveField.pickup),
                               ),
                             ),
                           ],
@@ -129,11 +128,13 @@ class DropOffScreen extends StatelessWidget {
                                     decoration: const InputDecoration(
                                       hintText: "Drop Off",
                                       border: InputBorder.none,
-                                      contentPadding:
-                                      EdgeInsets.symmetric(horizontal: 0),
+                                      contentPadding: EdgeInsets.symmetric(
+                                        horizontal: 0,
+                                      ),
                                     ),
-                                    onTap: () =>
-                                        c.toggleField(ActiveField.dropoff),
+                                    onTap:
+                                        () =>
+                                            c.toggleField(ActiveField.dropoff),
                                   ),
                                 ),
                               ],
@@ -150,7 +151,9 @@ class DropOffScreen extends StatelessWidget {
                               child: TextButton.icon(
                                 style: TextButton.styleFrom(
                                   backgroundColor: const Color(0xFFFFC107),
-                                  padding: EdgeInsets.symmetric(horizontal: sw(8)),
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: sw(8),
+                                  ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(sw(9)),
                                   ),
@@ -160,7 +163,11 @@ class DropOffScreen extends StatelessWidget {
                                   "ADD STOP",
                                   style: FTextTheme.lightTextTheme.labelSmall,
                                 ),
-                                icon: Icon(Icons.add, size: sw(16), color: Colors.black),
+                                icon: Icon(
+                                  Icons.add,
+                                  size: sw(16),
+                                  color: Colors.black,
+                                ),
                                 iconAlignment: IconAlignment.end,
                               ),
                             ),
@@ -187,7 +194,9 @@ class DropOffScreen extends StatelessWidget {
                       if (c.isLoading.value)
                         Padding(
                           padding: EdgeInsets.symmetric(vertical: sh(8)),
-                          child: const Center(child: CircularProgressIndicator()),
+                          child: const Center(
+                            child: CircularProgressIndicator(),
+                          ),
                         ),
                       if (c.suggestions.isNotEmpty) ...[
                         SizedBox(height: sh(10)),
@@ -196,12 +205,16 @@ class DropOffScreen extends StatelessWidget {
                           physics: const NeverScrollableScrollPhysics(),
                           itemCount: c.suggestions.length,
                           separatorBuilder: (_, __) => const Divider(height: 1),
-                          itemBuilder: (_, i) => ListTile(
-                            leading:
-                            Icon(Icons.location_on_outlined, size: sw(20)),
-                            title: Text(c.suggestions[i].description),
-                            onTap: () => c.selectSuggestion(c.suggestions[i]),
-                          ),
+                          itemBuilder:
+                              (_, i) => ListTile(
+                                leading: Icon(
+                                  Icons.location_on_outlined,
+                                  size: sw(20),
+                                ),
+                                title: Text(c.suggestions[i].description),
+                                onTap:
+                                    () => c.selectSuggestion(c.suggestions[i]),
+                              ),
                         ),
                         SizedBox(height: sh(16)),
                       ],
@@ -211,34 +224,60 @@ class DropOffScreen extends StatelessWidget {
                       for (int i = 0; i < c.recent.length && i < 4; i++)
                         Padding(
                           padding: EdgeInsets.only(bottom: sh(14)),
-                          child: Row(
-                            children: [
-                              Icon(Icons.navigation, size: sw(20)),
-                              SizedBox(width: sw(12)),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(c.recent[i].description,
+                          child: InkWell(
+                            onTap: () => c.setFieldValue(c.recent[i]),   // ✅ update field when clicked
+                            child: Row(
+                              children: [
+                                Icon(Icons.navigation, size: sw(20)),
+                                SizedBox(width: sw(12)),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        c.recent[i].description,
                                         style: const TextStyle(
-                                            fontWeight: FontWeight.w600)),
-                                    SizedBox(height: sh(2)),
-                                    const Text("Lahore, Province Punjab",
-                                        style: TextStyle(
-                                            fontSize: 12, color: Colors.grey)),
-                                  ],
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      SizedBox(height: sh(2)),
+                                      // const Text(
+                                      //   "Lahore, Province Punjab",
+                                      //   style: TextStyle(
+                                      //     fontSize: 12,
+                                      //     color: Colors.grey,
+                                      //   ),
+                                      // ),
+                                      Text(
+                                        "${c.recent[i].city ?? ''}, ${c.recent[i].province ?? ''}, ${c.recent[i].country ?? ''}",
+                                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              SizedBox(width: sw(8)),
-                              const Text("25 min",
-                                  style: TextStyle(
-                                      fontSize: 12, color: Colors.black54)),
-                              SizedBox(width: sw(8)),
-                              Icon(Icons.sync,
-                                  size: sw(18), color: Colors.black54),
-                            ],
+                                SizedBox(width: sw(8)),
+                                // const Text(
+                                //   "25 min",
+                                //   style: TextStyle(
+                                //     fontSize: 12,
+                                //     color: Colors.black54,
+                                //   ),
+                                // ),
+                                Text(
+                                  c.recent[i].eta ?? '',
+                                  style: const TextStyle(fontSize: 12, color: Colors.black54),
+                                ),
+                                SizedBox(width: sw(8)),
+                                Icon(
+                                  Icons.sync,
+                                  size: sw(18),
+                                  color: Colors.black54,
+                                ),
+                              ],
+                            ),
                           ),
                         ),
+
 
                       SizedBox(height: sh(28)),
                     ],
@@ -248,25 +287,44 @@ class DropOffScreen extends StatelessWidget {
             ),
 
             /// Confirm button outside the scrollable Column
+            // Positioned(
+            //   top: sh(805),
+            //   left: sw(45),
+            //   child: ResponsiveButton(
+            //     text: "Confirm",
+            //     onPressed: c.confirmSelection,
+            //     backgroundColor: FColors.secondaryColor,
+            //     textColor: Colors.white,
+            //     sw: sw,
+            //     sh: sh,
+            //     baseWidth: baseWidth,
+            //     screenWidth: screenWidth,
+            //     width: sw(360),
+            //     height: sh(48),
+            //     borderRadius: sw(14),
+            //     textStyle: TextStyle(
+            //       fontWeight: FontWeight.w600,
+            //       fontSize: sh(16),
+            //       color: Colors.white,
+            //     ),
+            //   ),
+            // ),
+
             Positioned(
-              top: sh(805),
-              left: sw(45),
-              child: ResponsiveButton(
-                text: "Confirm",
-                onPressed: c.confirmSelection,
-                backgroundColor: FColors.secondaryColor,
-                textColor: Colors.white,
-                sw: sw,
-                sh: sh,
-                baseWidth: baseWidth,
-                screenWidth: screenWidth,
-                width: sw(360),
-                height: sh(48),
-                borderRadius: sw(14),
-                textStyle: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: sh(16),
-                  color: Colors.white,
+              left: 45,
+              right: 45,
+              bottom: 30,
+              child: SizedBox(
+                height: 48,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: FColors.secondaryColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  onPressed: c.confirmSelection,
+                  child: Text("Confirm", style: FTextTheme.darkTextTheme.labelLarge,),
                 ),
               ),
             ),

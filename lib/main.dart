@@ -20,12 +20,14 @@ void main() async {
 
   FHttpHelper.setBaseUrl("http://dc.tricasol.pk");
   // FHttpHelper.setBaseUrl("http://192.168.100.109:4000");
+  // FHttpHelper.setBaseUrl("http://192.168.100.110:4000");
 
   // ✅ Pusher init
   // await PusherService.init();
 
   // ✅ Beams init
   // await BeamsService.init();
+
 
   runApp(MyApp());
 }

@@ -97,6 +97,18 @@
         <string>AIzaSyDSM07TyIXQ4Xo_aDPpQImkn9iyX0eAMGE</string>
         -->
 
+        <!-- Push Notifications Permission - ADDED -->
+        <key>NSUserNotificationUsageDescription</key>
+        <string>This app needs to send you notifications about ride requests and driver updates.</string>
+
+        <!-- Firebase Configuration (if using Firebase Cloud Messaging) - ADDED -->
+        <key>FirebaseAppDelegateProxyEnabled</key>
+        <false/>
+
+        <!-- APS Environment (Push Notifications) - ADDED -->
+        <key>aps-environment</key>
+        <string>development</string> <!-- Change to 'production' for App Store releases -->
+
         <key>UIStatusBarHidden</key>
         <false/>
     </dict>

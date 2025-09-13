@@ -26,13 +26,12 @@ require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelpe
 flutter_ios_podfile_setup
 
 target 'Runner' do
-  use_frameworks!
+  use_frameworks! :linkage => :static # ADDED: Recommended for Flutter projects
 
   # Install Flutter dependencies
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
 
-  # Install Beams Push Notifications
-  pod 'PushNotifications'
+
 
   target 'RunnerTests' do
     inherit! :search_paths
@@ -42,5 +41,22 @@ end
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
+
+    # ADDED: Build settings for better compatibility
+    target.build_configurations.each do |config|
+      # Enable modules
+      config.build_settings['CLANG_ENABLE_MODULES'] = 'YES'
+
+      # Swift version
+      config.build_settings['SWIFT_VERSION'] = '5.0'
+
+      # Enable whole module optimization for release builds
+      if config.name == 'Release'
+        config.build_settings['SWIFT_OPTIMIZATION_LEVEL'] = '-Owholemodule'
+      end
+
+      # Disable bitcode (recommended for Flutter)
+      config.build_settings['ENABLE_BITCODE'] = 'NO'
+    end
   end
 end

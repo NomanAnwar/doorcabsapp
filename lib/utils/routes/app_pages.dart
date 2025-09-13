@@ -1,3 +1,5 @@
+import 'package:doorcab/feautures/profile/driver/screens/referral_screen.dart';
+import 'package:doorcab/feautures/rides/driver/screens/ride_request_list_screen.dart';
 import 'package:get/get.dart';
 
 import '../../feautures/profile/driver/screens/profile_completion_screen.dart';
@@ -29,6 +31,7 @@ import '../../splash/views/welcome_screen.dart';
 
 class AppPages {
   static final pages = [
+
     // Common Routes
 
     GetPage(name: '/', page: () =>  SplashScreen()),
@@ -64,6 +67,9 @@ class AppPages {
     GetPage(name: '/upload-vehicle-info', page: () => UploadVehicleInfoScreen()),
     GetPage(name: '/upload-registration', page: () => UploadRegistrationScreen()),
     GetPage(name: '/upload-license', page: () => UploadLicenseScreen()),
+    GetPage(name: '/referral', page: () => ReferralScreen()),
+    GetPage(name: '/ride-request-list', page: () => RideRequestListScreen()),
+
 
     // GetPage(name: "/basic-info", page: () => const BasicInfoScreen()),
     // GetPage(name: "/cnic", page: () => const CnicScreen()),

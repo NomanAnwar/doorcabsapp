@@ -26,11 +26,12 @@ dependencies:
   # firebase packages
 
   firebase_core: ^4.0.0
-  firebase_messaging: ^16.0.0
+  firebase_messaging: ^16.0.1
   permission_handler: ^12.0.1
 
-  # pusher packages
-#  pusher_beams: ^1.1.2
+  # pusher + notification packages
+  pusher_beams: ^1.1.2
+  flutter_local_notifications: ^19.4.1
 
   # Url specific packages
   url_launcher: ^6.3.2
@@ -48,7 +49,7 @@ dependencies:
 
   # google maps packages
   google_maps_flutter: ^2.12.3
-  geolocator: ^14.0.2
+  geolocator: ^12.0.0
   geocoding: ^4.0.0
   location: ^8.0.1
 
@@ -74,6 +75,8 @@ flutter_icons:
   change_app_package_name: ^1.5.0
 
 dependency_overrides:
+  uuid: ^4.5.1
+  geolocator: ^12.0.0
   pusher_beams_android:
     path: plugins/pusher_beams_android
 

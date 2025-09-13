@@ -1,5 +1,6 @@
 
 import 'package:doorcab/utils/constants/colors.dart';
+import 'package:doorcab/utils/theme/custom_theme/text_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -81,12 +82,18 @@ class MapSelectionScreen extends StatelessWidget {
                 height: 48,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                      backgroundColor: FColors.primaryColor),
+                    backgroundColor: FColors.secondaryColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
                   onPressed: c.confirm,
-                  child: const Text("Done"),
+                  child: Text("Done", style: FTextTheme.darkTextTheme.labelLarge,),
                 ),
               ),
             ),
+
+
           ],
         ),
       ),

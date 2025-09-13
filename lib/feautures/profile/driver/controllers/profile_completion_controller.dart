@@ -33,7 +33,7 @@ class ProfileCompletionController extends GetxController {
           selfieDone.value &&
           driverLicenceDone.value &&
           vehicleInfoDone.value &&
-          referralDone.value &&
+          // referralDone.value &&
           acceptedPolicy.value;
 
   // Mark a step as completed

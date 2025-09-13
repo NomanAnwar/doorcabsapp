@@ -41,6 +41,7 @@ class SplashController extends GetxController {
       return;
     }
 
+
     /// 🚖 Passenger Flow
     if (role == "passenger") {
       bool isPassengerProfileCompleted = false;
@@ -90,7 +91,7 @@ class SplashController extends GetxController {
     final result = data['firstName']?.toString().isNotEmpty == true &&
         data['lastName']?.toString().isNotEmpty == true &&
         data['email']?.toString().isNotEmpty == true &&
-        data['contact']?.toString().isNotEmpty == true &&
+        // data['contact']?.toString().isNotEmpty == true &&
         data['emergency_no']?.toString().isNotEmpty == true &&
         data['country']?.toString().isNotEmpty == true &&
         data['city']?.toString().isNotEmpty == true;

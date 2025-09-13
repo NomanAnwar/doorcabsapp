@@ -7,7 +7,7 @@ import '../../../../utils/constants/colors.dart';
 import '../../../../utils/theme/custom_theme/text_theme.dart';
 import '../controllers/ride_request_controller.dart';
 
-class RideRequestScreen extends StatelessWidget {
+  class RideRequestScreen extends StatelessWidget {
   const RideRequestScreen({super.key});
 
   @override
@@ -29,7 +29,7 @@ class RideRequestScreen extends StatelessWidget {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          /// Map (top→380)
+          /// Map (top→380) - Show route with polyline
           Positioned(
             top: 0,
             left: 0,
@@ -40,7 +40,7 @@ class RideRequestScreen extends StatelessWidget {
                 return const Center(child: CircularProgressIndicator());
               }
               return GoogleMap(
-                key: const ValueKey("map"),
+                key: ValueKey("map_${c.routePolyline.value != null}"),
                 initialCameraPosition: CameraPosition(
                   target: c.currentPosition.value!,
                   zoom: 15,
@@ -49,6 +49,9 @@ class RideRequestScreen extends StatelessWidget {
                 myLocationButtonEnabled: true,
                 onMapCreated: c.onMapCreated,
                 markers: c.markers.toSet(),
+                polylines: c.routePolyline.value != null
+                    ? {c.routePolyline.value!}
+                    : {},
               );
             }),
           ),
@@ -60,7 +63,7 @@ class RideRequestScreen extends StatelessWidget {
             child: Icon(Icons.menu, size: sw(28), color: FColors.black),
           ),
 
-          /// Ride type selector (top: 390, left: 24)
+          /// Ride type selector (top: 390, left: 24) - Show fare instead of title
           Positioned(
             top: sh(390),
             left: sw(24),
@@ -113,9 +116,12 @@ class RideRequestScreen extends StatelessWidget {
                                 height: sh(36),
                               ),
                               SizedBox(height: sh(6)),
+                              // Show fare instead of title
                               Text(
-                                c.rideTypes[i].title,
-                                style: FTextTheme.lightTextTheme.labelSmall,
+                                c.fareForCard(i),
+                                style: FTextTheme.lightTextTheme.labelSmall?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ],
@@ -129,7 +135,7 @@ class RideRequestScreen extends StatelessWidget {
             ),
           ),
 
-          /// Pickup field (top: 498, left: 24)
+          /// Pickup field (top: 498, left: 24) - Use pickupLocation instead of pickupText
           Positioned(
             top: sh(498),
             left: sw(24),
@@ -138,16 +144,17 @@ class RideRequestScreen extends StatelessWidget {
                   () => _locationField(
                 context,
                 label: "Pickup",
-                text: c.pickupText.value.isEmpty
+                hasIcon: true,
+                text: c.pickupLocation.value.isEmpty
                     ? "Pickup Location"
-                    : c.pickupText.value,
+                    : c.pickupLocation.value,
                 onTap: c.onTapPickup,
                 sw: sw,
               ),
             ),
           ),
 
-          /// Dropoff field (top: 570, left: 24)
+          /// Dropoff field (top: 570, left: 24) - Use dropoffLocation instead of dropoffText
           Positioned(
             top: sh(570),
             left: sw(24),
@@ -156,70 +163,40 @@ class RideRequestScreen extends StatelessWidget {
                   () => _locationField(
                 context,
                 label: "Dropoff",
-                text: c.dropoffText.value.isEmpty
+                hasIcon: false,
+                text: c.dropoffLocation.value.isEmpty
                     ? "Dropoff Location"
-                    : c.dropoffText.value,
+                    : c.dropoffLocation.value,
                 onTap: c.openDropoff,
                 sw: sw,
-              ),
-            ),
-          ),
-
-          /// ADD STOP button inside dropoff field (absolute: top 581, left 301)
-          Positioned(
-            top: sh(581),
-            left: sw(301),
-            child: SizedBox(
-              width: sw(116),
-              height: sh(30),
-              child: TextButton.icon(
-                style: TextButton.styleFrom(
-                  backgroundColor: const Color(0xFFFFC107),
-                  padding: EdgeInsets.symmetric(horizontal: sw(8)),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(sw(9)),
-                  ),
-                ),
-                onPressed: c.openDropoff,
-                label: const Text(
-                  "ADD STOP",
-                  style: TextStyle(
-                    fontFamily: "Poppins",
-                    fontWeight: FontWeight.w500,
-                    fontSize: 12,
-                    color: Colors.black,
-                  ),
-                ),
-                icon: Icon(Icons.add, size: sw(16), color: Colors.black),
-                iconAlignment: IconAlignment.end,
+                showAddStop: true,
+                onAddStop: c.openDropoff,
               ),
             ),
           ),
 
           /// Date text (top: 626, left: 49)
           Positioned(
-            top: sh(626),
+            top: sh(635),
             left: sw(49),
             child: GestureDetector(
               onTap: c.openDateTimePopup,
               child: Obx(() => Text(
                 c.dateLabel.value,
-                style: FTextTheme.lightTextTheme.titleSmall
-                    ?.copyWith(fontWeight: FontWeight.w600),
+                style: FTextTheme.lightTextTheme.labelSmall,
               )),
             ),
           ),
 
           /// Time text (top: 626, left: 318)
           Positioned(
-            top: sh(626),
+            top: sh(635),
             left: sw(318),
             child: GestureDetector(
               onTap: c.openDateTimePopup,
               child: Obx(() => Text(
                 c.timeLabel.value,
-                style: FTextTheme.lightTextTheme.titleSmall
-                    ?.copyWith(fontWeight: FontWeight.w600),
+                style: FTextTheme.lightTextTheme.labelSmall,
               )),
             ),
           ),
@@ -230,9 +207,9 @@ class RideRequestScreen extends StatelessWidget {
             left: sw(24),
             child: Container(
               width: sw(400),
-              height: sh(143),
+              height: sh(150),
               decoration: BoxDecoration(
-                color: FColors.white,
+                color: FColors.phoneInputField,
                 borderRadius: BorderRadius.circular(sw(14)),
                 border: Border.all(color: Colors.grey.shade300),
               ),
@@ -241,7 +218,7 @@ class RideRequestScreen extends StatelessWidget {
 
           /// Passenger chips row inside the container (top 682, left 48)
           Positioned(
-            top: sh(682),
+            top: sh(675),
             left: sw(48),
             child: SizedBox(
               width: sw(360),
@@ -253,10 +230,12 @@ class RideRequestScreen extends StatelessWidget {
                       Padding(
                         padding: EdgeInsets.only(right: sw(8)),
                         child: ChoiceChip(
-                          label: Text(p),
+                          label: Text(p,style: TextStyle(color: FColors.white),),
                           selected: c.selectedPassengers.value == p,
                           onSelected: (_) => c.selectedPassengers.value = p,
-                          selectedColor: FColors.secondaryColor.withOpacity(.15),
+                          selectedColor: FColors.primaryColor,
+                          disabledColor: FColors.white,
+                          backgroundColor: FColors.chipBg,
                           labelStyle: TextStyle(
                             color: c.selectedPassengers.value == p
                                 ? FColors.secondaryColor
@@ -266,11 +245,11 @@ class RideRequestScreen extends StatelessWidget {
                           ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(sw(8)),
-                            side: BorderSide(
-                              color: c.selectedPassengers.value == p
-                                  ? FColors.secondaryColor
-                                  : Colors.grey.shade300,
-                            ),
+                            // side: BorderSide(
+                            //   color: c.selectedPassengers.value == p
+                            //       ? FColors.secondaryColor
+                            //       : Colors.grey.shade300,
+                            // ),
                           ),
                         ),
                       ),
@@ -282,11 +261,12 @@ class RideRequestScreen extends StatelessWidget {
 
           /// Minus button (top 746.4, left 94)
           Positioned(
-            top: sh(746.4),
+            top: sh(730.4),
             left: sw(94),
             child: IconButton(
               onPressed: c.decrementFare,
-              icon: Icon(Icons.remove_circle_outline, size: sw(28)),
+              icon: Image.asset("assets/images/minus_btn.png"),
+              // Icon(Icons.remove_circle_outline, size: sw(28)),
               color: FColors.black,
             ),
           ),
@@ -294,25 +274,28 @@ class RideRequestScreen extends StatelessWidget {
           /// Fare input field (top 739, left 151, h 37, min w 138)
           Positioned(
             top: sh(739),
-            left: sw(151),
+            left: sw(160),
             child: SizedBox(
               width: sw(150).clamp(sw(138), double.infinity),
               height: sh(37),
               child: TextField(
                 controller: c.fareController,
                 keyboardType: TextInputType.number,
-                inputFormatters: c.digitsOnly,
+                // inputFormatters: c.digitsOnly,
                 textAlign: TextAlign.center,
-                style: FTextTheme.lightTextTheme.titleSmall,
+                style: FTextTheme.lightTextTheme.titleSmall!.copyWith(color: FColors.white),
                 decoration: InputDecoration(
+                  filled: true,
+                  fillColor: FColors.primaryColor,
                   isDense: true,
                   contentPadding: EdgeInsets.symmetric(
-                    horizontal: sw(10),
-                    vertical: sh(8),
+                    horizontal: sw(25),
+                    vertical: sh(5),
                   ),
-                  prefixText: "PKR ",
+                  prefix: Text("PKR "),
                   prefixStyle: FTextTheme.lightTextTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w700,
+                    color: FColors.white
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(sw(10)),
@@ -329,11 +312,11 @@ class RideRequestScreen extends StatelessWidget {
 
           /// Plus button (top 746.4, left 324.63)
           Positioned(
-            top: sh(746.4),
+            top: sh(730.4),
             left: sw(324.63),
             child: IconButton(
               onPressed: c.incrementFare,
-              icon: Icon(Icons.add_circle_outline, size: sw(28)),
+              icon: Image.asset("assets/images/plus_btn.png"),
               color: FColors.black,
             ),
           ),
@@ -344,16 +327,9 @@ class RideRequestScreen extends StatelessWidget {
             left: sw(87),
             child: Row(
               children: [
+                Icon(Icons.stars_rounded, size: 10, color: FColors.primaryColor,),
                 Text(
-                  "* ",
-                  style: TextStyle(
-                    color: Colors.red.shade400,
-                    fontSize: sw(12),
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  "Enter your offer in PKR",
+                  " If no rider accepts your offer raise your fare",
                   style: TextStyle(
                     fontSize: sw(12),
                     color: Colors.black54,
@@ -366,7 +342,7 @@ class RideRequestScreen extends StatelessWidget {
 
           /// Row: text + toggle (text at top 819/left 105, toggle at top 814/left 322)
           Positioned(
-            top: sh(819),
+            top: sh(835),
             left: sw(105),
             child: Text(
               "Auto accept offers",
@@ -376,11 +352,14 @@ class RideRequestScreen extends StatelessWidget {
             ),
           ),
           Positioned(
-            top: sh(814),
+            top: sh(824),
             left: sw(322),
             child: Obx(
                   () => Switch(
                 value: c.autoAccept.value,
+                activeColor: FColors.primaryColor,
+                inactiveThumbColor: FColors.white,
+                inactiveTrackColor: FColors.secondaryColor,
                 onChanged: (val) => c.autoAccept.value = val,
               ),
             ),
@@ -388,13 +367,14 @@ class RideRequestScreen extends StatelessWidget {
 
           /// Bottom: Cash icon button with text under it (top 865, left 31)
           Positioned(
-            top: sh(865),
+            top: sh(885),
             left: sw(31),
             child: InkWell(
               onTap: c.openPaymentMethods,
               child: Column(
                 children: [
-                  Icon(Icons.account_balance_wallet, size: sw(28)),
+                  Image.asset("assets/images/cash.png"),
+                  // Icon(Icons.account_balance_wallet, size: sw(28)),
                   SizedBox(height: sh(6)),
                   Obx(() => Text(
                     c.selectedPaymentLabel.value,
@@ -407,37 +387,46 @@ class RideRequestScreen extends StatelessWidget {
 
           /// Bottom: main action button (w 287, h 48, top 865, left 77)
           Positioned(
-            top: sh(865),
-            left: sw(77),
+            top: sh(885),
+            left: sw(85),
             child: SizedBox(
               width: sw(287),
               height: sh(48),
-              child: ElevatedButton(
+              child: Obx(() => ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: FColors.secondaryColor,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(sw(12)),
                   ),
                 ),
-                onPressed: c.onRequestRide,
-                child: Text(
+                onPressed: c.isLoading.value ? null : c.onRequestRide,
+                child: c.isLoading.value
+                    ? SizedBox(
+                  width: sw(20),
+                  height: sw(20),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+                    : Text(
                   "Request Ride",
                   style: FTextTheme.lightTextTheme.titleSmall?.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-              ),
+              )),
             ),
           ),
 
           /// Bottom: comment icon button (top 872, left 379)
           Positioned(
-            top: sh(872),
+            top: sh(882),
             left: sw(379),
             child: IconButton(
               onPressed: c.openComments,
-              icon: const Icon(Icons.comment),
+              icon: Image.asset("assets/images/comment.png"),
             ),
           ),
         ],
@@ -449,8 +438,11 @@ class RideRequestScreen extends StatelessWidget {
       BuildContext ctx, {
         required String label,
         required String text,
+        required bool hasIcon,
         required VoidCallback onTap,
         required double Function(double) sw,
+        bool showAddStop = false,
+        VoidCallback? onAddStop,
       }) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -464,7 +456,7 @@ class RideRequestScreen extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Container(
+            hasIcon ? Container(
               width: sw(34),
               height: sw(34),
               alignment: Alignment.center,
@@ -472,21 +464,50 @@ class RideRequestScreen extends StatelessWidget {
                 color: FColors.phoneInputField,
                 borderRadius: BorderRadius.circular(sw(6)),
               ),
-              child: Icon(
-                label == "Pickup" ? Icons.my_location : Icons.location_on,
-                size: sw(18),
-                color: FColors.black,
-              ),
-            ),
+              child:
+                Image.asset("assets/images/place.png")
+              // Icon(
+              //   label == "Pickup" ? Icons.my_location : Icons.location_on,
+              //   size: sw(18),
+              //   color: FColors.black,
+              // ),
+            ) : SizedBox(),
             SizedBox(width: sw(10)),
             Expanded(
               child: Text(
                 text,
-                style: FTextTheme.lightTextTheme.bodyLarge,
+                style: FTextTheme.lightTextTheme.labelLarge,
                 overflow: TextOverflow.ellipsis,
                 maxLines: 1,
               ),
             ),
+            // Add Stop button only for Dropoff when showAddStop is true
+            if (showAddStop && onAddStop != null)
+              SizedBox(
+                width: sw(116),
+                height: sw(30),
+                child: TextButton.icon(
+                  style: TextButton.styleFrom(
+                    backgroundColor: const Color(0xFFFFC107),
+                    padding: EdgeInsets.symmetric(horizontal: sw(8)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(sw(9)),
+                    ),
+                  ),
+                  onPressed: onAddStop,
+                  label: const Text(
+                    "ADD STOP",
+                    style: TextStyle(
+                      fontFamily: "Poppins",
+                      fontWeight: FontWeight.w500,
+                      fontSize: 12,
+                      color: Colors.black,
+                    ),
+                  ),
+                  icon: Icon(Icons.add, size: sw(16), color: Colors.black),
+                  iconAlignment: IconAlignment.end,
+                ),
+              ),
           ],
         ),
       ),

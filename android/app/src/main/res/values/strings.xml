@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Replace with your actual Firebase sender ID -->
+    <string name="gcm_defaultSenderId">147024698002</string>
+
+    <!-- Your existing strings (if any) -->
+    <string name="app_name">doorcab</string>
+</resources>

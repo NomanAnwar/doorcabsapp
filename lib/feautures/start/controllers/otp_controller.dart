@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:doorcab/common/widgets/snakbar/snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:http/http.dart' as http;
 import '../../../utils/http/http_client.dart';
 import '../../shared/services/storage_service.dart';
 import '../models/sign_up_response.dart';
@@ -32,7 +34,34 @@ class OtpController extends GetxController {
       return;
     }
 
+    getOtp();
     startTimer();
+  }
+
+  Future<void> getOtp() async {
+    try {
+      final role = StorageService.getRole();
+
+      final url = Uri.parse('http://dc.tricasol.pk/service/get-otp?phone_no=${phone.toString()}&role=${role.toString()}');
+
+      final response = await http.get(url);
+      final responseData = json.decode(response.body);
+
+      print("Get OTP API Response: $responseData");
+      FSnackbar.show(
+          title: "Error",
+          message: responseData["message"] ?? "OTP",
+          isError: true
+      );
+
+    } catch (e) {
+      print("Error: $e");
+      FSnackbar.show(
+          title: "Error",
+          message: e.toString(),
+          isError: true
+      );
+    }
   }
 
   void startTimer() {
@@ -129,6 +158,12 @@ class OtpController extends GetxController {
 
         // ✅ mark as logged-in for your splash flow
         await StorageService.saveLoginStatus(true);
+        if(response["isProfileUpdated"]){
+          final response1 = await FHttpHelper.get("passenger/get-profile-info");
+          print("Get Profile Api Response : " + response1.toString());
+          StorageService.saveProfile(response1["passenger"]);
+
+        }
 
         Get.snackbar("Success", response["message"] ?? "Phone verified");
 
@@ -137,8 +172,14 @@ class OtpController extends GetxController {
           print("Navigating to Select Driver Type Screen...");
           Get.offAllNamed('/select_driver_type');
         } else {
-          print("Navigating to Profile Screen...");
-          Get.offAllNamed('/profile');
+          print("Navigating to Ride Home Screen...");
+          if(response["isProfileUpdated"]) {
+
+            Get.offAllNamed('/ride-home');
+          }else{
+            print("Navigating to Profile Screen...");
+            Get.offAllNamed('/profile');
+          }
         }
       } else {
         Get.snackbar("Error", response["message"] ?? "Invalid OTP");
