@@ -54,7 +54,7 @@ class FValidator {
 
   value = value.replaceAll(RegExp(r'\s+'), ''); // Remove spaces
 
-  // ✅ Detect country by prefix
+  //  Detect country by prefix
   if (value.startsWith('+92') || value.startsWith('03')) {
   // Pakistan
   final pkRegExp = RegExp(r'^(?:\+92|0)?3\d{9}$');

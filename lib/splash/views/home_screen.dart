@@ -25,7 +25,7 @@ class _HomeScreenState extends State<HomeScreen> {
     await FirebaseMessaging.instance.requestPermission();
 
     if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-      debugPrint("✅ Push notification permission granted");
+      debugPrint(" Push notification permission granted");
 
       // Get FCM Token
       String? token = await FirebaseMessaging.instance.getToken();
@@ -42,7 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
         debugPrint("📬 App opened via notification: ${message.data}");
       });
     } else {
-      debugPrint("❌ Push notification permission denied");
+      debugPrint(" Push notification permission denied");
     }
   }
 
@@ -53,9 +53,9 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       // await PusherBeams.instance.start("1aeaf0d9-e6ba-4132-bee8-b152fe62ad54"); // replace with your ID
       // await PusherBeams.instance.addDeviceInterest("passenger");
-      debugPrint("✅ Pusher Beams initialized");
+      debugPrint(" Pusher Beams initialized");
     } catch (e) {
-      debugPrint("❌ Pusher Beams initialization failed: $e");
+      debugPrint(" Pusher Beams initialization failed: $e");
     }
   }
 

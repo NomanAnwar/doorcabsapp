@@ -54,7 +54,7 @@ class WelcomeController extends GetxController {
     if (selectedLanguage.value != null && selectedRole.isNotEmpty) {
       StorageService.saveLanguage(selectedLanguage.value!.language);
       StorageService.saveRole(selectedRole.value);
-      Get.off(() =>  GettingStartedScreen());
+      Get.to(() =>  GettingStartedScreen());
     } else {
       Get.snackbar('Error', 'Please select both language and role');
     }

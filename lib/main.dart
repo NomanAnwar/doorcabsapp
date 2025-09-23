@@ -12,20 +12,20 @@ import 'package:firebase_core/firebase_core.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // ✅ Initialize local storage before anything else
+  //  Initialize local storage before anything else
   await FLocalStorage.init();
 
-  // ✅ Firebase initialization
+  //  Firebase initialization
   await Firebase.initializeApp();
 
   FHttpHelper.setBaseUrl("http://dc.tricasol.pk");
   // FHttpHelper.setBaseUrl("http://192.168.100.109:4000");
   // FHttpHelper.setBaseUrl("http://192.168.100.110:4000");
 
-  // ✅ Pusher init
+  //  Pusher init
   // await PusherService.init();
 
-  // ✅ Beams init
+  //  Beams init
   // await BeamsService.init();
 
 
@@ -113,14 +113,14 @@ class MyApp extends StatelessWidget {
 //       // Request notification permission
 //       final status = await Permission.notification.request();
 //       if (!status.isGranted && !status.isLimited) {
-//         debugPrint('❌ Notification permission denied');
+//         debugPrint(' Notification permission denied');
 //         return;
 //       }
-//       debugPrint('✅ Notification permission granted');
+//       debugPrint(' Notification permission granted');
 //
 //       // Start Pusher Beams
 //       await PusherBeams.instance.start(beamsInstanceId);
-//       debugPrint('✅ Pusher Beams started with instance id: $beamsInstanceId');
+//       debugPrint(' Pusher Beams started with instance id: $beamsInstanceId');
 //
 //       // Listen for interest changes
 //       PusherBeams.instance.onInterestChanges((interests) {
@@ -133,7 +133,7 @@ class MyApp extends StatelessWidget {
 //
 //       if (!existing.contains(interest)) {
 //         await PusherBeams.instance.addDeviceInterest(interest);
-//         debugPrint("✅ addDeviceInterest('$interest') called");
+//         debugPrint(" addDeviceInterest('$interest') called");
 //       } else {
 //         debugPrint("ℹ️ Already subscribed to '$interest'");
 //       }
@@ -185,9 +185,9 @@ class MyApp extends StatelessWidget {
 //         _showNotificationDialog(title, body);
 //       });
 //
-//       debugPrint('✅ Push / Beams initialization complete.');
+//       debugPrint(' Push / Beams initialization complete.');
 //     } catch (e, st) {
-//       debugPrint('❌ initPushAndBeams error: $e\n$st');
+//       debugPrint(' initPushAndBeams error: $e\n$st');
 //     }
 //   }
 //

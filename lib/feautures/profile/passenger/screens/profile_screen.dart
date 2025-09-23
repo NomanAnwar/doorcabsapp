@@ -119,6 +119,8 @@ class ProfileScreen extends StatelessWidget {
                     controller: c.firstNameCtrl,
                     hint: "First Name",
                     icon: Icons.person,
+                    validator: (value) =>
+                    value == null || value.trim().isEmpty ? "First Name is required" : null,
                   ),
                 ),
 
@@ -150,22 +152,24 @@ class ProfileScreen extends StatelessWidget {
                 ),
 
                 /// Contact
-                Positioned(
-                  top: sh(541),
-                  left: sw(25),
-                  child: _buildField(
-                    width: sw(393),
-                    height: sh(52),
-                    controller: c.contactCtrl,
-                    hint: "Contact Number",
-                    icon: Icons.phone,
-                    keyboardType: TextInputType.phone,
-                  ),
-                ),
+                // Positioned(
+                //   top: sh(541),
+                //   left: sw(25),
+                //   child: _buildField(
+                //     width: sw(393),
+                //     height: sh(52),
+                //     controller: c.contactCtrl,
+                //     hint: "Contact Number",
+                //     icon: Icons.phone,
+                //     keyboardType: TextInputType.phone,
+                //
+                //   ),
+                // ),
 
                 /// Emergency Contact
                 Positioned(
-                  top: sh(637),
+                  // top: sh(637),
+                  top: sh(541),
                   left: sw(25),
                   child: _buildField(
                     width: sw(393),
@@ -174,12 +178,15 @@ class ProfileScreen extends StatelessWidget {
                     hint: "Emergency Contact",
                     icon: Icons.contact_phone,
                     keyboardType: TextInputType.phone,
+                    validator: (value) =>
+                    value == null || value.trim().isEmpty ? "Emergency Contact is required" : null,
                   ),
                 ),
 
                 /// Country
                 Positioned(
-                  top: sh(733),
+                  top: sh(637),
+                  // top: sh(733),
                   left: sw(25),
                   child: _buildField(
                     width: sw(190),
@@ -192,7 +199,8 @@ class ProfileScreen extends StatelessWidget {
 
                 /// City
                 Positioned(
-                  top: sh(733),
+                  top: sh(637),
+                  // top: sh(733),
                   left: sw(229),
                   child: _buildField(
                     width: sw(190),
@@ -204,29 +212,48 @@ class ProfileScreen extends StatelessWidget {
                 ),
 
                 /// Continue Button
+                /// Continue Button
                 Positioned(
-                  bottom: sh(40),
+                  bottom: sh(140),
                   left: sw(25),
                   right: sw(25),
-                  child: ResponsiveButton(
-                    text: FTextStrings.submit,
-                    onPressed: c.saveAndContinue,
-                    backgroundColor: FColors.secondaryColor,
-                    textColor: Colors.white,
-                    sw: sw,
-                    sh: sh,
-                    baseWidth: baseWidth,
-                    screenWidth: screenWidth,
-                    width: 343, // original iPhone 16 Pro Max width (393 - 2*25) if you want strict match
-                    height: 52,
-                    borderRadius: 14,
-                    textStyle: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16, // will scale responsively inside the widget
-                      color: Colors.white,
-                    ),
-                  ),
+                  child: Obx(() {
+                    return ResponsiveButton(
+                      onPressed: c.isLoading.value ? null : c.saveAndContinue, // disable when loading
+                      backgroundColor: FColors.secondaryColor,
+                      textColor: Colors.white,
+                      sw: sw,
+                      sh: sh,
+                      baseWidth: baseWidth,
+                      screenWidth: screenWidth,
+                      width: 343,
+                      height: 52,
+                      borderRadius: 14,
+                      textStyle: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                        color: Colors.white,
+                      ),
+                      text: FTextStrings.submit,
+                      child: c.isLoading.value
+                          ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2.5,
+                        ),
+                      )
+                          : Text(FTextStrings.submit,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                            color: Colors.white,
+                          )),
+                    );
+                  }),
                 ),
+
               ],
             ),
           ),
@@ -242,16 +269,17 @@ class ProfileScreen extends StatelessWidget {
     required TextEditingController controller,
     required String hint,
     required IconData icon,
+    String? Function(String?)? validator,
     TextInputType keyboardType = TextInputType.text,
   }) {
     return SizedBox(
       width: width,
-      height: height,
+      // height: height,
       child: TextFormField(
         controller: controller,
         keyboardType: keyboardType,
-        validator: (value) =>
-        value == null || value.trim().isEmpty ? "$hint is required" : null,
+        validator:  validator,
+        // validator: (value) => value == null || value.trim().isEmpty ? "$hint is required" : null,
         style: FTextTheme.lightTextTheme.bodySmall,
         decoration: InputDecoration(
           prefixIcon: Icon(icon, color: Colors.grey.shade700),
@@ -259,6 +287,7 @@ class ProfileScreen extends StatelessWidget {
           hintStyle: FTextTheme.lightTextTheme.bodySmall,
           filled: true,
           fillColor: const Color(0xFFE3E3E3),
+          contentPadding: const EdgeInsets.symmetric(vertical: 1, horizontal: 12),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
             borderSide: BorderSide.none,

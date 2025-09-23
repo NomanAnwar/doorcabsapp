@@ -73,7 +73,7 @@ class MapController extends GetxController {
       }
 
       if (pickupLatLng == null || dropoffLatLng == null) {
-        print('❌ Could not get coordinates for addresses');
+        print(' Could not get coordinates for addresses');
         return null;
       }
 
@@ -93,7 +93,7 @@ class MapController extends GetxController {
         return routeDetails;
       }
     } catch (e) {
-      print('❌ Error calculating route: $e');
+      print(' Error calculating route: $e');
     }
     return null;
   }

@@ -29,7 +29,7 @@ class RideInProgressScreen extends StatelessWidget {
     }
 
     // start auto-navigation to RateDriver screen after 30s
-    c.startAutoNavigateToRating(delaySeconds: 30);
+    // c.startAutoNavigateToRating(delaySeconds: 30);
 
     return Scaffold(
       backgroundColor: Colors.white,

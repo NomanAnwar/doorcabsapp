@@ -24,7 +24,8 @@ class OtpController extends GetxController {
     super.onInit();
 
     // prefer passed arg, then stored signup response
-    phone = Get.arguments?['phone'] ??
+    phone =
+        Get.arguments?['phone'] ??
         StorageService.getSignUpResponse()?.phoneNo ??
         '';
 
@@ -40,27 +41,48 @@ class OtpController extends GetxController {
 
   Future<void> getOtp() async {
     try {
-      final role = StorageService.getRole();
+      final role = StorageService.getRole() ?? '';
+      final phoneStr = phone.toString();
 
-      final url = Uri.parse('http://dc.tricasol.pk/service/get-otp?phone_no=${phone.toString()}&role=${role.toString()}');
+      final uri = Uri.parse('http://dc.tricasol.pk/service/get-otp');
 
-      final response = await http.get(url);
-      final responseData = json.decode(response.body);
+      // Build low-level request so we can attach a body to GET
+      final request =
+          http.Request('GET', uri)
+            ..headers['Content-Type'] = 'application/json'
+            ..body = json.encode({'phone_no': phoneStr, 'role': role});
 
-      print("Get OTP API Response: $responseData");
-      FSnackbar.show(
-          title: "Error",
-          message: responseData["message"] ?? "OTP",
-          isError: true
-      );
+      print('Sending GET with body to $uri');
+      print('Request body: ${request.body}');
 
-    } catch (e) {
-      print("Error: $e");
-      FSnackbar.show(
-          title: "Error",
-          message: e.toString(),
-          isError: true
-      );
+      final streamedResp = await request.send();
+      final response = await http.Response.fromStream(streamedResp);
+
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        FSnackbar.show(
+          title: "Success",
+          message:
+              responseData['message'] + "OTP IS : " + responseData['otp'] ??
+              "OTP fetched",
+          isError: false,
+        );
+        print('OTP: ${responseData['otp']}');
+      } else {
+        // Try to decode body for server message, otherwise show status
+        String message = 'Request failed: ${response.statusCode}';
+        try {
+          final data = json.decode(response.body);
+          message = data['message'] ?? message;
+        } catch (_) {}
+        FSnackbar.show(title: "Error", message: message, isError: true);
+      }
+    } catch (e, st) {
+      print('Exception in getOtp(): $e\n$st');
+      FSnackbar.show(title: "Error", message: e.toString(), isError: true);
     }
   }
 
@@ -103,7 +125,7 @@ class OtpController extends GetxController {
       startTimer();
 
       // If API returns userId instead of passengerId, keep storage in sync
-      print("Resend OTP API Response:"+response.toString());
+      print("Resend OTP API Response:" + response.toString());
       if (response["userId"] != null) {
         final existing = StorageService.getSignUpResponse();
         if (existing != null) {
@@ -123,7 +145,11 @@ class OtpController extends GetxController {
       }
 
       // Get.snackbar("Success", response["message"] ?? "OTP resent successfully");
-      FSnackbar.show(title: "Success", message: response["message"] ?? "OTP resent successfully", isError: false);
+      FSnackbar.show(
+        title: "Success",
+        message: response["message"] ?? "OTP resent successfully",
+        isError: false,
+      );
     } catch (e) {
       Get.snackbar("Error", e.toString());
     }
@@ -139,11 +165,7 @@ class OtpController extends GetxController {
 
     try {
       final role = StorageService.getRole(); // stored role from signup
-      final body = {
-        "phone_no": phone,
-        "otp": pin,
-        "role": role,
-      };
+      final body = {"phone_no": phone, "otp": pin, "role": role};
 
       final response = await FHttpHelper.post("service/verify-otp", body);
 
@@ -156,13 +178,42 @@ class OtpController extends GetxController {
         await StorageService.saveAuthToken(token);
         FHttpHelper.setAuthToken(token, useBearer: true);
 
-        // ✅ mark as logged-in for your splash flow
+        //  mark as logged-in for your splash flow
         await StorageService.saveLoginStatus(true);
-        if(response["isProfileUpdated"]){
-          final response1 = await FHttpHelper.get("passenger/get-profile-info");
-          print("Get Profile Api Response : " + response1.toString());
-          StorageService.saveProfile(response1["passenger"]);
+        if (response["isProfileUpdated"]) {
+          if (role == "Driver") {
+    //         Verify OTP API Response:{message: Phone number verified successfully., token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4YWRjN2ViOWNlMjJhNTNiM2YwZDMzZSIsInJvbGUiOiJEcml2ZXIiLCJpYXQiOjE3NTc5MzIyNjAsImV4cCI6MTc1ODUzNzA2MH0.fRPbSRxIF0d1EIMuDIysxPfX5Tu899xQg1txRTE_0rM,
+    // role: Driver, isProfileUpdated: true, isCnicUploaded: true, isLicenseUploaded: true, isSelfieUploaded: true, isVehicleDocsUploaded: true, isRegistrationUploaded: true}
 
+            StorageService.setDriverStep("basic", true);
+            if(response["isCnicUploaded"]) {
+              StorageService.setDriverStep("cnic", true);
+            }
+            if(response["isSelfieUploaded"]) {
+              StorageService.setDriverStep("selfie", true);
+            }
+            if(response["isLicenseUploaded"]) {
+              StorageService.setDriverStep("licence", true);
+            }
+            if(response["isVehicleDocsUploaded"]) {
+              StorageService.setDriverStep("vehicle", true);
+            }
+            if(response["isRegistrationUploaded"]) {
+              StorageService.setDriverStep("registration", true);
+            }
+
+            final response0 = await FHttpHelper.get(
+              "driver/${StorageService.getSignUpResponse()?.userId.toString()}",
+            );
+            print("Get Profile Api Response : " + response0.toString());
+            StorageService.saveProfile(response0["driver"]);
+          } else {
+            final response1 = await FHttpHelper.get(
+              "passenger/get-profile-info",
+            );
+            print("Get Profile Api Response : " + response1.toString());
+            StorageService.saveProfile(response1["passenger"]);
+          }
         }
 
         Get.snackbar("Success", response["message"] ?? "Phone verified");
@@ -173,10 +224,9 @@ class OtpController extends GetxController {
           Get.offAllNamed('/select_driver_type');
         } else {
           print("Navigating to Ride Home Screen...");
-          if(response["isProfileUpdated"]) {
-
+          if (response["isProfileUpdated"]) {
             Get.offAllNamed('/ride-home');
-          }else{
+          } else {
             print("Navigating to Profile Screen...");
             Get.offAllNamed('/profile');
           }
@@ -188,7 +238,6 @@ class OtpController extends GetxController {
       Get.snackbar("Error", e.toString());
     }
   }
-
 
   @override
   void onClose() {

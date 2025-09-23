@@ -11,6 +11,7 @@ import '../../feautures/profile/driver/screens/upload_registration_screen.dart';
 import '../../feautures/profile/driver/screens/upload_selfie_screen.dart';
 import '../../feautures/profile/driver/screens/upload_vehicle_info_screen.dart';
 import '../../feautures/profile/passenger/screens/profile_screen.dart';
+import '../../feautures/rides/driver/screens/ride_request_detail_screen.dart';
 import '../../feautures/rides/passenger/screens/available_bids_screen.dart';
 import '../../feautures/rides/passenger/screens/available_drivers_screen.dart';
 import '../../feautures/rides/passenger/screens/chat_screen.dart';
@@ -69,6 +70,7 @@ class AppPages {
     GetPage(name: '/upload-license', page: () => UploadLicenseScreen()),
     GetPage(name: '/referral', page: () => ReferralScreen()),
     GetPage(name: '/ride-request-list', page: () => RideRequestListScreen()),
+    GetPage(name: '/ride-request-detail', page: () => RideRequestDetailScreen()),
 
 
     // GetPage(name: "/basic-info", page: () => const BasicInfoScreen()),

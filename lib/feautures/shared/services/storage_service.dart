@@ -46,7 +46,7 @@ class StorageService {
     final items = getRecent();
     items.removeWhere((e) => e.description == p.description);
     final newList = [p, ...items];
-    final top3 = newList.take(3).toList();
+    final top3 = newList.take(4).toList();
     _box.write(_recentKey, top3.map((e) => e.toJson()).toList());
   }
 
@@ -163,6 +163,6 @@ class StorageService {
   static void printDriverSteps() {
     final steps = getDriverSteps();
     print("🚖 Driver Steps Status: $steps");
-    print("✅ Driver Profile Completed: ${isDriverProfileCompleted()}");
+    print(" Driver Profile Completed: ${isDriverProfileCompleted()}");
   }
 }

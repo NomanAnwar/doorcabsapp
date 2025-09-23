@@ -147,6 +147,23 @@ class OtpScreen extends StatelessWidget {
                   ),
                 ),
               ),
+
+              /// Get OTP Button
+              Positioned(
+                top: sh(470),
+                left: (screenWidth / 2) - sw(70),
+                child: TextButton(
+                  onPressed: controller.getOtp,
+                  child: Text(
+                    "Get OTP",
+                    style: FTextTheme.lightTextTheme.titleSmall!.copyWith(
+                      fontSize: FTextTheme
+                          .lightTextTheme.titleSmall!.fontSize! *
+                          screenWidth / baseWidth,
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),

@@ -12,6 +12,8 @@ class FHttpHelper {
     _baseUrl = url;
   }
 
+  static String get baseUrl => _baseUrl;
+
   /// Optional auth token
   static String? _authToken;
   static bool _useBearer = true; // default is Bearer

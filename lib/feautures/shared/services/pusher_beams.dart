@@ -1,8 +1,11 @@
 import 'dart:convert';
-
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 import 'package:pusher_beams/pusher_beams.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:doorcab/feautures/shared/services/storage_service.dart';
+import '../../../utils/http/http_client.dart';
 
 class PusherBeamsService {
   static final PusherBeamsService _instance = PusherBeamsService._internal();
@@ -49,6 +52,11 @@ class PusherBeamsService {
       String? token = await _firebaseMessaging.getToken();
       print('FCM Token: $token');
 
+      // CRITICAL FIX: Send FCM token to backend server
+      if (token != null) {
+        await _sendFcmTokenToServer(token);
+      }
+
       // Initialize local notifications
       await _initializeLocalNotifications();
 
@@ -57,6 +65,38 @@ class PusherBeamsService {
 
     } catch (e) {
       print('❌ Error setting up Firebase Messaging: $e');
+    }
+  }
+
+  /// CRITICAL FIX: Send FCM token to backend server
+  Future<void> _sendFcmTokenToServer(String token) async {
+    try {
+      final driverId = StorageService.getSignUpResponse()?.userId;
+      if (driverId == null) {
+        print('❌ No driver ID found');
+        return;
+      }
+
+      final storetoken = StorageService.getAuthToken();
+
+      if (storetoken == null) {
+        Get.snackbar("Error", "User token not found. Please login again.");
+        return;
+      }
+
+      FHttpHelper.setAuthToken(storetoken, useBearer: true);
+
+      final fcmres = await FHttpHelper.post('token/register-fcm', {
+        'fcm_token': token,
+        'device_type': 'android',
+      });
+
+      print("FCM Res : "+fcmres.toString());
+
+
+      print('✅ FCM token sent to server successfully');
+    } catch (e) {
+      print('❌ Failed to send FCM token to server: $e');
     }
   }
 
@@ -127,15 +167,41 @@ class PusherBeamsService {
   /// Register device for push notifications
   Future<void> registerDevice() async {
     try {
+      // Get driver ID for driver-specific interest
+      final driverId = StorageService.getSignUpResponse()?.userId;
+      if (driverId != null) {
+        final driverInterest = 'driver_$driverId';
+        await PusherBeams.instance.addDeviceInterest(driverInterest);
+        print('✅ Subscribed to driver-specific interest: $driverInterest');
+      }
+
       final interests = await getCurrentInterests();
       print('📱 Device registered with interests: $interests');
 
       // Subscribe to relevant interests
+      await subscribeToInterest('debug-ride_requests');
       await subscribeToInterest('ride_requests');
       await subscribeToInterest('driver_updates');
 
+      // Send interests to backend for tracking
+      if (driverId != null) {
+        await _sendInterestsToServer(driverId, interests);
+      }
+
     } catch (e) {
       print('❌ Error registering device: $e');
+    }
+  }
+
+  /// Send current interests to backend
+  Future<void> _sendInterestsToServer(String driverId, List<String> interests) async {
+    try {
+      await FHttpHelper.post('token/update-interests', {
+        'interests': interests,
+      });
+      print('✅ Interests sent to server: $interests');
+    } catch (e) {
+      print('❌ Failed to send interests to server: $e');
     }
   }
 
@@ -255,6 +321,30 @@ class PusherBeamsService {
       print('✅ Cleared all interests');
     } catch (e) {
       print('❌ Error clearing interests: $e');
+    }
+  }
+
+  /// Test method to verify push notifications are working
+  Future<void> testNotification() async {
+    try {
+      // Get driver ID for testing
+      final driverId = StorageService.getSignUpResponse()?.userId;
+      if (driverId == null) {
+        print('❌ No driver ID found for test notification');
+        return;
+      }
+
+      // Call your backend API to send a test notification
+      // Your backend should use the server-side Pusher Beams SDK
+      await FHttpHelper.post('driver/test-notification', {
+        'driver_id': driverId,
+        'message': 'Test notification from your app'
+      });
+
+      print('✅ Test notification request sent to backend');
+
+    } catch (e) {
+      print('❌ Test notification failed: $e');
     }
   }
 }

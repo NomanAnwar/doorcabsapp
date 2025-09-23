@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
+import 'dart:ui' as ui; // ✅ for resizing marker
 import 'package:doorcab/utils/constants/image_strings.dart';
+import 'package:flutter/services.dart'; // ✅ for rootBundle
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
@@ -39,6 +42,9 @@ class RideHomeController extends GetxController {
 
   /// Loading state for ride types API
   final isLoadingRideTypes = true.obs;
+
+  /// Fix: prevent repeated camera animation snaps
+  bool _cameraMovedOnce = false;
 
   final String mapsApiKey = const String.fromEnvironment(
     'MAPS_API_KEY',
@@ -93,27 +99,61 @@ class RideHomeController extends GetxController {
       final address = await _getAddressFromLatLng(pos.latitude, pos.longitude);
       pickupText.value = address ?? "Your Current Location";
 
+      // ✅ Fix: clear old markers before adding a fresh one
+      markers.clear();
+
+      // ❌ OLD CODE (commented) - kept for reference
+      // final customIcon = await BitmapDescriptor.fromAssetImage(
+      //   const ImageConfiguration(size: Size(48, 48)),
+      //   "assets/images/position_marker.png",
+      // );
+
+      // ✅ NEW CODE: create resized marker bytes (keeps icon visible above the default blue dot and appropriately sized)
+      // You can switch assetPath to "assets/images/position_marker2.png" if you want that variant.
+      final customIcon = await _getResizedMarker(
+        "assets/images/position_marker.png", // <- use position_marker2.png to try the other asset
+        120, // target pixel width for the marker image (adjust if you need bigger/smaller)
+      );
+
       markers.add(
         Marker(
           markerId: const MarkerId('me'),
           position: latLng,
+          icon: customIcon,
           infoWindow: InfoWindow(title: address ?? 'Your Location'),
         ),
       );
 
-      // Animate camera when map controller is ready; if not ready yet, the future
-      // completion will still call animate when available.
+      // Animate camera when map controller is ready; only do it once to avoid snapping when user moves map
       mapController.future.then((controller) {
         try {
-          controller.animateCamera(CameraUpdate.newLatLngZoom(latLng, 15));
+          if (!_cameraMovedOnce) {
+            controller.animateCamera(CameraUpdate.newLatLngZoom(latLng, 15));
+            _cameraMovedOnce = true;
+          }
         } catch (_) {}
       });
 
       isLoadingLocation.value = false;
     } catch (e) {
       print('Error initializing location: $e');
+      pickupText.value = "Unable to fetch location"; // ✅ UX fallback
       isLoadingLocation.value = false;
     }
+  }
+
+  /// Helper that loads an asset image, resizes it, and returns a BitmapDescriptor
+  /// so marker size actually affects how it looks on the map.
+  Future<BitmapDescriptor> _getResizedMarker(String assetPath, int targetWidth) async {
+    final ByteData data = await rootBundle.load(assetPath);
+    // instantiate codec with targetWidth so the image is scaled
+    final codec = await ui.instantiateImageCodec(
+      data.buffer.asUint8List(),
+      targetWidth: targetWidth,
+    );
+    final frameInfo = await codec.getNextFrame();
+    final byteData = await frameInfo.image.toByteData(format: ui.ImageByteFormat.png);
+    return BitmapDescriptor.fromBytes(byteData!.buffer.asUint8List());
   }
 
   Future<String?> _getAddressFromLatLng(double lat, double lng) async {
@@ -174,6 +214,7 @@ class RideHomeController extends GetxController {
       _loadRecents();
     }
   }
+
 
   void selectRecent(PlaceSuggestion s) async {
     final result = await Get.toNamed(
@@ -374,7 +415,7 @@ class RideHomeController extends GetxController {
 
   @override
   void onClose() {
-    // nothing to dispose specifically here
+    // nothing to dispose specifically here (controllers / streams etc.)
     super.onClose();
   }
 }

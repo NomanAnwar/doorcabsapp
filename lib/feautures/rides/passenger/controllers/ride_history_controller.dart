@@ -7,7 +7,6 @@ class RideHistoryController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    // populate mock history
     rides.assignAll(List.generate(8, (i) {
       final fare = 250 + i * 10;
       return {

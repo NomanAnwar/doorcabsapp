@@ -45,8 +45,8 @@ class FDropdown extends StatelessWidget {
           filled: true,
           fillColor: backgroundColor,
           contentPadding: EdgeInsets.symmetric(
-            horizontal: sw(16),
-            vertical: sh(12),
+            horizontal: sw(12),
+            vertical: sh(2),
           ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(sw(14)),
@@ -57,13 +57,14 @@ class FDropdown extends StatelessWidget {
           return DropdownMenuItem(
             value: item["lang"],
             child: Row(
+              // mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 _buildFlag(item["flag"] ?? "", screenWidth, screenHeight),
                 SizedBox(width: sw(8)),
                 ConstrainedBox(
                   constraints: BoxConstraints(maxWidth: finalWidth - sw(50)),
                   child: Text(
-                    item["lang"] ?? "",
+                    item["lang"].toString().toUpperCase() ?? "",
                     style: FTextTheme.lightTextTheme.headlineMedium!.copyWith(
                       overflow: TextOverflow.ellipsis,
                       height: 1,
@@ -76,6 +77,13 @@ class FDropdown extends StatelessWidget {
           );
         }).toList(),
         onChanged: onChanged,
+        icon: Icon(
+          Icons.arrow_drop_down_rounded, // you can change to any icon
+          // size: 32,                   // make it bigger
+          weight: 900,                // bold (works in Flutter 3.7+ with MaterialSymbols)
+          color: Colors.black,        // change color
+        ),
+        iconSize: 32, // fallback if using default
       ),
     );
   }

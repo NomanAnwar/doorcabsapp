@@ -21,7 +21,7 @@ class PlaceSuggestion {
     this.eta,
   });
 
-  /// ✅ CopyWith to update values without losing old ones
+  ///  CopyWith to update values without losing old ones
   PlaceSuggestion copyWith({
     String? placeId,
     String? description,
@@ -42,7 +42,7 @@ class PlaceSuggestion {
     );
   }
 
-  /// ✅ Convert to JSON for storage
+  ///  Convert to JSON for storage
   Map<String, dynamic> toJson() {
     return {
       'placeId': placeId,
@@ -56,7 +56,7 @@ class PlaceSuggestion {
     };
   }
 
-  /// ✅ Create from JSON
+  ///  Create from JSON
   factory PlaceSuggestion.fromJson(Map<String, dynamic> json) {
     return PlaceSuggestion(
       placeId: json['placeId'] ?? '',

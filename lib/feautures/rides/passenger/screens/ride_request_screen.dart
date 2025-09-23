@@ -7,7 +7,7 @@ import '../../../../utils/constants/colors.dart';
 import '../../../../utils/theme/custom_theme/text_theme.dart';
 import '../controllers/ride_request_controller.dart';
 
-  class RideRequestScreen extends StatelessWidget {
+class RideRequestScreen extends StatelessWidget {
   const RideRequestScreen({super.key});
 
   @override
@@ -49,9 +49,10 @@ import '../controllers/ride_request_controller.dart';
                 myLocationButtonEnabled: true,
                 onMapCreated: c.onMapCreated,
                 markers: c.markers.toSet(),
-                polylines: c.routePolyline.value != null
-                    ? {c.routePolyline.value!}
-                    : {},
+                polylines:
+                    c.routePolyline.value != null
+                        ? {c.routePolyline.value!}
+                        : {},
               );
             }),
           ),
@@ -96,9 +97,10 @@ import '../controllers/ride_request_controller.dart';
                             borderRadius: BorderRadius.circular(sw(10)),
                             border: Border.all(
                               width: isSelected ? 2 : 1,
-                              color: isSelected
-                                  ? FColors.secondaryColor
-                                  : Colors.grey.shade300,
+                              color:
+                                  isSelected
+                                      ? FColors.secondaryColor
+                                      : Colors.grey.shade300,
                             ),
                           ),
                           child: Column(
@@ -106,22 +108,21 @@ import '../controllers/ride_request_controller.dart';
                             children: [
                               c.rideTypes[i].isBase64
                                   ? Image.memory(
-                                base64Decode(
-                                  c.rideTypes[i].image.split(',').last,
-                                ),
-                                height: sh(36),
-                              )
+                                    base64Decode(
+                                      c.rideTypes[i].image.split(',').last,
+                                    ),
+                                    height: sh(36),
+                                  )
                                   : Image.asset(
-                                c.rideTypes[i].image,
-                                height: sh(36),
-                              ),
+                                    c.rideTypes[i].image,
+                                    height: sh(36),
+                                  ),
                               SizedBox(height: sh(6)),
                               // Show fare instead of title
                               Text(
                                 c.fareForCard(i),
-                                style: FTextTheme.lightTextTheme.labelSmall?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
+                                style: FTextTheme.lightTextTheme.labelSmall
+                                    ?.copyWith(fontWeight: FontWeight.w600),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ],
@@ -141,13 +142,14 @@ import '../controllers/ride_request_controller.dart';
             left: sw(24),
             right: sw(24),
             child: Obx(
-                  () => _locationField(
+              () => _locationField(
                 context,
                 label: "Pickup",
                 hasIcon: true,
-                text: c.pickupLocation.value.isEmpty
-                    ? "Pickup Location"
-                    : c.pickupLocation.value,
+                text:
+                    c.pickupLocation.value.isEmpty
+                        ? "Pickup Location"
+                        : c.pickupLocation.value,
                 onTap: c.onTapPickup,
                 sw: sw,
               ),
@@ -160,13 +162,14 @@ import '../controllers/ride_request_controller.dart';
             left: sw(24),
             right: sw(24),
             child: Obx(
-                  () => _locationField(
+              () => _locationField(
                 context,
                 label: "Dropoff",
                 hasIcon: false,
-                text: c.dropoffLocation.value.isEmpty
-                    ? "Dropoff Location"
-                    : c.dropoffLocation.value,
+                text:
+                    c.dropoffLocation.value.isEmpty
+                        ? "Dropoff Location"
+                        : c.dropoffLocation.value,
                 onTap: c.openDropoff,
                 sw: sw,
                 showAddStop: true,
@@ -181,10 +184,12 @@ import '../controllers/ride_request_controller.dart';
             left: sw(49),
             child: GestureDetector(
               onTap: c.openDateTimePopup,
-              child: Obx(() => Text(
-                c.dateLabel.value,
-                style: FTextTheme.lightTextTheme.labelSmall,
-              )),
+              child: Obx(
+                () => Text(
+                  c.dateLabel.value,
+                  style: FTextTheme.lightTextTheme.labelSmall,
+                ),
+              ),
             ),
           ),
 
@@ -194,10 +199,12 @@ import '../controllers/ride_request_controller.dart';
             left: sw(318),
             child: GestureDetector(
               onTap: c.openDateTimePopup,
-              child: Obx(() => Text(
-                c.timeLabel.value,
-                style: FTextTheme.lightTextTheme.labelSmall,
-              )),
+              child: Obx(
+                () => Text(
+                  c.timeLabel.value,
+                  style: FTextTheme.lightTextTheme.labelSmall,
+                ),
+              ),
             ),
           ),
 
@@ -223,23 +230,27 @@ import '../controllers/ride_request_controller.dart';
             child: SizedBox(
               width: sw(360),
               child: Obx(
-                    () => Row(
+                () => Row(
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
                     for (final p in c.passengerOptions)
                       Padding(
                         padding: EdgeInsets.only(right: sw(8)),
                         child: ChoiceChip(
-                          label: Text(p,style: TextStyle(color: FColors.white),),
+                          label: Text(
+                            p,
+                            style: TextStyle(color: FColors.white),
+                          ),
                           selected: c.selectedPassengers.value == p,
                           onSelected: (_) => c.selectedPassengers.value = p,
                           selectedColor: FColors.primaryColor,
                           disabledColor: FColors.white,
                           backgroundColor: FColors.chipBg,
                           labelStyle: TextStyle(
-                            color: c.selectedPassengers.value == p
-                                ? FColors.secondaryColor
-                                : FColors.black,
+                            color:
+                                c.selectedPassengers.value == p
+                                    ? FColors.secondaryColor
+                                    : FColors.black,
                             fontSize: sw(12),
                             fontWeight: FontWeight.w600,
                           ),
@@ -283,7 +294,9 @@ import '../controllers/ride_request_controller.dart';
                 keyboardType: TextInputType.number,
                 // inputFormatters: c.digitsOnly,
                 textAlign: TextAlign.center,
-                style: FTextTheme.lightTextTheme.titleSmall!.copyWith(color: FColors.white),
+                style: FTextTheme.lightTextTheme.titleSmall!.copyWith(
+                  color: FColors.white,
+                ),
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: FColors.primaryColor,
@@ -295,7 +308,7 @@ import '../controllers/ride_request_controller.dart';
                   prefix: Text("PKR "),
                   prefixStyle: FTextTheme.lightTextTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w700,
-                    color: FColors.white
+                    color: FColors.white,
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(sw(10)),
@@ -327,7 +340,11 @@ import '../controllers/ride_request_controller.dart';
             left: sw(87),
             child: Row(
               children: [
-                Icon(Icons.stars_rounded, size: 10, color: FColors.primaryColor,),
+                Icon(
+                  Icons.stars_rounded,
+                  size: 10,
+                  color: FColors.primaryColor,
+                ),
                 Text(
                   " If no rider accepts your offer raise your fare",
                   style: TextStyle(
@@ -343,7 +360,7 @@ import '../controllers/ride_request_controller.dart';
           /// Row: text + toggle (text at top 819/left 105, toggle at top 814/left 322)
           Positioned(
             top: sh(835),
-            left: sw(105),
+            left: sw(85),
             child: Text(
               "Auto accept offers",
               style: FTextTheme.lightTextTheme.bodyMedium?.copyWith(
@@ -352,15 +369,18 @@ import '../controllers/ride_request_controller.dart';
             ),
           ),
           Positioned(
-            top: sh(824),
-            left: sw(322),
+            top: sh(816),
+            left: sw(282),
             child: Obx(
-                  () => Switch(
-                value: c.autoAccept.value,
-                activeColor: FColors.primaryColor,
-                inactiveThumbColor: FColors.white,
-                inactiveTrackColor: FColors.secondaryColor,
-                onChanged: (val) => c.autoAccept.value = val,
+              () => Transform.scale(
+                scale: 0.7,
+                child: Switch(
+                  value: c.autoAccept.value,
+                  activeColor: FColors.primaryColor,
+                  inactiveThumbColor: FColors.white,
+                  inactiveTrackColor: FColors.secondaryColor,
+                  onChanged: (val) => c.autoAccept.value = val,
+                ),
               ),
             ),
           ),
@@ -376,10 +396,12 @@ import '../controllers/ride_request_controller.dart';
                   Image.asset("assets/images/cash.png"),
                   // Icon(Icons.account_balance_wallet, size: sw(28)),
                   SizedBox(height: sh(6)),
-                  Obx(() => Text(
-                    c.selectedPaymentLabel.value,
-                    style: FTextTheme.lightTextTheme.labelSmall,
-                  )),
+                  Obx(
+                    () => Text(
+                      c.selectedPaymentLabel.value,
+                      style: FTextTheme.lightTextTheme.labelSmall,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -392,31 +414,37 @@ import '../controllers/ride_request_controller.dart';
             child: SizedBox(
               width: sw(287),
               height: sh(48),
-              child: Obx(() => ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: FColors.secondaryColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(sw(12)),
+              child: Obx(
+                () => ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: FColors.secondaryColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(sw(12)),
+                    ),
                   ),
+                  onPressed: c.isLoading.value ? null : c.onRequestRide,
+                  child:
+                      c.isLoading.value
+                          ? SizedBox(
+                            width: sw(20),
+                            height: sw(20),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
+                          )
+                          : Text(
+                            "Request Ride",
+                            style: FTextTheme.lightTextTheme.titleSmall
+                                ?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                          ),
                 ),
-                onPressed: c.isLoading.value ? null : c.onRequestRide,
-                child: c.isLoading.value
-                    ? SizedBox(
-                  width: sw(20),
-                  height: sw(20),
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                )
-                    : Text(
-                  "Request Ride",
-                  style: FTextTheme.lightTextTheme.titleSmall?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              )),
+              ),
             ),
           ),
 
@@ -435,15 +463,15 @@ import '../controllers/ride_request_controller.dart';
   }
 
   Widget _locationField(
-      BuildContext ctx, {
-        required String label,
-        required String text,
-        required bool hasIcon,
-        required VoidCallback onTap,
-        required double Function(double) sw,
-        bool showAddStop = false,
-        VoidCallback? onAddStop,
-      }) {
+    BuildContext ctx, {
+    required String label,
+    required String text,
+    required bool hasIcon,
+    required VoidCallback onTap,
+    required double Function(double) sw,
+    bool showAddStop = false,
+    VoidCallback? onAddStop,
+  }) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
@@ -456,22 +484,23 @@ import '../controllers/ride_request_controller.dart';
         ),
         child: Row(
           children: [
-            hasIcon ? Container(
-              width: sw(34),
-              height: sw(34),
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: FColors.phoneInputField,
-                borderRadius: BorderRadius.circular(sw(6)),
-              ),
-              child:
-                Image.asset("assets/images/place.png")
-              // Icon(
-              //   label == "Pickup" ? Icons.my_location : Icons.location_on,
-              //   size: sw(18),
-              //   color: FColors.black,
-              // ),
-            ) : SizedBox(),
+            hasIcon
+                ? Container(
+                  width: sw(34),
+                  height: sw(34),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: FColors.phoneInputField,
+                    borderRadius: BorderRadius.circular(sw(6)),
+                  ),
+                  child: Image.asset("assets/images/place.png"),
+                  // Icon(
+                  //   label == "Pickup" ? Icons.my_location : Icons.location_on,
+                  //   size: sw(18),
+                  //   color: FColors.black,
+                  // ),
+                )
+                : SizedBox(),
             SizedBox(width: sw(10)),
             Expanded(
               child: Text(

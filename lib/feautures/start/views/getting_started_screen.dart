@@ -1,5 +1,4 @@
 import 'package:doorcab/common/widgets/snakbar/snackbar.dart';
-import 'package:doorcab/utils/constants/sizes.dart';
 import 'package:doorcab/utils/constants/text_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -28,14 +27,11 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
     });
 
     if (!controller.acceptedPolicy.value) {
-      // Get.snackbar("Error", "You must accept the Privacy Policy.",
-      //     backgroundColor: Colors.red.shade100, colorText: Colors.black);
       FSnackbar.show(
         title: "Error",
         message: "You must accept the Privacy Policy.",
         isError: true,
       );
-
       return;
     }
 
@@ -319,7 +315,7 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
                                   baseWidth),
                         ),
                         GestureDetector(
-                          onTap: () => Get.toNamed('/login'),
+                          // onTap: () => Get.toNamed('/login'),
                           child: Text(
                             "Log-In",
                             style: FTextTheme.lightTextTheme.titleSmall!

@@ -15,87 +15,118 @@ class MapSelectionScreen extends StatelessWidget {
 
     return Scaffold(
       body: Obx(
-            () => Stack(
-          children: [
-            GoogleMap(
-              initialCameraPosition:
-              CameraPosition(target: c.center.value, zoom: 15),
-              onMapCreated: c.onMapCreated,
-              onCameraMove: c.onCameraMove,
-              onCameraIdle: c.onCameraIdle,
-              myLocationButtonEnabled: true,
-              myLocationEnabled: true,
-            ),
+            () {
+          if (c.isLoading.value) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-            /// Back arrow
-            Positioned(
-              top: 44,
-              left: 26,
-              child: CircleAvatar(
-                backgroundColor: Colors.white,
-                child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.black87),
-                  onPressed: Get.back,
+          return Stack(
+            children: [
+              GoogleMap(
+                // initialCameraPosition: CameraPosition(target: c.center.value, zoom: 15), // ❌ old
+                initialCameraPosition: CameraPosition(
+                  target: c.center.value,
+                  zoom: 15,
+                ),
+                onMapCreated: c.onMapCreated,
+                onCameraMove: c.onCameraMove,
+                onCameraIdle: c.onCameraIdle,
+                myLocationButtonEnabled: false, // ✅ disable default
+                myLocationEnabled: false,
+              ),
+
+              /// Back arrow
+              Positioned(
+                top: 44,
+                left: 26,
+                child: CircleAvatar(
+                  backgroundColor: Colors.white,
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_back, color: Colors.black87),
+                    onPressed: Get.back,
+                  ),
                 ),
               ),
-            ),
 
-            /// Center pin
-            const Center(
-                child: Icon(Icons.location_pin, size: 48, color: Colors.red)),
-
-            /// Address display
-            Positioned(
-              left: 24,
-              right: 24,
-              bottom: 92,
-              child: Container(
-                padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 8,
-                      offset: Offset(0, 2),
-                    )
-                  ],
-                ),
-                child: Text(
-                  c.address.value.isEmpty
-                      ? 'Move the map to pick a location...'
-                      : c.address.value,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+              /// Center pin
+              // const Center(child: Icon(Icons.location_pin, size: 48, color: Colors.red)), // ❌ old
+              Center(
+                child: IgnorePointer(
+                  ignoring: true,
+                  child: Image.asset(
+                    "assets/images/position_marker.png", // ✅ same as RideHomeScreen
+                    width: 60,
+                    height: 60,
+                  ),
                 ),
               ),
-            ),
 
-            /// Done button
-            Positioned(
-              left: 45,
-              right: 45,
-              bottom: 30,
-              child: SizedBox(
-                height: 48,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: FColors.secondaryColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+              /// Address display
+              Positioned(
+                left: 24,
+                right: 24,
+                bottom: 92,
+                child: Container(
+                  padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 8,
+                        offset: Offset(0, 2),
+                      )
+                    ],
+                  ),
+                  child: Text(
+                    c.address.value.isEmpty
+                        ? 'Move the map to pick a location...'
+                        : c.address.value,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+
+              /// Done button
+              Positioned(
+                left: 45,
+                right: 45,
+                bottom: 30,
+                child: SizedBox(
+                  height: 48,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: FColors.secondaryColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    onPressed: c.confirm,
+                    child: Text(
+                      "Done",
+                      style: FTextTheme.darkTextTheme.labelLarge,
                     ),
                   ),
-                  onPressed: c.confirm,
-                  child: Text("Done", style: FTextTheme.darkTextTheme.labelLarge,),
                 ),
               ),
-            ),
 
-
-          ],
-        ),
+              /// ✅ Recenter FAB (bottom-right)
+              Positioned(
+                bottom: 160,
+                right: 16,
+                child: FloatingActionButton(
+                  mini: true,
+                  backgroundColor: Colors.white,
+                  onPressed: c.recenter,
+                  child: const Icon(Icons.my_location, color: Colors.black87),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

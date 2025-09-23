@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
+import '../../../../utils/http/http_client.dart';
 
 class AvailableBidsController extends GetxController {
   final bids = <Map<String, dynamic>>[].obs;
@@ -15,13 +17,31 @@ class AvailableBidsController extends GetxController {
   final autoAccept = false.obs;
   final remainingSeconds = 60.obs;
   Timer? _timer;
-  Timer? _bidTimer;
+
+  late final Map<String, dynamic> rideArgs;
 
   @override
   void onInit() {
     super.onInit();
+
+    rideArgs = Map<String, dynamic>.from(Get.arguments ?? {});
+    print("📌 Ride args in AvailableBidsController: $rideArgs");
+
+    final argBids = rideArgs['bids'];
+    if (argBids != null) {
+      if (argBids is RxList<Map<String, dynamic>>) {
+        ever(argBids, (_) {
+          bids.assignAll(argBids);
+        });
+        bids.assignAll(argBids);
+      } else if (argBids is List<Map<String, dynamic>>) {
+        bids.assignAll(argBids);
+      }
+    }
+
+    print("📌 Initial bids: $bids");
+
     _startCountdown();
-    _simulateIncomingBids();
   }
 
   void _startCountdown() {
@@ -34,71 +54,65 @@ class AvailableBidsController extends GetxController {
     });
   }
 
-  void _simulateIncomingBids() {
-    // Simulate bids coming in every 5-10 seconds
-    _bidTimer = Timer.periodic(const Duration(seconds: 7), (timer) {
-      if (bids.length < 5) { // Limit to 5 simultaneous bids
-        _addNewBid();
-      }
-    });
-  }
+  /// ✅ Accept a bid and call backend
+  Future<void> acceptBid(Map bid) async {
+    try {
+      _timer?.cancel();
 
-  void _addNewBid() {
-    final bidId = DateTime.now().millisecondsSinceEpoch;
-    final newBid = {
-      'id': bidId,
-      'name': "Driver ${bids.length + 1}",
-      'car': "Toyota Corolla",
-      'fare': 250 + bids.length * 20,
-      'eta': 5 + bids.length,
-      'distance': (1.5 + bids.length * 0.3).toStringAsFixed(1),
-      'avatar': driverAvatars[bids.length % driverAvatars.length],
-      'rating': (4.0 + bids.length * 0.1).toStringAsFixed(1),
-      'totalRatings': 100 + bids.length * 20,
-      'category': "Standard",
-      'progress': 1.0.obs, // Start with full progress
-    };
-
-    bids.insert(0, newBid);
-
-    // Start countdown for this bid (10 seconds)
-    _startBidCountdown(bidId);
-  }
-
-  void _startBidCountdown(int bidId) {
-    Timer.periodic(const Duration(milliseconds: 100), (timer) {
-      final bidIndex = bids.indexWhere((bid) => bid['id'] == bidId);
-      if (bidIndex == -1) {
-        timer.cancel();
+      final bidId = bid['bidId'];
+      if (bidId == null) {
+        Get.snackbar("Error", "Invalid bid ID.");
         return;
       }
 
-      final bid = bids[bidIndex];
-      final progress = bid['progress'] as RxDouble;
-      progress.value -= 0.01; // Decrease progress by 1% every 100ms
-
-      if (progress.value <= 0) {
-        timer.cancel();
-        bids.removeWhere((bid) => bid['id'] == bidId);
+      // Parse ETA (example: "1 min" or "5 mins")
+      DateTime etaDateTime = DateTime.now().toUtc();
+      if (bid['eta'] != null && bid['eta'].toString().contains("min")) {
+        final parts = bid['eta'].toString().split(" ");
+        final minutes = int.tryParse(parts[0]) ?? 0;
+        etaDateTime = etaDateTime.add(Duration(minutes: minutes));
       }
-    });
+
+      // Format ETA to ISO
+      final etaIso =
+      DateFormat("yyyy-MM-ddTHH:mm:ss.SSS'Z'").format(etaDateTime);
+
+      // ✅ Merge bid + rideArgs
+      final body = {
+        "bidId": bidId,
+        "rideId": rideArgs['rideId'],
+        "pickup": rideArgs['pickup'],
+        "dropoffs": rideArgs['dropoffs'],
+        "fare": rideArgs['fare'],
+        "passengers": rideArgs['passengers'],
+        "payment": rideArgs['payment'],
+        "rideType": rideArgs['rideType'],
+        "estimated_arrival_time": etaIso,
+      };
+
+      print("🚀 Sending accept-bid request: $body");
+
+      final response = await FHttpHelper.post("ride/accept-bids", body);
+
+      print("✅ Accept bid API Response: $response");
+
+      if (response['message'] == "Bid accepted successfully.") {
+        Get.snackbar("Bid Accepted",
+            "Driver ${bid['driver']?['name']?['firstName'] ?? ''} confirmed");
+
+        // Navigate to next screen with response
+        final responseMap = Map<String, dynamic>.from(response);
+        Get.toNamed("/drivers-waiting", arguments: {...responseMap,
+          'bid': bid,});
+      } else {
+        Get.snackbar("Error", response['message'] ?? "Failed to accept bid");
+      }
+    } catch (e, s) {
+      print("❌ Error in acceptBid: $e");
+      print(s);
+      Get.snackbar("Error", "Something went wrong while accepting bid.");
+    }
   }
-
-  void acceptBid(Map bid) {
-    // First stop timers so bids don't keep coming in
-    _timer?.cancel();
-    _bidTimer?.cancel();
-
-    // Remove this bid from the list
-    // bids.remove(bid);
-
-    // Navigate to DriversWaitingScreen with selected driver data
-    Get.toNamed("/drivers-waiting", arguments: bid);
-
-    // Optionally show a confirmation snackbar
-    Get.snackbar("Bid Accepted", "Driver ${bid['name']} confirmed");
-  }
-
 
   void rejectBid(Map bid) {
     bids.remove(bid);
@@ -106,7 +120,6 @@ class AvailableBidsController extends GetxController {
 
   void cancelRequest() {
     _timer?.cancel();
-    _bidTimer?.cancel();
     Get.back();
     Get.snackbar("Cancelled", "Your ride request was cancelled.");
   }
@@ -114,7 +127,6 @@ class AvailableBidsController extends GetxController {
   @override
   void onClose() {
     _timer?.cancel();
-    _bidTimer?.cancel();
     super.onClose();
   }
 }

@@ -15,12 +15,16 @@ class DriversWaitingController extends GetxController {
   void onInit() {
     super.onInit();
 
+    final args = Get.arguments as Map<String, dynamic>;
+    final bid = args['bid'];
+    final driverResponse = args; // contains both response + bid
+
     // Mock current position
     currentPosition.value = const LatLng(31.5204, 74.3587);
 
     // Auto move after 20 seconds → RideInProgress
-    _waitingTimer = Timer(const Duration(seconds: 20), () {
-      Get.offNamed('/ride-in-progress');
+    _waitingTimer = Timer(const Duration(seconds: 30), () {
+      Get.toNamed('/ride-in-progress');
     });
   }
 

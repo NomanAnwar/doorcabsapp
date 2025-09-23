@@ -1,6 +1,7 @@
 import 'package:doorcab/feautures/rides/passenger/controllers/widgets/ride_request_reuseable_controllers/date_time_controller.dart';
 import 'package:doorcab/feautures/rides/passenger/controllers/widgets/ride_request_reuseable_controllers/fare_calculator_controller.dart';
 import 'package:doorcab/feautures/rides/passenger/controllers/widgets/ride_request_reuseable_controllers/map_controller.dart';
+import 'package:doorcab/feautures/shared/services/pusher_channels.dart';
 import 'package:doorcab/feautures/shared/services/storage_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -26,14 +27,12 @@ class RideRequestController extends RideHomeController {
   final selectedRideIndexFromHome = 0.obs;
   final selectedVehicleData = Rx<Map<String, dynamic>?>(null);
 
-  // Add missing properties for the screen
   final List<String> passengerOptions = const ["1", "2", "3", "4", "More"];
   final List<TextInputFormatter> digitsOnly = [FilteringTextInputFormatter.digitsOnly];
 
   // Loading state
   final isLoading = false.obs;
 
-  // Exposed getters
   TextEditingController get fareController => _fareController.fareController;
   RxString get userCity => _fareController.userCity;
   RxString get pickupLocation => _mapController.pickupLocation;
@@ -51,11 +50,16 @@ class RideRequestController extends RideHomeController {
   RxString get timeLabel => _dateTimeController.timeLabel;
 
   final PusherBeamsService _pusherBeams = PusherBeamsService();
+  final PusherChannelsService _pusherChannels = PusherChannelsService();
+
+  final bids = <Map<String, dynamic>>[].obs;
 
   // Coordinates for API calls
   LatLng? pickupCoords;
   LatLng? dropoffCoords;
   List<Map<String, dynamic>> stopCoords = [];
+
+  final a = StorageService.getRole();
 
   @override
   void onInit() {
@@ -159,7 +163,7 @@ class RideRequestController extends RideHomeController {
         );
       }
     } catch (e) {
-      print('❌ Error calculating route: $e');
+      print('Error calculating route: $e');
     }
   }
 
@@ -189,13 +193,13 @@ class RideRequestController extends RideHomeController {
   void incrementFare() => _fareController.incrementFare();
   void decrementFare() => _fareController.decrementFare();
 
+  // In RideRequestController - update the onRequestRide method
   Future<void> onRequestRide() async {
     if (pickupLocation.value.isEmpty || dropoffLocation.value.isEmpty) {
       Get.snackbar('Missing fields', 'Pickup and Drop-off are required.');
       return;
     }
 
-    // Validate coordinates
     if (pickupCoords == null || dropoffCoords == null) {
       Get.snackbar('Error', 'Could not determine coordinates for locations.');
       return;
@@ -204,51 +208,78 @@ class RideRequestController extends RideHomeController {
     isLoading.value = true;
 
     try {
-      // Prepare the request body
       final requestBody = await _prepareRideRequestBody();
-
       final token = StorageService.getAuthToken();
 
       if (token == null) {
         Get.snackbar("Error", "User token not found. Please login again.");
+        return;
       }
 
-      FHttpHelper.setAuthToken(token!, useBearer: true);
+      FHttpHelper.setAuthToken(token, useBearer: true);
 
-
-      // Call the ride request API
       final response = await FHttpHelper.post('ride/request', requestBody);
+      print("Ride Request API Response : " + response.toString());
 
-      print("Ride Request API Response : "+response.toString());
-
-      // Handle successful response
       if (response['message'] == 'Ride requested successfully.') {
-        final rideData = response['ride'];
-        final rideId = rideData['_id'];
+        final rideData = response;
+        final rideId = rideData['rideId'];
 
-        // Send push notification to nearby drivers
         await _sendPushNotificationToDrivers(rideData);
-
         Get.snackbar('Success', 'Ride requested successfully!');
 
+        // ✅ Subscribe passenger to pusher channel for bids
+        final passengerId = StorageService.getSignUpResponse()!.userId;
+        if (passengerId != null) {
+          await _pusherChannels.initialize(
+            passengerId: passengerId,
+            onNewBid: (data) {
+              print("📨 Passenger received new bid: $data");
+              // Store the bid data
+              bids.add(data);
+            },
+          );
+        }
+
         // Navigate to available drivers screen with ride details
+        // Get.toNamed('/available-drivers', arguments: {
+        //   'rideId': rideId,
+        //   'rideData': rideData,
+        //   'pickup': pickupLocation.value,
+        //   'dropoff': dropoffLocation.value,
+        //   'stops': stops.toList(),
+        //   'rideType': selectedVehicle.value?.name ?? rideType.value,
+        //   'fare': fareController.text,
+        //   'passengers': selectedPassengers.value,
+        //   'payment': selectedPaymentLabel.value,
+        //   'pickupLat': pickupCoords?.latitude,
+        //   'pickupLng': pickupCoords?.longitude,
+        //   'bids': bids, // Send observable bids list
+        // });
         Get.toNamed('/available-drivers', arguments: {
           'rideId': rideId,
           'rideData': rideData,
-          'pickup': pickupLocation.value,
-          'dropoff': dropoffLocation.value,
-          'stops': stops.toList(),
+          'pickup': {
+            "lat": pickupCoords?.latitude,
+            "lng": pickupCoords?.longitude,
+            "address": pickupLocation.value,
+          },
+          'dropoffs': await _getNotificationDropoffs(), // includes main + stops with order
           'rideType': selectedVehicle.value?.name ?? rideType.value,
           'fare': fareController.text,
           'passengers': selectedPassengers.value,
           'payment': selectedPaymentLabel.value,
+          'pickupLat': pickupCoords?.latitude,
+          'pickupLng': pickupCoords?.longitude,
+          'bids': bids, // RxList, updates in real-time
         });
+
       } else {
         throw Exception(response['message'] ?? 'Failed to request ride');
       }
     } catch (e) {
       Get.snackbar('Error', 'Failed to request ride: ${e.toString()}');
-      print('❌ Ride request error: $e');
+      print(' Ride request error: $e');
     } finally {
       isLoading.value = false;
     }
@@ -332,6 +363,7 @@ class RideRequestController extends RideHomeController {
   Future<void> _sendPushNotificationToDrivers(Map<String, dynamic> rideData) async {
     try {
       final notificationBody = {
+        "rideId": rideData['rideId'],
         "pickup": {
           "lat": pickupCoords!.latitude,
           "lng": pickupCoords!.longitude,
@@ -344,9 +376,9 @@ class RideRequestController extends RideHomeController {
       // Call the push notification endpoint
       await FHttpHelper.post('ride/push-notification', notificationBody);
 
-      print('✅ Push notification sent to drivers');
+      print(' Push notification sent to drivers');
     } catch (e) {
-      print('❌ Error sending push notification: $e');
+      print(' Error sending push notification: $e');
       // Don't throw error here - ride request was successful, just notification failed
     }
   }

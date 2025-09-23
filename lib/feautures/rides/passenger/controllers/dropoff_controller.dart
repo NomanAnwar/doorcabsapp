@@ -112,7 +112,7 @@ class DropOffController extends GetxController {
   Future<void> selectSuggestion(PlaceSuggestion s) async {
     isLoading.value = true;
 
-    // ✅ Get origin from RideHomeController (user’s current position)
+    //  Get origin from RideHomeController (user’s current position)
     final rideHome = Get.find<RideHomeController>();
     final origin = rideHome.currentPosition.value;
 

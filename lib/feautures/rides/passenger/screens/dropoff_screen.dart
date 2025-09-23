@@ -1,6 +1,7 @@
 import 'package:doorcab/utils/constants/colors.dart';
 import 'package:doorcab/utils/theme/custom_theme/text_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import '../../../../common/widgets/buttons/responsive_button.dart';
 import '../controllers/dropoff_controller.dart';
@@ -27,6 +28,7 @@ class DropOffScreen extends StatelessWidget {
     double sh(double h) => h * screenHeight / baseHeight;
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       body: SafeArea(
         child: Stack(
           children: [
@@ -53,18 +55,21 @@ class DropOffScreen extends StatelessWidget {
               ),
             ),
 
-            /// Main content
-            Positioned.fill(
+            /// Main scrollable content
+            Positioned(
               top: sh(121),
+              left: 0,
+              right: 0,
+              bottom: sh(100), // Leave space for the confirm button at bottom
               child: SingleChildScrollView(
                 padding: EdgeInsets.symmetric(horizontal: sw(23)),
                 child: Obx(
-                  () => Column(
+                      () => Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       /// Pickup
                       Container(
-                        height: sh(52),
+                        // height: sh(52),
                         padding: EdgeInsets.symmetric(horizontal: sw(12)),
                         decoration: BoxDecoration(
                           color: const Color(0xFFEFEFEF),
@@ -72,22 +77,29 @@ class DropOffScreen extends StatelessWidget {
                         ),
                         child: Row(
                           children: [
-                            Container(
-                              width: sw(16),
-                              height: sw(16),
-                              decoration: const BoxDecoration(
-                                color: FColors.secondaryColor,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
+                            Image.asset("assets/images/place.png"),
+                            // Container(
+                            //   width: sw(16),
+                            //   height: sw(16),
+                            //   decoration: const BoxDecoration(
+                            //     color: FColors.secondaryColor,
+                            //     shape: BoxShape.circle,
+                            //   ),
+                            // ),
                             SizedBox(width: sw(12)),
                             Expanded(
                               child: TextField(
                                 controller: c.pickupCtrl,
                                 focusNode: c.pickupFocus,
-                                decoration: const InputDecoration(
+                                style: FTextTheme.lightTextTheme.titleSmall!.copyWith(fontWeight: FontWeight.w500),
+                                decoration: InputDecoration(
                                   hintText: "Model Town Link Rd Zainab Tower",
+                                  hintStyle: FTextTheme.lightTextTheme.bodyLarge,
                                   border: InputBorder.none,
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: sw(5),
+                                    vertical: sh(12),
+                                  ),
                                 ),
                                 onTap: () => c.toggleField(ActiveField.pickup),
                               ),
@@ -102,39 +114,47 @@ class DropOffScreen extends StatelessWidget {
                         children: [
                           /// Background field
                           Container(
-                            width: sw(393),
-                            height: sh(52),
+                            width: double.infinity,
+                            // height: sh(52),
                             decoration: BoxDecoration(
                               color: const Color(0xFFEFEFEF),
                               borderRadius: BorderRadius.circular(sw(10)),
                             ),
                             padding: EdgeInsets.symmetric(horizontal: sw(12)),
                             child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 SizedBox(width: sw(4)),
-                                Container(
-                                  width: sw(16),
-                                  height: sw(16),
-                                  decoration: const BoxDecoration(
-                                    color: FColors.secondaryColor,
-                                    shape: BoxShape.circle,
-                                  ),
+                                Icon(
+                                  Icons.near_me_sharp,
+                                  color: FColors.black,
                                 ),
+                                // Container(
+                                  // width: sw(16),
+                                  // height: sw(16),
+                                  // decoration: const BoxDecoration(
+                                  //   color: FColors.secondaryColor,
+                                  //   shape: BoxShape.circle,
+                                  // ),
+                                // ),
                                 SizedBox(width: sw(12)),
                                 Expanded(
                                   child: TextField(
                                     controller: c.dropCtrl,
                                     focusNode: c.dropFocus,
-                                    decoration: const InputDecoration(
+                                    style: FTextTheme.lightTextTheme.titleSmall!.copyWith(fontWeight: FontWeight.w500),
+                                    decoration: InputDecoration(
                                       hintText: "Drop Off",
+                                      hintStyle: FTextTheme.lightTextTheme.bodyLarge,
                                       border: InputBorder.none,
                                       contentPadding: EdgeInsets.symmetric(
-                                        horizontal: 0,
+                                        horizontal: sw(2),
+                                        vertical: sh(12),
                                       ),
                                     ),
                                     onTap:
                                         () =>
-                                            c.toggleField(ActiveField.dropoff),
+                                        c.toggleField(ActiveField.dropoff),
                                   ),
                                 ),
                               ],
@@ -143,8 +163,8 @@ class DropOffScreen extends StatelessWidget {
 
                           /// ADD STOP button
                           Positioned(
-                            right: sw(6),
-                            top: sh(11),
+                            right: sw(10),
+                            top: sh(14),
                             child: SizedBox(
                               width: sw(116),
                               height: sh(30),
@@ -163,11 +183,17 @@ class DropOffScreen extends StatelessWidget {
                                   "ADD STOP",
                                   style: FTextTheme.lightTextTheme.labelSmall,
                                 ),
-                                icon: Icon(
-                                  Icons.add,
-                                  size: sw(16),
+                                icon: SvgPicture.asset(
+                                  "assets/images/add_stop_plus.svg",
+                                  width: sw(16),
+                                  height: sw(16),
                                   color: Colors.black,
                                 ),
+                                // Icon(
+                                //   Icons.add,
+                                //   size: sw(16),
+                                //   color: Colors.black,
+                                // ),
                                 iconAlignment: IconAlignment.end,
                               ),
                             ),
@@ -182,9 +208,15 @@ class DropOffScreen extends StatelessWidget {
                         child: Row(
                           children: [
                             SizedBox(width: sw(19)),
-                            Icon(Icons.near_me_outlined, size: sw(20)),
+                            // Icon(Icons.near_me_outlined, size: sw(20)),
+                            SvgPicture.asset(
+                              "assets/images/choose_on_map.svg",
+                              // width: sw(16),
+                              // height: sw(16),
+                              color: Colors.black,
+                            ),
                             SizedBox(width: sw(8)),
-                            const Text("Choose on Map"),
+                            Text("Choose on Map", style: FTextTheme.lightTextTheme.bodySmall,),
                           ],
                         ),
                       ),
@@ -207,14 +239,18 @@ class DropOffScreen extends StatelessWidget {
                           separatorBuilder: (_, __) => const Divider(height: 1),
                           itemBuilder:
                               (_, i) => ListTile(
-                                leading: Icon(
-                                  Icons.location_on_outlined,
-                                  size: sw(20),
-                                ),
-                                title: Text(c.suggestions[i].description),
-                                onTap:
-                                    () => c.selectSuggestion(c.suggestions[i]),
-                              ),
+                            leading: Icon(
+                              Icons.location_on_outlined,
+                              size: sw(20),
+                            ),
+                            title: Text(c.suggestions[i].description, style: TextStyle(
+                              fontWeight:
+                              FontWeight.w600,
+                              fontSize: sw(14),
+                            ),),
+                            onTap:
+                                () => c.selectSuggestion(c.suggestions[i]),
+                          ),
                         ),
                         SizedBox(height: sh(16)),
                       ],
@@ -222,62 +258,133 @@ class DropOffScreen extends StatelessWidget {
                       /// Recent
                       SizedBox(height: sh(6)),
                       for (int i = 0; i < c.recent.length && i < 4; i++)
-                        Padding(
-                          padding: EdgeInsets.only(bottom: sh(14)),
-                          child: InkWell(
-                            onTap: () => c.setFieldValue(c.recent[i]),   // ✅ update field when clicked
-                            child: Row(
-                              children: [
-                                Icon(Icons.navigation, size: sw(20)),
-                                SizedBox(width: sw(12)),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        c.recent[i].description,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                        ),
+                        Column(
+                          children: [
+                            Padding(
+                              padding: EdgeInsets.only(bottom: sh(4),top: sh(4)),
+                              child: InkWell(
+                                onTap: () => c.setFieldValue(c.recent[i]),   //  update field when clicked
+                                child: Row(
+                                  crossAxisAlignment:
+                                  CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        borderRadius:
+                                        BorderRadius.circular(
+                                            sw(6)),
+                                        color:
+                                        FColors.phoneInputField,
                                       ),
-                                      SizedBox(height: sh(2)),
-                                      // const Text(
-                                      //   "Lahore, Province Punjab",
-                                      //   style: TextStyle(
-                                      //     fontSize: 12,
-                                      //     color: Colors.grey,
-                                      //   ),
-                                      // ),
-                                      Text(
-                                        "${c.recent[i].city ?? ''}, ${c.recent[i].province ?? ''}, ${c.recent[i].country ?? ''}",
-                                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                      height: sh(34),
+                                      width: sw(34),
+                                      padding: EdgeInsets.all(sw(2)),
+                                      child: Icon(
+                                        Icons.near_me_sharp,
+                                        color: FColors.black,
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                    SizedBox(width: sw(12)),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            c.recent[i].description,
+                                            style: TextStyle(
+                                              fontWeight:
+                                              FontWeight.w600,
+                                              fontSize: sw(14),
+                                            ),
+                                          ),
+                                          SizedBox(height: sh(2)),
+                                          Text(
+                                            "${c.recent[i].city ?? ''}, ${c.recent[i].province ?? ''}, ${c.recent[i].country ?? ''}",
+                                            style: TextStyle(
+                                                fontSize: sw(12),
+                                                color: Colors.grey),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    SizedBox(width: sw(2)),
+                                    Text(
+                                      c.recent[i].eta ?? '',
+                                      style: TextStyle(
+                                          fontSize: sw(12),
+                                          color: Colors.black54),
+                                    ),
+                                    SizedBox(width: sw(8)),
+                                    Transform(
+                                      alignment: Alignment.center,
+                                      transform: Matrix4.rotationY(3.14), // flip horizontally
+                                      child: Icon(Icons.refresh_sharp,
+                                          color: FColors.black,
+                                          size: sw(32)),
+                                    ),
+                                  ],
                                 ),
-                                SizedBox(width: sw(8)),
-                                // const Text(
-                                //   "25 min",
-                                //   style: TextStyle(
-                                //     fontSize: 12,
-                                //     color: Colors.black54,
-                                //   ),
+                                // Row(
+                                //   children: [
+                                //     // Icon(Icons.near_me_sharp, size: sw(20)),
+                                //     Container(
+                                //       decoration: BoxDecoration(
+                                //         borderRadius:
+                                //         BorderRadius.circular(
+                                //             sw(6)),
+                                //         color:
+                                //         FColors.phoneInputField,
+                                //       ),
+                                //       height: sh(34),
+                                //       width: sw(34),
+                                //       padding: EdgeInsets.all(sw(2)),
+                                //       child: Icon(
+                                //         Icons.near_me_sharp,
+                                //         color: FColors.black,
+                                //       ),
+                                //     ),
+                                //     SizedBox(width: sw(12)),
+                                //     Expanded(
+                                //       child: Column(
+                                //         crossAxisAlignment: CrossAxisAlignment.start,
+                                //         children: [
+                                //           Text(
+                                //             c.recent[i].description,
+                                //             style: const TextStyle(
+                                //               fontWeight: FontWeight.w600,
+                                //             ),
+                                //           ),
+                                //           SizedBox(height: sh(2)),
+                                //           Text(
+                                //             "${c.recent[i].city ?? ''}, ${c.recent[i].province ?? ''}, ${c.recent[i].country ?? ''}",
+                                //             style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                //           ),
+                                //         ],
+                                //       ),
+                                //     ),
+                                //     SizedBox(width: sw(8)),
+                                //     Text(
+                                //       c.recent[i].eta ?? '',
+                                //       style: const TextStyle(fontSize: 12, color: Colors.black54),
+                                //     ),
+                                //     SizedBox(width: sw(8)),
+                                //     Icon(
+                                //       Icons.sync,
+                                //       size: sw(18),
+                                //       color: Colors.black54,
+                                //     ),
+                                //   ],
                                 // ),
-                                Text(
-                                  c.recent[i].eta ?? '',
-                                  style: const TextStyle(fontSize: 12, color: Colors.black54),
-                                ),
-                                SizedBox(width: sw(8)),
-                                Icon(
-                                  Icons.sync,
-                                  size: sw(18),
-                                  color: Colors.black54,
-                                ),
-                              ],
+                              ),
                             ),
-                          ),
+                            Divider(
+                              color: FColors.buttonDisabled,
+                              thickness: 2,
+                              height: sh(10),
+                            ),
+                          ],
                         ),
-
 
                       SizedBox(height: sh(28)),
                     ],
@@ -286,45 +393,22 @@ class DropOffScreen extends StatelessWidget {
               ),
             ),
 
-            /// Confirm button outside the scrollable Column
-            // Positioned(
-            //   top: sh(805),
-            //   left: sw(45),
-            //   child: ResponsiveButton(
-            //     text: "Confirm",
-            //     onPressed: c.confirmSelection,
-            //     backgroundColor: FColors.secondaryColor,
-            //     textColor: Colors.white,
-            //     sw: sw,
-            //     sh: sh,
-            //     baseWidth: baseWidth,
-            //     screenWidth: screenWidth,
-            //     width: sw(360),
-            //     height: sh(48),
-            //     borderRadius: sw(14),
-            //     textStyle: TextStyle(
-            //       fontWeight: FontWeight.w600,
-            //       fontSize: sh(16),
-            //       color: Colors.white,
-            //     ),
-            //   ),
-            // ),
-
+            /// Confirm button fixed at bottom
             Positioned(
-              left: 45,
-              right: 45,
-              bottom: 30,
+              left: sw(45),
+              right: sw(45),
+              bottom: sh(30),
               child: SizedBox(
-                height: 48,
+                height: sh(48),
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: FColors.secondaryColor,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(sw(14)),
                     ),
                   ),
                   onPressed: c.confirmSelection,
-                  child: Text("Confirm", style: FTextTheme.darkTextTheme.labelLarge,),
+                  child: Text("Done", style: FTextTheme.darkTextTheme.labelLarge),
                 ),
               ),
             ),

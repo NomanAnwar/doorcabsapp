@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 class ResponsiveButton extends StatelessWidget {
-  final String text;
-  final VoidCallback onPressed;
+  final String? text;
+  final VoidCallback? onPressed;
   final Color backgroundColor;
   final Color textColor;
   final double width;
@@ -10,9 +10,10 @@ class ResponsiveButton extends StatelessWidget {
   final double borderRadius;
   final TextStyle? textStyle;
   final IconData? icon;
-  final String? assetIcon; // <-- to support asset icons like PNGs
+  final String? assetIcon;
   final Color? iconColor;
   final double? iconSize;
+  final Widget? child; // 👈 new for custom UI (spinner, etc.)
 
   /// Screen scale functions
   final double Function(double w) sw;
@@ -22,7 +23,7 @@ class ResponsiveButton extends StatelessWidget {
 
   const ResponsiveButton({
     super.key,
-    required this.text,
+    this.text,
     required this.onPressed,
     required this.sw,
     required this.sh,
@@ -38,6 +39,7 @@ class ResponsiveButton extends StatelessWidget {
     this.assetIcon,
     this.iconColor,
     this.iconSize,
+    this.child,
   });
 
   @override
@@ -45,31 +47,8 @@ class ResponsiveButton extends StatelessWidget {
     return SizedBox(
       width: sw(width),
       height: sh(height),
-      child: ElevatedButton.icon(
+      child: ElevatedButton(
         onPressed: onPressed,
-        icon: assetIcon != null
-            ? Image.asset(
-          assetIcon!,
-          width: sw(24),
-          height: sh(24),
-          color: iconColor,
-        )
-            : (icon != null
-            ? Icon(
-          icon,
-          size: iconSize ?? sw(20),
-          color: iconColor ?? textColor,
-        )
-            : const SizedBox.shrink()),
-        label: Text(
-          text,
-          style: textStyle ??
-              TextStyle(
-                color: textColor,
-                fontWeight: FontWeight.w600,
-                fontSize: 16 * screenWidth / baseWidth, // responsive font size
-              ),
-        ),
         style: ElevatedButton.styleFrom(
           backgroundColor: backgroundColor,
           foregroundColor: textColor,
@@ -77,6 +56,37 @@ class ResponsiveButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(sw(borderRadius)),
           ),
         ),
+        child: child ??
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (assetIcon != null)
+                  Image.asset(
+                    assetIcon!,
+                    width: sw(24),
+                    height: sh(24),
+                    color: iconColor,
+                  )
+                else if (icon != null)
+                  Icon(
+                    icon,
+                    size: iconSize ?? sw(20),
+                    color: iconColor ?? textColor,
+                  ),
+                if (assetIcon != null || icon != null) SizedBox(width: sw(8)),
+                if (text != null)
+                  Text(
+                    text!,
+                    style: textStyle ??
+                        TextStyle(
+                          color: textColor,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16 * screenWidth / baseWidth,
+                        ),
+                  ),
+              ],
+            ),
       ),
     );
   }

@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -211,7 +212,17 @@ class AvailableBidsScreen extends StatelessWidget {
             left: 24,
             child: CircleAvatar(
               radius: 32,
-              backgroundImage: AssetImage(bid['avatar']),
+              backgroundColor: Colors.grey.shade200,
+              child: ClipOval(
+                child: CachedNetworkImage(
+                  imageUrl: bid['driver']['profileImage'] ?? "",
+                  fit: BoxFit.cover,
+                  width: 64,
+                  height: 64,
+                  placeholder: (_, __) => Image.asset("assets/images/profile_img_sample.png"),
+                  errorWidget: (_, __, ___) => Image.asset("assets/images/profile_img_sample.png"),
+                ),
+              ),
             ),
           ),
 
@@ -232,7 +243,10 @@ class AvailableBidsScreen extends StatelessWidget {
             top: 99, // 187 - 88
             left: 42,
             child: Text(
-              bid['rating'].toString(),
+              (bid['driver']['avgRating'] == null || bid['driver']['avgRating'].toString().isEmpty)
+                  ? '0'
+                  : bid['driver']['avgRating'].toString(),
+              // bid['rating'].toString(),
               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
             ),
           ),
@@ -240,7 +254,10 @@ class AvailableBidsScreen extends StatelessWidget {
             top: 99,
             left: 62,
             child: Text(
-              "(${bid['totalRatings']})",
+              (bid['driver']?['total_ratings'] == null || bid['driver']['total_ratings'].toString().isEmpty)
+                  ? '(0)'
+                  : "(${bid['driver']['total_ratings']})",
+              // "(${bid['totalRatings']})",
               style: const TextStyle(fontSize: 12, color: Colors.grey),
             ),
           ),
@@ -250,7 +267,8 @@ class AvailableBidsScreen extends StatelessWidget {
             top: 111, // 199 - 88
             left: 23,
             child: Text(
-              bid['category'],
+              bid['driver']['category'],
+              // bid['category'],
               style: const TextStyle(fontSize: 12, color: Colors.grey),
             ),
           ),
@@ -260,7 +278,8 @@ class AvailableBidsScreen extends StatelessWidget {
             top: 23, // 111 - 88
             left: 104,
             child: Text(
-              bid['name'],
+                "${bid['driver']?['name']?['firstName'] ?? ''} ${bid['driver']?['name']?['lastName'] ?? ''}",
+                // "name",
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
           ),
@@ -270,7 +289,8 @@ class AvailableBidsScreen extends StatelessWidget {
             top: 46, // 134 - 88
             left: 104,
             child: Text(
-              bid['car'],
+              "${bid['driver']?['vehicleType'] ?? ''}, ${bid['driver']?['vehicle'] ?? ''}",
+              // bid['car'],
               style: const TextStyle(color: Colors.grey, fontSize: 14),
             ),
           ),
@@ -280,7 +300,7 @@ class AvailableBidsScreen extends StatelessWidget {
             top: 98, // 186 - 88
             left: 110,
             child: Text(
-              "PKR ${bid['fare']}",
+              "PKR ${bid['fareOffered']}",
               style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
             ),
           ),
@@ -289,30 +309,36 @@ class AvailableBidsScreen extends StatelessWidget {
           PositionedScaled(
             top: 12, // 100 - 88
             right: 66,
-            child: Text("${bid['eta']} min"),
+            child: Text("${bid['eta'] ?? ''}"),
+            // child: Text("${bid['eta']} min"),
           ),
           PositionedScaled(
             top: 12,
             right: 15,
-            child: Text("${bid['distance']} km"),
+            child: Text("${bid['distance'] ?? ''}"),
+            // child: Text("${bid['distance']} km"),
           ),
 
           /// Accept button
           PositionedScaled(
             top: 34, // 122 - 88
             right: 20,
-            width: 80,
+            width: 120,
             height: 30,
-            child: Obx(() {
-              final progress = bid['progress'].value as double;
-              return ElevatedButton(
+            child:
+            // Obx(() {
+              // final progress = bid['progress'].value as double;
+              // return
+                ElevatedButton(
                 onPressed: () => c.acceptBid(bid),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: FColors.secondaryColor.withOpacity(0.1 + 0.9 * progress),
+                  backgroundColor: FColors.secondaryColor,
+                  // backgroundColor: FColors.secondaryColor.withOpacity(0.1 + 0.9 * progress),
                 ),
                 child: const Text("Accept"),
-              );
-            }),
+              ),
+            // ;
+            // }),
           ),
 
           /// Reject button

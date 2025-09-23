@@ -2,7 +2,7 @@
 class SignUpResponse {
   final String message;
   final String userId;
-  final String phoneNo; // ✅ added
+  final String phoneNo; //  added
 
   SignUpResponse({
     required this.message,

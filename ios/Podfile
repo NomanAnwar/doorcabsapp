@@ -31,7 +31,7 @@ target 'Runner' do
   # Install Flutter dependencies
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
 
-
+  pod 'PushNotifications', '~> 4.0'
 
   target 'RunnerTests' do
     inherit! :search_paths

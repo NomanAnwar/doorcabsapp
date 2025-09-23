@@ -31,7 +31,7 @@ class GettingStartedController extends GetxController {
 
       final language = StorageService.getLanguage();
 
-      // ✅ prepend country code
+      //  prepend country code
       String formattedPhone = phoneNumber.value;
       if (!formattedPhone.startsWith('+')) {
         formattedPhone = '+92${formattedPhone.replaceAll(RegExp(r'^0+'), '')}';
@@ -49,7 +49,7 @@ class GettingStartedController extends GetxController {
 
       print("Sign Up API Response : $response");
       if (response["userId"] != null) {
-        /// ✅ inject phone number
+        ///  inject phone number
         final signUpResponse = SignUpResponse.fromJson({
           ...response,
           "phone_no": formattedPhone,
@@ -58,7 +58,7 @@ class GettingStartedController extends GetxController {
         await StorageService.saveSignUpResponse(signUpResponse);
         this.signUpResponse.value = signUpResponse;
 
-        Get.offAllNamed(
+        Get.toNamed(
           '/otp',
           arguments: {
             "phone": formattedPhone,

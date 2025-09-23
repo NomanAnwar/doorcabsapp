@@ -32,7 +32,7 @@ class ReferralController extends GetxController {
 
       final data = ReferralModel.fromJson(response);
 
-      // ✅ mark referral step complete
+      //  mark referral step complete
       StorageService.setDriverStep("referral", true);
 
       FSnackbar.show(

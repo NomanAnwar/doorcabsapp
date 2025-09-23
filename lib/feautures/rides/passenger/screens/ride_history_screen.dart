@@ -1,8 +1,6 @@
 import 'package:doorcab/utils/constants/image_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../../common/widgets/positioned/positioned_scaled.dart';
-import '../../../../utils/constants/colors.dart';
 import '../../../../utils/theme/custom_theme/text_theme.dart';
 import '../controllers/ride_history_controller.dart';
 

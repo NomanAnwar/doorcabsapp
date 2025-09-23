@@ -28,100 +28,105 @@ class WelcomeScreen extends StatelessWidget {
       body: Container(
         width: screenWidth,
         decoration: const BoxDecoration(color: FColors.primaryColor),
-        child: Stack(
-          children: [
-            /// Logo
-            Positioned(
-              top: sh(160),
-              left: sw(128),
-              child: Image.asset(
-                FImages.logo,
-                width: sw(183),
-                height: sh(114),
-              ),
-            ),
+        child: SingleChildScrollView(
+          child: SizedBox(
+            height: screenHeight, // Ensure the scroll view takes full height
+            child: Stack(
+              children: [
+                /// Logo
+                Positioned(
+                  top: sh(160),
+                  left: sw(128),
+                  child: Image.asset(
+                    FImages.logo,
+                    width: sw(183),
+                    height: sh(114),
+                  ),
+                ),
 
-            /// Language Dropdown
-            Positioned(
-              top: sh(329),
-              left: sw(121),
-              child: Obx(() {
-                if (controller.isLoading.value) {
-                  return Padding(
-                    padding: const EdgeInsets.only(left: 70),
-                    child: CircularProgressIndicator(color: Colors.white),
-                  );
-                }
+                /// Language Dropdown
+                Positioned(
+                  top: sh(329),
+                  left: sw(121),
+                  child: Obx(() {
+                    if (controller.isLoading.value) {
+                      return Padding(
+                        padding: const EdgeInsets.only(left: 70),
+                        child: CircularProgressIndicator(color: Colors.white),
+                      );
+                    }
 
-                if (controller.languages.isEmpty) {
-                  return const Text(
-                    "No languages found",
-                    style: TextStyle(color: Colors.white),
-                  );
-                }
+                    if (controller.languages.isEmpty) {
+                      return const Text(
+                        "No languages found",
+                        style: TextStyle(color: Colors.white),
+                      );
+                    }
 
-                return SizedBox(
-                  width: sw(197),
-                  child: FDropdown(
-                    value: controller.selectedLanguage.value?.language,
-                    items: controller.languages
-                        .map((lang) => {
-                      "lang": lang.language,
-                      "flag": lang.flag,
-                    })
-                        .toList(),
-                    width: sw(197),
-                    backgroundColor: FColors.white,
-                    onChanged: (val) {
-                      final selected = controller.languages
-                          .firstWhere((l) => l.language == val);
-                      controller.selectLanguage(selected);
+                    return SizedBox(
+                      width: sw(197),
+                      child: FDropdown(
+                        value: controller.selectedLanguage.value?.language,
+                        items: controller.languages
+                            .map((lang) => {
+                          "lang": lang.language,
+                          "flag": lang.flag,
+                        })
+                            .toList(),
+                        width: sw(197),
+                        backgroundColor: FColors.white,
+                        onChanged: (val) {
+                          final selected = controller.languages
+                              .firstWhere((l) => l.language == val);
+                          controller.selectLanguage(selected);
+                        },
+                      ),
+                    );
+                  }),
+                ),
+
+                /// Driver Button
+                Positioned(
+                  top: sh(445),
+                  left: sw(150),
+                  child: FElevatedButton(
+                    text: FTextStrings.driver.toUpperCase(),
+                    width: sw(140),
+                    onPressed: () {
+                      controller.selectRole(FTextStrings.driver);
+                      controller.saveAndContinue();
                     },
                   ),
-                );
-              }),
-            ),
+                ),
 
-            /// Driver Button
-            Positioned(
-              top: sh(445),
-              left: sw(150),
-              child: FElevatedButton(
-                text: FTextStrings.driver.toUpperCase(),
-                width: sw(140),
-                onPressed: () {
-                  controller.selectRole(FTextStrings.driver);
-                  controller.saveAndContinue();
-                },
-              ),
-            ),
+                /// Passenger Button
+                Positioned(
+                  top: sh(535),
+                  left: sw(128),
+                  child: FElevatedButton(
+                    text: FTextStrings.passenger.toUpperCase(),
+                    width: sw(185),
+                    onPressed: () {
+                      controller.selectRole(FTextStrings.passenger);
+                      controller.saveAndContinue();
+                    },
+                  ),
+                ),
 
-            /// Passenger Button
-            Positioned(
-              top: sh(535),
-              left: sw(128),
-              child: FElevatedButton(
-                text: FTextStrings.passenger.toUpperCase(),
-                width: sw(185),
-                onPressed: () {
-                  controller.selectRole(FTextStrings.passenger);
-                  controller.saveAndContinue();
-                },
-              ),
+                /// Bottom BG Image
+                Positioned(
+                  top: sh(630),
+                  left: 0,
+                  right: 0,
+                  child: Image.asset(
+                    FImages.splash_bg_down,
+                    width: screenWidth,
+                    fit: BoxFit.fitWidth,
+                  ),
+                ),
+              ],
             ),
-
-            /// Bottom BG Image
-            Positioned(
-              top: sh(630),
-              left: 0,
-              right: 0,
-              child: Image.asset(
-                FImages.splash_bg_down,
-                width: screenWidth,
-                fit: BoxFit.fitWidth,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

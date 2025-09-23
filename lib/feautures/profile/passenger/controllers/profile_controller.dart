@@ -1,4 +1,3 @@
-// lib/features/profile/controllers/profile_controller.dart
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -23,7 +22,7 @@ class ProfileController extends GetxController {
   final isLoading = false.obs;
 
   /// Image handling
-  final profileImage = Rx<File?>(null); // ✅ used directly in UI
+  final profileImage = Rx<File?>(null); //  used directly in UI
   final base64Image = ''.obs;
   final _picker = ImagePicker();
 
