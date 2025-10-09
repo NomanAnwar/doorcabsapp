@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:doorcab/feautures/shared/services/storage_service.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
 import 'package:workmanager/workmanager.dart';
 import '../../../utils/http/http_client.dart';
 
@@ -14,7 +13,10 @@ class DriverLocationService {
   bool _isOnline = false;
   Timer? _foregroundTimer;
 
-  /// Called once at app startup
+  // 🔄 Optional pause flag (to stop sending when offline but keep service alive)
+  bool _isPaused = false;
+
+  /// Called once at app startup (main.dart)
   Future<void> configure() async {
     // Request location permissions
     LocationPermission permission = await Geolocator.checkPermission();
@@ -26,16 +28,16 @@ class DriverLocationService {
       throw Exception("⚠️ Location permissions are permanently denied");
     }
 
-    // Init background worker
+    // ✅ Init background worker
     await Workmanager().initialize(
       _callbackDispatcher,
       isInDebugMode: true,
     );
   }
 
-  /// Foreground + Background start
+  /// Start foreground + background tracking
   Future<void> start() async {
-    if (_isOnline) return;
+    if (_isOnline) return; // already running
     _isOnline = true;
 
     // Foreground real-time updates (every 5s)
@@ -43,18 +45,19 @@ class DriverLocationService {
       await _sendCurrentLocation();
     });
 
-    // Background updates (15 minutes min interval)
+    // Background updates (every 15 minutes)
     await Workmanager().registerPeriodicTask(
       "driverLocationTask",
       "sendDriverLocation",
       frequency: const Duration(minutes: 15),
-      existingWorkPolicy: ExistingPeriodicWorkPolicy.replace, // <-- FIXED
+      existingWorkPolicy: ExistingPeriodicWorkPolicy.replace, // ✅ FIX
     );
 
     print("▶️ DriverLocationService started (5s foreground, 15m background)");
   }
 
   /// Stop both foreground + background tracking
+  /// ❌ You commented this out in toggleOnline — so service runs until app exit
   Future<void> stop() async {
     _isOnline = false;
     _foregroundTimer?.cancel();
@@ -64,11 +67,26 @@ class DriverLocationService {
     print("🛑 DriverLocationService stopped");
   }
 
+  // 🔄 Optional pause/resume control (if you want to stop sending while offline)
+
+  void pause() {
+    _isPaused = true;
+    print("⏸️ DriverLocationService paused (no location sent, still running)");
+  }
+
+  void resume() {
+    _isPaused = false;
+    print("▶️ DriverLocationService resumed");
+  }
+
   bool get isRunning => _isOnline;
 
   /// Internal — send current position to server
   Future<void> _sendCurrentLocation() async {
     try {
+      // 🔄 Skip if paused
+      // if (_isPaused) return;
+
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
@@ -80,11 +98,11 @@ class DriverLocationService {
 
       final token = StorageService.getAuthToken();
       if (token == null) {
-        Get.snackbar("Error", "User token not found. Please login again.");
+        print("Error" + "User token not found. Please login again.");
+        return; // ✅ prevent crash
       }
 
-      FHttpHelper.setAuthToken(token!, useBearer: true);
-
+      FHttpHelper.setAuthToken(token, useBearer: true);
 
       await FHttpHelper.post("driver/redis-drivers", body);
       print("📍 Location sent: $body");

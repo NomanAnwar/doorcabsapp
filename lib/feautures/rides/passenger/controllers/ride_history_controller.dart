@@ -12,7 +12,7 @@ class RideHistoryController extends GetxController {
       return {
         'id': i,
         'title': i % 2 == 0 ? 'Door Comfort' : 'Door Bike',
-        'time': '11:${(i+1).toString().padLeft(2, '0')} PM',
+        'time': '11:${(i + 1).toString().padLeft(2, '0')} PM',
         'date': 'Sunday, August ${10 - i}',
         'fare': fare,
         'status': i % 3 == 0 ? 'Canceled' : 'Completed',
@@ -30,6 +30,12 @@ class RideHistoryController extends GetxController {
           fare: fare,
           pickup: 'Model Town Link Rd Zainab Tower',
           dropoff: 'Township, Lahore',
+
+          // ✅ New required fields (dummy coordinates for now)
+          pickupLat: 31.5204,
+          pickupLng: 74.3587,
+          dropoffLat: 31.4500,
+          dropoffLng: 74.4000,
         ).toMap(),
       };
     }));

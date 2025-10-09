@@ -5,19 +5,17 @@ import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geocoding/geocoding.dart' as geo;
 import 'package:geolocator/geolocator.dart';
+import '../../../shared/controllers/base_controller.dart'; // ✅ ADDED
 
-class MapSelectionController extends GetxController {
+class MapSelectionController extends BaseController { // ✅ CHANGED: Extend BaseController
   final mapCtrl = Completer<GoogleMapController>();
-
-  // ❌ Old code (always shows Karachi first)
-  // final center = const LatLng(24.8607, 67.0011).obs; // fallback (Karachi)
 
   // ✅ Fix: start with a dummy point (0,0) and update once location is ready
   final center = const LatLng(0, 0).obs;
 
   final address = ''.obs;
   final activeField = 'dropoff'.obs;
-  final isLoading = true.obs; // 🔥 for spinner
+  final isLoadingLocation = false.obs; // 🔥 for spinner
 
   BitmapDescriptor? _markerIcon;
 
@@ -32,87 +30,97 @@ class MapSelectionController extends GetxController {
 
   // ✅ marker loader (same as RideHomeScreen)
   Future<void> _loadMarkerIcon() async {
-    final data = await rootBundle.load("assets/icons/ic_current_marker.png");
-    final codec = await ui.instantiateImageCodec(
-      data.buffer.asUint8List(),
-      targetWidth: 100, // adjust size as needed
-    );
-    final fi = await codec.getNextFrame();
-    final bytes = await fi.image.toByteData(format: ui.ImageByteFormat.png);
-    _markerIcon = BitmapDescriptor.fromBytes(bytes!.buffer.asUint8List());
+    try {
+      await executeWithRetry(() async {
+        final data = await rootBundle.load("assets/images/position_marker.png");
+        final codec = await ui.instantiateImageCodec(
+          data.buffer.asUint8List(),
+          targetWidth: 100, // adjust size as needed
+        );
+        final fi = await codec.getNextFrame();
+        final bytes = await fi.image.toByteData(format: ui.ImageByteFormat.png);
+        _markerIcon = BitmapDescriptor.fromBytes(bytes!.buffer.asUint8List());
+      });
+    } catch (e) {
+      print('❌ Error loading marker icon: $e');
+      _markerIcon = BitmapDescriptor.defaultMarker;
+    }
   }
 
   BitmapDescriptor get markerIcon =>
       _markerIcon ?? BitmapDescriptor.defaultMarker;
 
-  // ✅ method to recenter to user’s location
+  // ✅ method to recenter to user's location
   Future<void> recenter() async {
     try {
-      final pos = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
-      final userLatLng = LatLng(pos.latitude, pos.longitude);
-      center.value = userLatLng;
+      await executeWithRetry(() async {
+        final pos = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high,
+        );
+        final userLatLng = LatLng(pos.latitude, pos.longitude);
+        center.value = userLatLng;
 
-      if (mapCtrl.isCompleted) {
-        final ctrl = await mapCtrl.future;
-        ctrl.animateCamera(CameraUpdate.newLatLngZoom(userLatLng, 15));
-      }
+        if (mapCtrl.isCompleted) {
+          final ctrl = await mapCtrl.future;
+          ctrl.animateCamera(CameraUpdate.newLatLngZoom(userLatLng, 15));
+        }
+      });
     } catch (e) {
       print("Error recentering: $e");
+      showError('Failed to get current location');
     }
   }
 
   Future<void> _initUserLocation() async {
     try {
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) {
-        permission = await Geolocator.requestPermission();
+      isLoadingLocation(true);
+
+      await executeWithRetry(() async {
+        LocationPermission permission = await Geolocator.checkPermission();
         if (permission == LocationPermission.denied ||
             permission == LocationPermission.deniedForever) {
-          // ❌ Old fallback instantly
-          // isLoading.value = false;
-          // return; // fallback (Karachi)
-
-          // ✅ Fix: fallback to Karachi only if denied
-          center.value = const LatLng(24.8607, 67.0011);
-          isLoading.value = false;
-          return;
+          permission = await Geolocator.requestPermission();
+          if (permission == LocationPermission.denied ||
+              permission == LocationPermission.deniedForever) {
+            // ✅ Fix: fallback to Karachi only if denied
+            center.value = const LatLng(24.8607, 67.0011);
+            isLoadingLocation.value = false;
+            return;
+          }
         }
-      }
 
-      final pos = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
-      final userLatLng = LatLng(pos.latitude, pos.longitude);
+        final pos = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high,
+        );
+        final userLatLng = LatLng(pos.latitude, pos.longitude);
 
-      center.value = userLatLng;
+        center.value = userLatLng;
 
-      if (mapCtrl.isCompleted) {
-        final controller = await mapCtrl.future;
-        controller.animateCamera(CameraUpdate.newLatLngZoom(userLatLng, 15));
-      }
+        if (mapCtrl.isCompleted) {
+          final controller = await mapCtrl.future;
+          controller.animateCamera(CameraUpdate.newLatLngZoom(userLatLng, 15));
+        }
 
-      final placemarks = await geo.placemarkFromCoordinates(
-        userLatLng.latitude,
-        userLatLng.longitude,
-      );
-      if (placemarks.isNotEmpty) {
-        final p = placemarks.first;
-        final name = [p.name, p.locality, p.administrativeArea]
-            .where((e) => (e ?? '').toString().trim().isNotEmpty)
-            .join(', ');
-        address.value = name.isEmpty ? "Selected location" : name;
-      }
-
-      isLoading.value = false; // ✅ only ready when user location loaded
+        final placemarks = await geo.placemarkFromCoordinates(
+          userLatLng.latitude,
+          userLatLng.longitude,
+        );
+        if (placemarks.isNotEmpty) {
+          final p = placemarks.first;
+          final name = [p.name, p.locality, p.administrativeArea]
+              .where((e) => (e ?? '').toString().trim().isNotEmpty)
+              .join(', ');
+          address.value = name.isEmpty ? "Selected location" : name;
+        }
+      });
     } catch (e) {
       print("Error getting user location: $e");
+      showError('Failed to get your location');
 
       // ✅ fallback to Karachi if error
       center.value = const LatLng(24.8607, 67.0011);
-      isLoading.value = false;
+    } finally {
+      isLoadingLocation.value = false;
     }
   }
 
@@ -124,19 +132,21 @@ class MapSelectionController extends GetxController {
 
   Future<void> onCameraIdle() async {
     try {
-      final placemarks = await geo.placemarkFromCoordinates(
-        center.value.latitude,
-        center.value.longitude,
-      );
-      if (placemarks.isNotEmpty) {
-        final p = placemarks.first;
-        final name = [p.name, p.locality, p.administrativeArea]
-            .where((e) => (e ?? '').toString().trim().isNotEmpty)
-            .join(', ');
-        address.value = name.isEmpty ? "Selected location" : name;
-      } else {
-        address.value = "Selected location";
-      }
+      await executeWithRetry(() async {
+        final placemarks = await geo.placemarkFromCoordinates(
+          center.value.latitude,
+          center.value.longitude,
+        );
+        if (placemarks.isNotEmpty) {
+          final p = placemarks.first;
+          final name = [p.name, p.locality, p.administrativeArea]
+              .where((e) => (e ?? '').toString().trim().isNotEmpty)
+              .join(', ');
+          address.value = name.isEmpty ? "Selected location" : name;
+        } else {
+          address.value = "Selected location";
+        }
+      });
     } catch (_) {
       address.value = "Selected location";
     }

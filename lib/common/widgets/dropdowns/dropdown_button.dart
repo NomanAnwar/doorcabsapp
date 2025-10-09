@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import '../../../utils/constants/colors.dart';
 import '../../../utils/theme/custom_theme/text_theme.dart';
 
 class FDropdown extends StatelessWidget {
@@ -62,13 +63,16 @@ class FDropdown extends StatelessWidget {
                 _buildFlag(item["flag"] ?? "", screenWidth, screenHeight),
                 SizedBox(width: sw(8)),
                 ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: finalWidth - sw(50)),
+                  constraints: BoxConstraints(maxWidth: finalWidth - sw(20)),
                   child: Text(
                     item["lang"].toString().toUpperCase() ?? "",
                     style: FTextTheme.lightTextTheme.headlineMedium!.copyWith(
+                      fontSize: FTextTheme
+                          .lightTextTheme.headlineMedium!.fontSize! *
+                          screenWidth /
+                          baseWidth,
                       overflow: TextOverflow.ellipsis,
                       height: 1,
-                      fontSize: sw(20),
                     ),
                   ),
                 ),
@@ -81,9 +85,9 @@ class FDropdown extends StatelessWidget {
           Icons.arrow_drop_down_rounded, // you can change to any icon
           // size: 32,                   // make it bigger
           weight: 900,                // bold (works in Flutter 3.7+ with MaterialSymbols)
-          color: Colors.black,        // change color
+          color: FColors.black,        // change color
         ),
-        iconSize: 32, // fallback if using default
+        iconSize: sw(32), // fallback if using default
       ),
     );
   }

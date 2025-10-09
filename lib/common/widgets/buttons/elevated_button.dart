@@ -26,7 +26,7 @@ class FElevatedButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: onPressed,
         style: FElevatedButtonTheme.lightElevatedButtonTheme.style,
-        child: Text(text, style: FTextTheme.darkTextTheme.headlineMedium!.copyWith(),),
+        child: Text(text, style: FTextTheme.darkTextTheme.titleMedium!.copyWith(),),
       ),
     );
   }

@@ -12,7 +12,7 @@ import '../../../../utils/http/http_client.dart';
 import '../../../shared/models/place_suggestion.dart';
 import '../../../shared/services/storage_service.dart';
 import '../models/city_model.dart';
-import '../models/ride_type.dart';
+import '../models/ride_type_model.dart';
 import '../models/vehicle_model.dart';
 
 class RideHomeController extends GetxController {
@@ -21,7 +21,7 @@ class RideHomeController extends GetxController {
   final markers = <Marker>{}.obs;
 
   /// Ride types shown in the UI (these are the simplified UI items)
-  final rideTypes = <RideType>[].obs;
+  final rideTypes = <RideTypeModel>[].obs;
 
   /// Full vehicle models returned from API (contains fareValue etc.)
   final vehicleModels = <VehicleModel>[].obs;
@@ -102,17 +102,9 @@ class RideHomeController extends GetxController {
       // ✅ Fix: clear old markers before adding a fresh one
       markers.clear();
 
-      // ❌ OLD CODE (commented) - kept for reference
-      // final customIcon = await BitmapDescriptor.fromAssetImage(
-      //   const ImageConfiguration(size: Size(48, 48)),
-      //   "assets/images/position_marker.png",
-      // );
-
-      // ✅ NEW CODE: create resized marker bytes (keeps icon visible above the default blue dot and appropriately sized)
-      // You can switch assetPath to "assets/images/position_marker2.png" if you want that variant.
       final customIcon = await _getResizedMarker(
-        "assets/images/position_marker.png", // <- use position_marker2.png to try the other asset
-        120, // target pixel width for the marker image (adjust if you need bigger/smaller)
+        "assets/images/position_marker.png",
+        120,
       );
 
       markers.add(
@@ -190,11 +182,16 @@ class RideHomeController extends GetxController {
   Future<void> openDropoff() async {
     final result = await Get.toNamed(
       '/dropoff',
-      arguments: {'pickup': pickupText.value, 'dropoff': dropoffText.value},
+      arguments: {'pickup': pickupText.value, 'pickupLatLng': currentPosition.value, 'dropoff': dropoffText.value},
     );
     if (result is Map) {
       pickupText.value = result['pickup'] ?? pickupText.value;
       dropoffText.value = result['dropoff'] ?? dropoffText.value;
+
+      if (result['pickupLatLng'] is LatLng) {
+        currentPosition.value = result['pickupLatLng'];
+      }
+
       _loadRecents();
     }
   }
@@ -205,12 +202,19 @@ class RideHomeController extends GetxController {
       arguments: {
         'activeField': 'pickup',
         'pickup': pickupText.value,
+        'pickupLatLng': currentPosition.value,
         'dropoff': dropoffText.value,
       },
     );
     if (result is Map) {
       pickupText.value = result['pickup'] ?? pickupText.value;
       dropoffText.value = result['dropoff'] ?? dropoffText.value;
+
+      // ✅ also update LatLng if returned
+      if (result['pickupLatLng'] is LatLng) {
+        currentPosition.value = result['pickupLatLng'];
+      }
+
       _loadRecents();
     }
   }
@@ -219,12 +223,18 @@ class RideHomeController extends GetxController {
   void selectRecent(PlaceSuggestion s) async {
     final result = await Get.toNamed(
       '/dropoff',
-      arguments: {'pickup': pickupText.value, 'dropoff': s.description},
+      arguments: {'pickup': pickupText.value, 'pickupLatLng': currentPosition.value, 'dropoff': s.description},
     );
+
 
     if (result is Map) {
       pickupText.value = result['pickup'] ?? pickupText.value;
       dropoffText.value = result['dropoff'] ?? dropoffText.value;
+
+      if (result['pickupLatLng'] is LatLng) {
+        currentPosition.value = result['pickupLatLng'];
+      }
+
       _loadRecents();
     }
   }
@@ -239,7 +249,7 @@ class RideHomeController extends GetxController {
       cached.map((m) {
         final name = (m['name'] ?? '').toString();
         final icon = (m['iconBase64'] ?? '').toString();
-        return RideType(
+        return RideTypeModel(
           name,
           icon.isNotEmpty ? icon : FImages.ride_ac,
           isBase64: icon.isNotEmpty,
@@ -325,7 +335,7 @@ class RideHomeController extends GetxController {
         apiSimple.map((m) {
           final name = (m['name'] ?? '').toString();
           final icon = (m['iconBase64'] ?? '').toString();
-          return RideType(
+          return RideTypeModel(
             name,
             icon.isNotEmpty ? icon : FImages.ride_ac,
             isBase64: icon.isNotEmpty,

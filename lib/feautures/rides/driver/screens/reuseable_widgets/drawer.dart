@@ -67,3 +67,87 @@ class DriverDrawer extends StatelessWidget {
     );
   }
 }
+
+class PassengerDrawer extends StatelessWidget {
+  const PassengerDrawer({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    const baseWidth = 440.0;
+    double sw(double w) => w * screenWidth / baseWidth;
+
+    return Drawer(
+      width: sw(320),
+      backgroundColor: Colors.white,
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(height: sw(20)),
+            // Header section (profile)
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: sw(20)),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: sw(36),
+                    backgroundColor: Colors.grey[300],
+                    child: Icon(Icons.person, size: sw(40), color: Colors.grey[600]),
+                  ),
+                  SizedBox(width: sw(15)),
+                  Text(
+                    'Passenger Name',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: sw(16)),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: sw(30)),
+
+            // Menu Items
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children: [
+                  _drawerItem(Icons.home, 'Home', () => Get.back(), sw),
+                  _drawerItem(Icons.home, 'Ride Type', () => Get.offNamed('/ride-type'), sw),
+                  _drawerItem(Icons.history, 'Ride History', () {}, sw),
+                  _drawerItem(Icons.payment, 'Payments', () {}, sw),
+                  _drawerItem(Icons.favorite, 'Saved Locations', () {}, sw),
+                  _drawerItem(Icons.support, 'Support', () {}, sw),
+                ],
+              ),
+            ),
+
+            // Logout at bottom
+            Padding(
+              padding: EdgeInsets.all(sw(20)),
+              child: _drawerItem(Icons.logout, 'Logout', () {}, sw, isLogout: true),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _drawerItem(
+      IconData icon,
+      String title,
+      VoidCallback onTap,
+      double Function(double) sw, {
+        bool isLogout = false,
+      }) {
+    return ListTile(
+      leading: Icon(icon, size: sw(24), color: isLogout ? Colors.red : Colors.black),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontSize: sw(16),
+          color: isLogout ? Colors.red : Colors.black,
+        ),
+      ),
+      onTap: onTap,
+    );
+  }
+}

@@ -1,4 +1,3 @@
-// lib/features/profile_completion/controllers/upload_registration_controller.dart
 import 'dart:io';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
@@ -71,7 +70,7 @@ class UploadRegistrationController extends GetxController {
       StorageService.setDriverStep("registration", true); // signal that registration uploaded (vehicle step relies on this)
       Get.snackbar("Success", response["message"] ?? "Registration uploaded");
       // go back to vehicle info screen
-      Get.offAllNamed('/upload-vehicle-info'); // adjust route if you used a different route name
+      Get.offNamed('/upload-vehicle-info'); // adjust route if you used a different route name
     } catch (e) {
       Get.snackbar("Error", e.toString());
     } finally {

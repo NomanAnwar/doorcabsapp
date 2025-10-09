@@ -36,19 +36,23 @@ class RequestModel {
   // ---------- JSON Factory ----------
   factory RequestModel.fromJson(Map<String, dynamic> json) {
     return RequestModel(
-      id: json['id'] ?? '',
-      passengerName: json['passengerName'],
-      passengerImage: json['passengerImage'],
-      rating: (json['rating'] as num).toDouble(),
-      pickupAddress: LocationPoint.fromJson(json['pickupAddress']),
-      dropoffAddress: (json['dropoffAddress'] as List)
-          .map((e) => DropoffPoint.fromJson(e))
-          .toList(),
-      phone: json['phone'],
-      etaMinutes: json['etaMinutes'],
-      distanceKm: (json['distanceKm'] as num).toDouble(),
-      offerAmount: (json['offerAmount'] as num).toDouble(),
-      createdAt: DateTime.fromMillisecondsSinceEpoch(json['createdAt']),
+      id: json['rideId']?.toString() ?? json['id']?.toString() ?? '',
+      passengerName: json['passengerName']?.toString() ?? 'Unknown Passenger',
+      passengerImage: json['passengerImage']?.toString() ?? '',
+      rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
+      pickupAddress: LocationPoint.fromJson(json['pickupAddress'] ?? {}),
+      dropoffAddress: (json['dropoffAddress'] is List)
+          ? (json['dropoffAddress'] as List)
+          .map((e) => DropoffPoint.fromJson(e ?? {}))
+          .toList()
+          : [],
+      phone: json['phone']?.toString() ?? '',
+      etaMinutes: (json['etaMinutes'] as int?) ?? 0,
+      distanceKm: (json['distanceKm'] as num?)?.toDouble() ?? 0.0,
+      offerAmount: (json['offerAmount'] as num?)?.toDouble() ?? 0.0,
+      createdAt: (json['createdAt'] is int)
+          ? DateTime.fromMillisecondsSinceEpoch(json['createdAt'])
+          : DateTime.now(),
     );
   }
 
@@ -113,7 +117,7 @@ class DropoffPoint extends LocationPoint {
       lat: (json['lat'] as num).toDouble(),
       lng: (json['lng'] as num).toDouble(),
       address: json['address'],
-      stopOrder: json['stop_order'],
+      stopOrder: json['stop_order'] ?? json['order'] ?? 0,
     );
   }
 
@@ -124,6 +128,7 @@ class DropoffPoint extends LocationPoint {
       "lng": lng,
       "address": address,
       "stop_order": stopOrder,
+      "order": stopOrder,
     };
   }
 }

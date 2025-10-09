@@ -1,3 +1,4 @@
+// maputils.dart
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -6,7 +7,6 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../controllers/ride_request_controller.dart';
 import '../../models/city_model.dart';
 import '../../models/services/polyline_service.dart';
-
 
 class MapUtils {
   final PolylineService _polylineService = PolylineService();
@@ -27,6 +27,7 @@ class MapUtils {
     return _polylineService.convertToLatLngList(polyline);
   }
 
+  // FIXED: This method should return empty list to avoid overriding custom markers
   List<Marker> createMarkers(
       LatLng pickupLatLng,
       LatLng dropoffLatLng,
@@ -34,6 +35,12 @@ class MapUtils {
       String dropoffLocation,
       List<Map<String, dynamic>> stops
       ) {
+    // FIXED: Return empty list - let RideRequestController handle custom markers
+    print('🔄 MapUtils.createMarkers called - returning empty list to preserve custom markers');
+    return [];
+
+    // OLD CODE (COMMENTED OUT TO PREVENT OVERRIDING CUSTOM MARKERS):
+    /*
     final markers = [
       Marker(
         markerId: const MarkerId('pickup'),
@@ -62,6 +69,7 @@ class MapUtils {
     }
 
     return markers;
+    */
   }
 
   void animateCameraToRoute(List<LatLng> pts, LatLng pickupLatLng, LatLng dropoffLatLng) {

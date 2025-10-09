@@ -1,8 +1,10 @@
 import 'dart:convert';
+import 'package:doorcab/feautures/rides/driver/screens/reuseable_widgets/drawer.dart';
+import 'package:doorcab/feautures/rides/passenger/screens/reusable_widgets/passengers_chips.dart';
+import 'package:doorcab/feautures/rides/passenger/screens/reusable_widgets/ride_request_location_field.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-
 import '../../../../utils/constants/colors.dart';
 import '../../../../utils/theme/custom_theme/text_theme.dart';
 import '../controllers/ride_request_controller.dart';
@@ -26,6 +28,7 @@ class RideRequestScreen extends StatelessWidget {
     double sh(double h) => h * screenHeight / baseHeight;
 
     return Scaffold(
+      drawer: PassengerDrawer(),
       backgroundColor: Colors.white,
       body: Stack(
         children: [
@@ -40,19 +43,19 @@ class RideRequestScreen extends StatelessWidget {
                 return const Center(child: CircularProgressIndicator());
               }
               return GoogleMap(
-                key: ValueKey("map_${c.routePolyline.value != null}"),
                 initialCameraPosition: CameraPosition(
-                  target: c.currentPosition.value!,
+                  target: c.pickupCoords ?? LatLng(
+                    c.currentPosition.value?.latitude ?? 0,
+                    c.currentPosition.value?.longitude ?? 0,
+                  ),
                   zoom: 15,
                 ),
-                myLocationEnabled: true,
-                myLocationButtonEnabled: true,
+                myLocationEnabled: false,
                 onMapCreated: c.onMapCreated,
-                markers: c.markers.toSet(),
-                polylines:
-                    c.routePolyline.value != null
-                        ? {c.routePolyline.value!}
-                        : {},
+                markers: c.markers,
+                polylines: c.routePolyline.value != null
+                    ? {c.routePolyline.value!}
+                    : {},
               );
             }),
           ),
@@ -61,7 +64,20 @@ class RideRequestScreen extends StatelessWidget {
           Positioned(
             top: sh(39),
             left: sw(33),
-            child: Icon(Icons.menu, size: sw(28), color: FColors.black),
+            child: Builder(
+              builder:
+                  (context) => GestureDetector(
+                    onTap: () {
+                      Scaffold.of(context).openDrawer(); // ✅ works now
+                    },
+                    child: Image.asset(
+                      "assets/images/drawer_icon.png",
+                      fit: BoxFit.cover,
+                      width: sw(39),
+                      height: sh(39),
+                    ),
+                  ),
+            ),
           ),
 
           /// Ride type selector (top: 390, left: 24) - Show fare instead of title
@@ -72,6 +88,10 @@ class RideRequestScreen extends StatelessWidget {
               width: sw(390),
               height: sh(90),
               child: Obx(() {
+                // ✅ New: show spinner while calculating fare / building polyline
+                if (c.isCalculatingFare.value) {
+                  return const Center(child: CircularProgressIndicator());
+                }
                 if (c.rideTypes.isEmpty && c.isLoadingRideTypes.value) {
                   return const Center(child: CircularProgressIndicator());
                 }
@@ -142,15 +162,15 @@ class RideRequestScreen extends StatelessWidget {
             left: sw(24),
             right: sw(24),
             child: Obx(
-              () => _locationField(
-                context,
+              () => LocationField(
                 label: "Pickup",
                 hasIcon: true,
                 text:
                     c.pickupLocation.value.isEmpty
                         ? "Pickup Location"
                         : c.pickupLocation.value,
-                onTap: c.onTapPickup,
+                onTap: () => Get.back(),
+                // onTap: c.onTapPickup,
                 sw: sw,
               ),
             ),
@@ -162,15 +182,15 @@ class RideRequestScreen extends StatelessWidget {
             left: sw(24),
             right: sw(24),
             child: Obx(
-              () => _locationField(
-                context,
+              () => LocationField(
                 label: "Dropoff",
                 hasIcon: false,
                 text:
                     c.dropoffLocation.value.isEmpty
                         ? "Dropoff Location"
                         : c.dropoffLocation.value,
-                onTap: c.openDropoff,
+                onTap: () => Get.back(),
+                // onTap: c.openDropoff,
                 sw: sw,
                 showAddStop: true,
                 onAddStop: c.openDropoff,
@@ -226,46 +246,56 @@ class RideRequestScreen extends StatelessWidget {
           /// Passenger chips row inside the container (top 682, left 48)
           Positioned(
             top: sh(675),
-            left: sw(48),
+            left: sw(78),
             child: SizedBox(
               width: sw(360),
-              child: Obx(
-                () => Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    for (final p in c.passengerOptions)
-                      Padding(
-                        padding: EdgeInsets.only(right: sw(8)),
-                        child: ChoiceChip(
+              child: Row(
+                children: [
+                  for (final p in c.passengerOptions)
+                    Padding(
+                      padding: EdgeInsets.only(right: sw(4)),
+                      child: Obx(() {
+                        if (p == "More") {
+                          return MorePassengersChip(
+                            selectedPassengers: c.selectedPassengers.value,
+                            onSelected:
+                                (val) => c.selectedPassengers.value = val,
+                          );
+                        }
+                        return RawChip(
+                          showCheckmark: false,
                           label: Text(
                             p,
-                            style: TextStyle(color: FColors.white),
+                            style: TextStyle(
+                              color:
+                                  c.selectedPassengers.value == p
+                                      ? FColors.black
+                                      : FColors.white,
+                              fontSize: sw(15),
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
+                          avatar:
+                              c.selectedPassengers.value == p
+                                  ? Icon(
+                                    Icons.person,
+                                    size: sw(20),
+                                    color: FColors.secondaryColor,
+                                  )
+                                  : null,
+                          // ✅ only shows when selected
                           selected: c.selectedPassengers.value == p,
                           onSelected: (_) => c.selectedPassengers.value = p,
                           selectedColor: FColors.primaryColor,
-                          disabledColor: FColors.white,
                           backgroundColor: FColors.chipBg,
-                          labelStyle: TextStyle(
-                            color:
-                                c.selectedPassengers.value == p
-                                    ? FColors.secondaryColor
-                                    : FColors.black,
-                            fontSize: sw(12),
-                            fontWeight: FontWeight.w600,
-                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(sw(8)),
-                            // side: BorderSide(
-                            //   color: c.selectedPassengers.value == p
-                            //       ? FColors.secondaryColor
-                            //       : Colors.grey.shade300,
-                            // ),
                           ),
-                        ),
-                      ),
-                  ],
-                ),
+                          pressElevation: 0,
+                        );
+                      }),
+                    ),
+                ],
               ),
             ),
           ),
@@ -294,9 +324,7 @@ class RideRequestScreen extends StatelessWidget {
                 keyboardType: TextInputType.number,
                 // inputFormatters: c.digitsOnly,
                 textAlign: TextAlign.center,
-                style: FTextTheme.lightTextTheme.titleSmall!.copyWith(
-                  color: FColors.white,
-                ),
+                style: FTextTheme.lightTextTheme.titleSmall,
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: FColors.primaryColor,
@@ -308,15 +336,22 @@ class RideRequestScreen extends StatelessWidget {
                   prefix: Text("PKR "),
                   prefixStyle: FTextTheme.lightTextTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w700,
-                    color: FColors.white,
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(sw(10)),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
+                    borderSide: BorderSide.none,
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(sw(10)),
-                    borderSide: BorderSide(color: FColors.secondaryColor),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(sw(10)),
+                    borderSide: BorderSide.none,
+                  ),
+                  disabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(sw(10)),
+                    borderSide: BorderSide.none,
                   ),
                 ),
               ),
@@ -385,20 +420,24 @@ class RideRequestScreen extends StatelessWidget {
             ),
           ),
 
-          /// Bottom: Cash icon button with text under it (top 865, left 31)
+          /// Bottom: Cash icon button with text under it (top 885, left 31)
           Positioned(
             top: sh(885),
-            left: sw(31),
+            left: sw(11),
             child: InkWell(
               onTap: c.openPaymentMethods,
               child: Column(
                 children: [
-                  Image.asset("assets/images/cash.png"),
+                  Image.asset(
+                    "assets/images/cash.png",
+                    width: sw(30),
+                    height: sh(30),
+                  ),
                   // Icon(Icons.account_balance_wallet, size: sw(28)),
-                  SizedBox(height: sh(6)),
+                  SizedBox(height: sh(1)),
                   Obx(
                     () => Text(
-                      c.selectedPaymentLabel.value,
+                      _getPaymentText(c.selectedPaymentLabel.value),
                       style: FTextTheme.lightTextTheme.labelSmall,
                     ),
                   ),
@@ -407,9 +446,9 @@ class RideRequestScreen extends StatelessWidget {
             ),
           ),
 
-          /// Bottom: main action button (w 287, h 48, top 865, left 77)
+          /// Bottom: main action button (w 287, h 48, top 885, left 77)
           Positioned(
-            top: sh(885),
+            top: sh(888),
             left: sw(85),
             child: SizedBox(
               width: sw(287),
@@ -422,7 +461,13 @@ class RideRequestScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(sw(12)),
                     ),
                   ),
-                  onPressed: c.isLoading.value ? null : c.onRequestRide,
+                  // ✅ Disabled until mapReady AND fares/calculation done and not isLoading
+                  onPressed:
+                      (c.isLoading.value ||
+                              c.isCalculatingFare.value ||
+                              !c.mapReady.value)
+                          ? null
+                          : c.onRequestRide,
                   child:
                       c.isLoading.value
                           ? SizedBox(
@@ -454,92 +499,32 @@ class RideRequestScreen extends StatelessWidget {
             left: sw(379),
             child: IconButton(
               onPressed: c.openComments,
-              icon: Image.asset("assets/images/comment.png"),
+              icon: Image.asset(
+                "assets/images/comment.png",
+                width: sw(28),
+                height: sh(27),
+              ),
             ),
           ),
         ],
       ),
     );
   }
-
-  Widget _locationField(
-    BuildContext ctx, {
-    required String label,
-    required String text,
-    required bool hasIcon,
-    required VoidCallback onTap,
-    required double Function(double) sw,
-    bool showAddStop = false,
-    VoidCallback? onAddStop,
-  }) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Container(
-        height: 52,
-        padding: EdgeInsets.symmetric(horizontal: sw(12)),
-        decoration: BoxDecoration(
-          color: const Color(0xFFE3E3E3),
-          borderRadius: BorderRadius.circular(sw(14)),
-        ),
-        child: Row(
-          children: [
-            hasIcon
-                ? Container(
-                  width: sw(34),
-                  height: sw(34),
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: FColors.phoneInputField,
-                    borderRadius: BorderRadius.circular(sw(6)),
-                  ),
-                  child: Image.asset("assets/images/place.png"),
-                  // Icon(
-                  //   label == "Pickup" ? Icons.my_location : Icons.location_on,
-                  //   size: sw(18),
-                  //   color: FColors.black,
-                  // ),
-                )
-                : SizedBox(),
-            SizedBox(width: sw(10)),
-            Expanded(
-              child: Text(
-                text,
-                style: FTextTheme.lightTextTheme.labelLarge,
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
-              ),
-            ),
-            // Add Stop button only for Dropoff when showAddStop is true
-            if (showAddStop && onAddStop != null)
-              SizedBox(
-                width: sw(116),
-                height: sw(30),
-                child: TextButton.icon(
-                  style: TextButton.styleFrom(
-                    backgroundColor: const Color(0xFFFFC107),
-                    padding: EdgeInsets.symmetric(horizontal: sw(8)),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(sw(9)),
-                    ),
-                  ),
-                  onPressed: onAddStop,
-                  label: const Text(
-                    "ADD STOP",
-                    style: TextStyle(
-                      fontFamily: "Poppins",
-                      fontWeight: FontWeight.w500,
-                      fontSize: 12,
-                      color: Colors.black,
-                    ),
-                  ),
-                  icon: Icon(Icons.add, size: sw(16), color: Colors.black),
-                  iconAlignment: IconAlignment.end,
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
+}
+String _getPaymentText(String method) {
+  switch (method) {
+    case "Cash Payment":
+      return "Pay Cash";
+    case "Easypaisa":
+      return "EasyPaisa";
+    case "JazzCash":
+      return "JazzCash";
+    case "Debit/Credit Card":
+      return "Pay Card";
+    case "DoorCabs Wallet":
+      return "Pay Wallet";
+    default:
+      return "Pay Cash";
   }
 }
+

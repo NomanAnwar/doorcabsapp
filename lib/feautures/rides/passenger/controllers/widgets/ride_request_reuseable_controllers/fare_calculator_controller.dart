@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../models/city_model.dart';
-import '../../../models/ride_type.dart';
+import '../../../models/ride_type_model.dart';
 import '../../../models/vehicle_model.dart';
 import '../../../screens/reusable_widgets/fare_calculator.dart';
 import '../../ride_request_controller.dart';
@@ -34,7 +34,7 @@ class FareCalculatorController extends GetxController {
   void initializeVehicleSelection(
       Map<String, dynamic>? selectedVehicleData,
       int selectedRideIndexFromHome,
-      List<RideType> rideTypes,
+      List<RideTypeModel> rideTypes,
       List<VehicleModel> vehicleModels,
       List<CityModel> cities,
       VehicleModel? Function(int) vehicleForRideTypeIndex
@@ -110,7 +110,7 @@ class FareCalculatorController extends GetxController {
     }
   }
 
-  VehicleModel? vehicleForRideTypeIndex(int index, List<RideType> rideTypes, List<VehicleModel> vehicleModels) {
+  VehicleModel? vehicleForRideTypeIndex(int index, List<RideTypeModel> rideTypes, List<VehicleModel> vehicleModels) {
     if (index >= 0 && index < vehicleModels.length) return vehicleModels[index];
 
     if (index >= 0 && index < rideTypes.length) {
@@ -122,7 +122,7 @@ class FareCalculatorController extends GetxController {
     return vehicleModels.isNotEmpty ? vehicleModels.first : null;
   }
 
-  void updateSelectedRide(int index, List<RideType> rideTypes, List<VehicleModel> vehicleModels, VehicleModel? Function(int) vehicleForRideTypeIndex) {
+  void updateSelectedRide(int index, List<RideTypeModel> rideTypes, List<VehicleModel> vehicleModels, VehicleModel? Function(int) vehicleForRideTypeIndex) {
     final v = vehicleForRideTypeIndex(index);
     if (v != null) {
       Get.find<RideRequestController>().selectedVehicle.value = v;
@@ -149,7 +149,7 @@ class FareCalculatorController extends GetxController {
       double distanceKm,
       int durationMinutes,
       List<CityModel> cities,
-      List<RideType> rideTypes,
+      List<RideTypeModel> rideTypes,
       List<VehicleModel> vehicleModels,
       VehicleModel? Function(int) vehicleForRideTypeIndex
       ) {

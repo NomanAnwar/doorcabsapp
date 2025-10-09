@@ -80,7 +80,7 @@ class PusherBeamsService {
       final storetoken = StorageService.getAuthToken();
 
       if (storetoken == null) {
-        Get.snackbar("Error", "User token not found. Please login again.");
+        print("Error" + "User token not found. Please login again.");
         return;
       }
 
@@ -196,6 +196,16 @@ class PusherBeamsService {
   /// Send current interests to backend
   Future<void> _sendInterestsToServer(String driverId, List<String> interests) async {
     try {
+
+      final token = StorageService.getAuthToken();
+
+      if (token == null) {
+        print("Error" + "User token not found. Please login again.");
+        return;
+      }
+
+      FHttpHelper.setAuthToken(token, useBearer: true);
+
       await FHttpHelper.post('token/update-interests', {
         'interests': interests,
       });

@@ -1,8 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
-
-import '../../../../common/widgets/positioned/positioned_scaled.dart';
 import '../../../../common/widgets/buttons/f_primary_button.dart';
 import '../../../../utils/constants/colors.dart';
 import '../../../../utils/theme/custom_theme/text_theme.dart';
@@ -15,210 +14,265 @@ class AvailableBidsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = Get.put(AvailableBidsController());
 
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    /// Reference device size (iPhone 16 Pro Max)
+    const baseWidth = 440.0;
+    const baseHeight = 956.0;
+
+    double sw(double w) => w * screenWidth / baseWidth;
+    double sh(double h) => h * screenHeight / baseHeight;
+
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Stack(
-        children: [
-          /// Back button
-          PositionedScaled(
-            top: 43,
-            left: 23,
-            child: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: Get.back,
-            ),
-          ),
-
-          /// Scrollable bids list
-          PositionedScaled(
-            top: 88,
-            left: 10,
-            right: 10,
-            bottom: 332,
-            child: Obx(() => ListView.builder(
-              padding: EdgeInsets.zero,
-              itemCount: c.bids.length,
-              itemBuilder: (_, i) {
-                final bid = c.bids[i];
-                return _buildBidItem(bid, c);
-              },
-            )),
-          ),
-
-          /// Bottom container
-          PositionedScaled(
-            top: 624,
-            left: 0,
-            right: 0,
-            child: Container(
-              height: 332,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
-                boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6)],
+      body: SingleChildScrollView(
+        child: SizedBox(
+          width: screenWidth,
+          height: screenHeight,
+          child: Stack(
+            children: [
+              /// Back button
+              Positioned(
+                top: sh(43),
+                left: sw(23),
+                child: IconButton(
+                  icon: Icon(Icons.arrow_back, size: sw(24)),
+                  onPressed: Get.back,
+                ),
               ),
-              child: Stack(
-                children: [
-                  /// "x drivers viewing" text
-                  PositionedScaled(
-                    top: 21, // 645 - 624 = 21
-                    left: 15,
-                    child: Obx(() => Text(
-                      "${c.viewingDrivers.value} drivers are viewing your request",
-                      style: FTextTheme.lightTextTheme.bodyMedium,
-                    )),
-                  ),
 
-                  /// Driver avatars row
-                  PositionedScaled(
-                    top: 18, // 642 - 624 = 18
-                    left: 291,
-                    width: 128,
-                    height: 24,
-                    child: Obx(() => ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: c.driverAvatars.take(6).length,
-                      separatorBuilder: (_, __) => const SizedBox(width: 1),
-                      itemBuilder: (_, index) {
-                        final avatar = c.driverAvatars[index];
-                        return CircleAvatar(
-                          radius: 12,
-                          backgroundImage: AssetImage(avatar),
-                        );
-                      },
-                    )
-                    ),
-                  ),
-
-                  /// Grey sub-container
-                  PositionedScaled(
-                    top: 54, // 678 - 624 = 54
-                    left: 0,
-                    right: 0,
-                    child: Container(
-                      height: 241,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE3E3E3),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Stack(
-                        children: [
-                          /// "Waiting for more bids..." text
-                          PositionedScaled(
-                            top: 22, // 700 - 678 = 22
-                            left: 15,
-                            child: const Text("Waiting for more bids..."),
-                          ),
-
-                          /// Countdown timer
-                          PositionedScaled(
-                            top: 25, // 703 - 678 = 25
-                            right: 22,
-                            child: Obx(() => Text(
-                              "${c.remainingSeconds.value}s",
-                              style: const TextStyle(fontWeight: FontWeight.bold),
-                            )),
-                          ),
-
-                          /// Progress bar
-                          PositionedScaled(
-                            top: 51, // 729 - 678 = 51
-                            left: 15,
-                            right: 15,
-                            child: Obx(() => LinearProgressIndicator(
-                              value: c.remainingSeconds.value / 60,
-                              color: FColors.secondaryColor,
-                            )),
-                          ),
-
-                          /// Black container (Auto accept)
-                          PositionedScaled(
-                            top: 82, // 760 - 678 = 82
-                            left: 0,
-                            right: 0,
-                            child: Container(
-                              height: 77,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF595959),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  const Padding(
-                                    padding: EdgeInsets.only(left: 14),
-                                    child: Icon(Icons.shield, size: 34, color: Colors.white),
-                                  ),
-                                  const Text(
-                                    "Auto accept offers",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.only(right: 14),
-                                    child: Obx(() => Switch(
-                                      value: c.autoAccept.value,
-                                      onChanged: (v) => c.autoAccept.value = v,
-                                    )),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-
-                          /// Cancel request button
-                          PositionedScaled(
-                            top: 180, // 858 - 678 = 180
-                            left: 41,
-                            width: 358,
-                            height: 48,
-                            child: FPrimaryButton(
-                              text: "Cancel Request",
-                              onPressed: c.cancelRequest,
-                              backgroundColor: const Color(0xFF595959),
-                              designBorderRadius: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+              /// Scrollable bids list
+              Positioned(
+                top: sh(88),
+                left: sw(10),
+                right: sw(10),
+                bottom: sh(332),
+                child: Obx(() => ListView.builder(
+                  padding: EdgeInsets.zero,
+                  itemCount: c.bids.length,
+                  itemBuilder: (_, i) {
+                    final bid = c.bids[i];
+                    return _buildBidItem(bid, c, sw, sh);
+                  },
+                )),
               ),
-            ),
+
+              /// Bottom container
+              Positioned(
+                top: sh(624),
+                left: 0,
+                right: 0,
+                child: Container(
+                  height: sh(332),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(sw(14))),
+                    boxShadow: [
+                      BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: sw(6)
+                      )
+                    ],
+                  ),
+                  child: Stack(
+                    children: [
+                      /// "x drivers viewing" text
+                      Positioned(
+                        top: sh(21),
+                        left: sw(15),
+                        width: sw(203),
+                        child: Obx(() => Text(
+                          "${c.viewingDrivers.value} drivers are viewing your request",
+                          style: FTextTheme.lightTextTheme.bodyMedium?.copyWith(
+                            fontSize: sw(14),
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        )),
+                      ),
+
+                      /// Driver avatars row
+                      Positioned(
+                        top: sh(18),
+                        left: sw(291),
+                        width: sw(108),
+                        height: sh(24),
+                        child: Obx(() => ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: c.driverAvatars.take(6).length,
+                          separatorBuilder: (_, __) => SizedBox(width: sw(0)),
+                          itemBuilder: (_, index) {
+                            final avatar = c.driverAvatars[index];
+                            return CircleAvatar(
+                              radius: sw(12),
+                              backgroundImage: AssetImage(avatar),
+                            );
+                          },
+                        )),
+                      ),
+
+                      /// Grey sub-container
+                      Positioned(
+                        top: sh(54),
+                        left: 0,
+                        right: 0,
+                        child: Container(
+                          height: sh(241),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE3E3E3),
+                            borderRadius: BorderRadius.circular(sw(14)),
+                          ),
+                          child: Stack(
+                            children: [
+                              /// "Waiting for more bids..." text
+                              Positioned(
+                                top: sh(22),
+                                left: sw(15),
+                                child: Text(
+                                  "Accept an offer from a driver",
+                                  style: TextStyle(fontSize: sw(16)),
+                                ),
+                              ),
+
+                              /// Countdown timer
+                              Positioned(
+                                top: sh(25),
+                                right: sw(22),
+                                child: Obx(() => Text(
+                                  "${c.remainingSeconds.value}s",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: sw(16),
+                                  ),
+                                )),
+                              ),
+
+                              /// Progress bar
+                              Positioned(
+                                top: sh(51),
+                                left: sw(15),
+                                right: sw(15),
+                                child: Obx(() => LinearProgressIndicator(
+                                  value: c.remainingSeconds.value / 60,
+                                  color: FColors.primaryColor,
+                                  backgroundColor: FColors.chipBg,
+                                )),
+                              ),
+
+                              /// Black container (Auto accept)
+                              Positioned(
+                                top: sh(82),
+                                left: 0,
+                                right: 0,
+                                child: Container(
+                                  height: sh(77),
+                                  decoration: BoxDecoration(
+                                    color: FColors.chipBg,
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Padding(
+                                        padding: EdgeInsets.only(left: sw(14)),
+                                        child: SvgPicture.asset(
+                                          'assets/images/forward.svg',
+                                          width: sw(34),
+                                          height: sh(34),
+                                        ),
+                                      ),
+                                      Container(
+                                        width: sw(281),
+                                        height: sh(42),
+                                        child: Text(
+                                          "Auto Accept the nearest driver for PKR 250",
+                                          maxLines: 2,
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: sw(14),
+                                          ),
+                                        ),
+                                      ),
+                                      Padding(
+                                        padding: EdgeInsets.only(right: sw(14)),
+                                        child: Obx(() => Transform.scale(
+                                          scale: 0.7,
+                                          child: Switch(
+                                            padding: EdgeInsets.zero,
+                                            activeColor: FColors.secondaryColor,
+                                            inactiveTrackColor: FColors.primaryColor,
+                                            value: c.autoAccept.value,
+                                            onChanged: (v) => c.autoAccept.value = v,
+                                          ),
+                                        )),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+
+                              /// Cancel request button
+                              Positioned(
+                                top: sh(180),
+                                left: sw(41),
+                                width: sw(358),
+                                height: sh(48),
+                                child: FPrimaryButton(
+                                  text: "Cancel Request",
+                                  onPressed: c.cancelRequest,
+                                  backgroundColor: FColors.chipBg,
+                                  designBorderRadius: sw(12),
+                                  textStyle: TextStyle(fontSize: sw(16)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildBidItem(Map<String, dynamic> bid, AvailableBidsController c) {
+  Widget _buildBidItem(Map<String, dynamic> bid, AvailableBidsController c, double Function(double) sw, double Function(double) sh) {
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      width: 420,
-      height: 145,
+      margin: EdgeInsets.symmetric(vertical: sh(8)),
+      width: sw(420),
+      height: sh(145),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
+        color: FColors.phoneInputField,
+        borderRadius: BorderRadius.circular(sw(12)),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black12,
+              blurRadius: sw(4)
+          )
+        ],
       ),
       child: Stack(
         children: [
           /// Driver image
-          PositionedScaled(
-            top: 19, // 107 - 88 = 19
-            left: 24,
+          Positioned(
+            top: sh(19),
+            left: sw(24),
             child: CircleAvatar(
-              radius: 32,
+              radius: sw(32),
               backgroundColor: Colors.grey.shade200,
               child: ClipOval(
                 child: CachedNetworkImage(
-                  imageUrl: bid['driver']['profileImage'] ?? "",
+                  imageUrl: (bid['driver']['profileImage'] != null &&
+                      bid['driver']['profileImage'].toString().isNotEmpty)
+                      ? bid['driver']['profileImage'].toString()
+                      : "https://via.placeholder.com/150",
                   fit: BoxFit.cover,
-                  width: 64,
-                  height: 64,
+                  width: sw(64),
+                  height: sh(64),
                   placeholder: (_, __) => Image.asset("assets/images/profile_img_sample.png"),
                   errorWidget: (_, __, ___) => Image.asset("assets/images/profile_img_sample.png"),
                 ),
@@ -227,127 +281,196 @@ class AvailableBidsScreen extends StatelessWidget {
           ),
 
           /// Driver badge
-          PositionedScaled(
-            top: 63, // 151.42 - 88 = 63
-            left: 80.33 - 10, // adjust relative
-            child: const Icon(Icons.verified, color: Colors.green, size: 12),
+          Positioned(
+            top: sh(63),
+            left: sw(80.33),
+            child: Icon(Icons.verified, color: Colors.green, size: sw(12)),
           ),
 
           /// Star + rating
-          PositionedScaled(
-            top: 95, // 183 - 88
-            left: 23,
-            child: const Icon(Icons.star, color: Colors.amber, size: 14),
+          Positioned(
+            top: sh(95),
+            left: sw(23),
+            child: Icon(Icons.star, color: Colors.amber, size: sw(14)),
           ),
-          PositionedScaled(
-            top: 99, // 187 - 88
-            left: 42,
+          Positioned(
+            top: sh(95),
+            left: sw(42),
             child: Text(
               (bid['driver']['avgRating'] == null || bid['driver']['avgRating'].toString().isEmpty)
                   ? '0'
                   : bid['driver']['avgRating'].toString(),
-              // bid['rating'].toString(),
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: sw(12), fontWeight: FontWeight.bold),
             ),
           ),
-          PositionedScaled(
-            top: 99,
-            left: 62,
+          Positioned(
+            top: sh(95),
+            left: sw(62),
             child: Text(
               (bid['driver']?['total_ratings'] == null || bid['driver']['total_ratings'].toString().isEmpty)
                   ? '(0)'
                   : "(${bid['driver']['total_ratings']})",
-              // "(${bid['totalRatings']})",
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
+              style: TextStyle(fontSize: sw(12), color: Colors.grey),
             ),
           ),
 
           /// Driver category
-          PositionedScaled(
-            top: 111, // 199 - 88
-            left: 23,
+          Positioned(
+            top: sh(115),
+            left: sw(23),
             child: Text(
               bid['driver']['category'],
-              // bid['category'],
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
+              style: TextStyle(fontSize: sw(12), color: Colors.grey),
             ),
           ),
 
           /// Driver name
-          PositionedScaled(
-            top: 23, // 111 - 88
-            left: 104,
+          Positioned(
+            top: sh(23),
+            left: sw(104),
             child: Text(
-                "${bid['driver']?['name']?['firstName'] ?? ''} ${bid['driver']?['name']?['lastName'] ?? ''}",
-                // "name",
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              "${bid['driver']?['name']?['firstName'] ?? ''} ${bid['driver']?['name']?['lastName'] ?? ''}",
+              style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: sw(16)
+              ),
             ),
           ),
 
           /// Car model
-          PositionedScaled(
-            top: 46, // 134 - 88
-            left: 104,
+          Positioned(
+            top: sh(46),
+            left: sw(104),
             child: Text(
               "${bid['driver']?['vehicleType'] ?? ''}, ${bid['driver']?['vehicle'] ?? ''}",
-              // bid['car'],
-              style: const TextStyle(color: Colors.grey, fontSize: 14),
+              style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: sw(14)
+              ),
             ),
           ),
 
           /// Fare
-          PositionedScaled(
-            top: 98, // 186 - 88
-            left: 110,
+          Positioned(
+            top: sh(115),
+            left: sw(110),
             child: Text(
               "PKR ${bid['fareOffered']}",
-              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+              style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: sw(16)
+              ),
             ),
           ),
 
           /// ETA + distance
-          PositionedScaled(
-            top: 12, // 100 - 88
-            right: 66,
-            child: Text("${bid['eta'] ?? ''}"),
-            // child: Text("${bid['eta']} min"),
+          Positioned(
+            top: sh(12),
+            right: sw(70),
+            child: Text(
+              "${bid['eta'] ?? ''}",
+              style: TextStyle(fontSize: sw(14)),
+            ),
           ),
-          PositionedScaled(
-            top: 12,
-            right: 15,
-            child: Text("${bid['distance'] ?? ''}"),
-            // child: Text("${bid['distance']} km"),
+          Positioned(
+            top: sh(12),
+            right: sw(25),
+            child: Text(
+              "${bid['distance'] ?? ''}",
+              style: TextStyle(fontSize: sw(14)),
+            ),
           ),
 
-          /// Accept button
-          PositionedScaled(
-            top: 34, // 122 - 88
-            right: 20,
-            width: 120,
-            height: 30,
-            child:
-            // Obx(() {
-              // final progress = bid['progress'].value as double;
-              // return
-                ElevatedButton(
-                onPressed: () => c.acceptBid(bid),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: FColors.secondaryColor,
-                  // backgroundColor: FColors.secondaryColor.withOpacity(0.1 + 0.9 * progress),
+          /// Accept button with progress
+          Positioned(
+            top: sh(34),
+            right: sw(10),
+            width: sw(133),
+            height: sh(37),
+            child: Obx(() {
+              double progress = 0.0;
+              int secondsLeft = 0;
+              if (bid.containsKey('timer')) {
+                try {
+                  secondsLeft = (bid['timer'] as RxInt).value;
+                  progress = ((20 - secondsLeft) / 20).clamp(0.0, 1.0);
+                } catch (_) {
+                  progress = 0.0;
+                }
+              } else if (bid.containsKey('progress')) {
+                final p = bid['progress'];
+                if (p is RxDouble) {
+                  progress = (p.value).clamp(0.0, 1.0);
+                } else if (p is double) {
+                  progress = p.clamp(0.0, 1.0);
+                }
+              }
+
+              final overlayColor = bid.containsKey('progressColor')
+                  ? FColors.secondaryColor
+                  : FColors.rideTypeBg;
+
+              return GestureDetector(
+                onTap: () => c.acceptBid(bid),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(sw(8)),
+                  child: Stack(
+                    fit: StackFit.passthrough,
+                    children: [
+                      // base background
+                      Container(
+                        width: double.infinity,
+                        height: double.infinity,
+                        color: FColors.primaryColor,
+                      ),
+
+                      // colored filling progress
+                      FractionallySizedBox(
+                        alignment: Alignment.centerLeft,
+                        widthFactor: progress,
+                        child: Container(
+                          height: double.infinity,
+                          color: overlayColor,
+                        ),
+                      ),
+
+                      // label on top
+                      Center(
+                        child: Text(
+                          "Accept",
+                          style: FTextTheme.lightTextTheme.titleMedium?.copyWith(
+                            color: Colors.white,
+                            fontSize: sw(14),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                child: const Text("Accept"),
-              ),
-            // ;
-            // }),
+              );
+            }),
           ),
 
           /// Reject button
-          PositionedScaled(
-            top: 84, // 172 - 88
-            right: 20,
-            child: OutlinedButton(
+          Positioned(
+            top: sh(84),
+            right: sw(10),
+            width: sw(133),
+            height: sh(37),
+            child: ElevatedButton(
               onPressed: () => c.rejectBid(bid),
-              child: const Text("Reject"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: FColors.secondaryColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(sw(8)),
+                ),
+              ),
+              child: Text(
+                "Reject",
+                style: FTextTheme.darkTextTheme.titleMedium?.copyWith(
+                  fontSize: sw(14),
+                ),
+              ),
             ),
           ),
         ],

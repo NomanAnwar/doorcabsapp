@@ -64,7 +64,8 @@ class WelcomeScreen extends StatelessWidget {
                     }
 
                     return SizedBox(
-                      width: sw(197),
+                      width: sw(210),
+                      height: sh(49),
                       child: FDropdown(
                         value: controller.selectedLanguage.value?.language,
                         items: controller.languages

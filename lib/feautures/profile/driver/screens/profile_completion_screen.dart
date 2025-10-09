@@ -1,7 +1,5 @@
-// ProfileCompletionScreen with responsiveness and SingleChildScrollView
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../../common/widgets/positioned/positioned_scaled.dart';
 import '../../../../common/widgets/snakbar/snackbar.dart';
 import '../../../../utils/constants/colors.dart';
 import '../../../shared/services/storage_service.dart';
@@ -198,6 +196,7 @@ class ProfileCompletionScreen extends StatelessWidget {
                           height: sh(24),
                           child: Checkbox(
                             value: controller.acceptedPolicy.value,
+                            activeColor: FColors.secondaryColor,
                             onChanged: (val) {
                               controller.acceptedPolicy.value = val ?? false;
                               StorageService.setDriverStep("policy", val ?? false);
@@ -238,8 +237,8 @@ class ProfileCompletionScreen extends StatelessWidget {
                           message: "Profile completed successfully!",
                         );
 
-                        // Get.offAllNamed('/home');
-                        Get.offAllNamed('/ride-request-list');
+                        Get.offAllNamed('/go-online');
+                        // Get.offAllNamed('/ride-request-list');
                       }
                           : null,
                       style: ElevatedButton.styleFrom(

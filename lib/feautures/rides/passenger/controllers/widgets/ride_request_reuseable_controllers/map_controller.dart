@@ -1,3 +1,4 @@
+// mapcontroller.dart
 import 'dart:math';
 import 'package:doorcab/utils/constants/colors.dart';
 import 'package:flutter/material.dart';
@@ -9,17 +10,21 @@ import '../../../models/services/geocoding_service.dart';
 import '../../../models/services/map_service.dart';
 import '../../../screens/reusable_widgets/map_utils.dart';
 
-
 class MapController extends GetxController {
   final pickupLocation = RxString('');
   final dropoffLocation = RxString('');
   final routePolyline = Rx<Polyline?>(null);
   final distanceKm = RxDouble(0.0);
   final durationMinutes = RxInt(0);
-  final markers = <Marker>[].obs;
+  final markers = <Marker>{}.obs; // instead of <Marker>[].obs
+
 
   LatLng? lastPickupCoords;
   LatLng? lastDropoffCoords;
+
+  // FIXED: Add property to store stop coordinates
+  final stopCoords = <LatLng>[].obs;
+
   final MapService _mapService = MapService();
   final MapUtils _mapUtils = MapUtils();
 
@@ -65,11 +70,18 @@ class MapController extends GetxController {
       LatLng? pickupLatLng = lastPickupCoords;
       LatLng? dropoffLatLng = lastDropoffCoords;
 
+      // FIXED: Get coordinates for pickup/dropoff if not provided
       if (pickupLatLng == null) {
         pickupLatLng = await geocodingService.getLatLngFromAddress(pickup);
+        if (pickupLatLng != null) {
+          lastPickupCoords = pickupLatLng;
+        }
       }
       if (dropoffLatLng == null) {
         dropoffLatLng = await geocodingService.getLatLngFromAddress(dropoff);
+        if (dropoffLatLng != null) {
+          lastDropoffCoords = dropoffLatLng;
+        }
       }
 
       if (pickupLatLng == null || dropoffLatLng == null) {
@@ -77,18 +89,35 @@ class MapController extends GetxController {
         return null;
       }
 
-      final routeDetails = await _mapService.getRouteDetails(pickupLatLng, dropoffLatLng);
+      // FIXED: Get coordinates for stops and store them
+      final List<LatLng> waypoints = await _getStopCoordinates(stops, geocodingService);
+      stopCoords.assignAll(waypoints); // FIXED: Store for later use
+
+      print('📍 Calculating route with ${waypoints.length} stops');
+
+      // FIXED: Pass waypoints to getRouteDetails
+      final routeDetails = await _mapService.getRouteDetails(
+        pickupLatLng,
+        dropoffLatLng,
+        waypoints: waypoints, // ADD THIS
+      );
 
       if (routeDetails != null) {
         distanceKm.value = routeDetails['distance'];
         durationMinutes.value = routeDetails['duration'];
 
-        _drawRouteOnMap(
-            routeDetails['polylinePoints'],
-            pickupLatLng,
-            dropoffLatLng,
-            stops
+        // FIXED: Don't draw route here - just update polyline
+        final pts = _mapUtils.convertToLatLngList(routeDetails['polylinePoints']);
+        final polyline = Polyline(
+          polylineId: const PolylineId('route'),
+          points: pts,
+          color: FColors.secondaryColor,
+          width: 4,
         );
+
+        routePolyline.value = polyline;
+
+        print('🔄 Route calculated - ${pts.length} points, ${waypoints.length} stops');
 
         return routeDetails;
       }
@@ -98,28 +127,51 @@ class MapController extends GetxController {
     return null;
   }
 
-  void _drawRouteOnMap(String polylinePoints, LatLng pickupLatLng, LatLng dropoffLatLng, List<Map<String, dynamic>> stops) {
-    if (polylinePoints.isEmpty) return;
+  // FIXED: New method to get coordinates for stops
+  // FIXED: New method to get coordinates for stops
+  Future<List<LatLng>> _getStopCoordinates(
+      List<Map<String, dynamic>> stops,
+      GeocodingService geocodingService,
+      ) async {
+    final List<LatLng> waypoints = [];
 
-    final pts = _mapUtils.convertToLatLngList(polylinePoints);
-    final polyline = Polyline(
-      polylineId: const PolylineId('route'),
-      points: pts,
-      color: FColors.secondaryColor,
-      width: 4,
-    );
+    for (int i = 0; i < stops.length; i++) {
+      final stop = stops[i];
+      LatLng? stopLatLng;
 
-    routePolyline.value = polyline;
+      // Try to get coordinates from existing stop data
+      if (stop['lat'] != null && stop['lng'] != null) {
+        stopLatLng = LatLng(
+          (stop['lat'] as num).toDouble(),
+          (stop['lng'] as num).toDouble(),
+        );
+        print('📍 Using coordinates from stop $i: $stopLatLng');
+      }
+      // If no coordinates, try to geocode from description
+      else if (stop['description'] != null && stop['description'].toString().isNotEmpty) {
+        final address = stop['description'].toString();
+        stopLatLng = await geocodingService.getLatLngFromAddress(address);
+        if (stopLatLng != null) {
+          // Update stop with coordinates
+          stops[i]['lat'] = stopLatLng.latitude;
+          stops[i]['lng'] = stopLatLng.longitude;
+          print('📍 Geocoded stop $i: $address -> $stopLatLng');
+        } else {
+          print('❌ Failed to geocode stop $i: $address');
+        }
+      } else {
+        print('⚠️ Stop $i has no description to geocode');
+      }
 
-    markers.clear();
-    markers.addAll(_mapUtils.createMarkers(
-        pickupLatLng,
-        dropoffLatLng,
-        pickupLocation.value,
-        dropoffLocation.value,
-        stops
-    ));
+      if (stopLatLng != null) {
+        waypoints.add(stopLatLng);
+        print('✅ Added stop $i to waypoints: $stopLatLng');
+      } else {
+        print('⚠️ Could not get coordinates for stop $i');
+      }
+    }
 
-    _mapUtils.animateCameraToRoute(pts, pickupLatLng, dropoffLatLng);
+    print('📍 Total waypoints for route: ${waypoints.length}');
+    return waypoints;
   }
 }

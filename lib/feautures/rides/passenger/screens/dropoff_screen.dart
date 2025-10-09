@@ -1,9 +1,9 @@
 import 'package:doorcab/utils/constants/colors.dart';
+import 'package:doorcab/utils/constants/text_strings.dart';
 import 'package:doorcab/utils/theme/custom_theme/text_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
-import '../../../../common/widgets/buttons/responsive_button.dart';
 import '../controllers/dropoff_controller.dart';
 
 class DropOffScreen extends StatelessWidget {
@@ -34,10 +34,10 @@ class DropOffScreen extends StatelessWidget {
           children: [
             /// Back
             Positioned(
-              top: sh(42),
+              top: sh(43),
               left: sw(23),
               child: IconButton(
-                icon: Icon(Icons.arrow_back, size: sw(24)),
+                icon: Icon(Icons.arrow_back, size: sw(28)),
                 onPressed: Get.back,
               ),
             ),
@@ -50,7 +50,12 @@ class DropOffScreen extends StatelessWidget {
               child: Center(
                 child: Text(
                   "Enter Your Route",
-                  style: FTextTheme.lightTextTheme.titleLarge,
+                  style: FTextTheme.lightTextTheme.headlineSmall!.copyWith(
+                    fontSize:
+                        FTextTheme.lightTextTheme.headlineMedium!.fontSize! *
+                        screenWidth /
+                        baseWidth,
+                  ),
                 ),
               ),
             ),
@@ -60,16 +65,18 @@ class DropOffScreen extends StatelessWidget {
               top: sh(121),
               left: 0,
               right: 0,
-              bottom: sh(100), // Leave space for the confirm button at bottom
+              bottom: sh(100),
+              // Leave space for the confirm button at bottom
               child: SingleChildScrollView(
                 padding: EdgeInsets.symmetric(horizontal: sw(23)),
                 child: Obx(
-                      () => Column(
+                  () => Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       /// Pickup
                       Container(
-                        // height: sh(52),
+                        height: sh(52),
+                        width: sw(393),
                         padding: EdgeInsets.symmetric(horizontal: sw(12)),
                         decoration: BoxDecoration(
                           color: const Color(0xFFEFEFEF),
@@ -77,24 +84,39 @@ class DropOffScreen extends StatelessWidget {
                         ),
                         child: Row(
                           children: [
-                            Image.asset("assets/images/place.png"),
-                            // Container(
-                            //   width: sw(16),
-                            //   height: sw(16),
-                            //   decoration: const BoxDecoration(
-                            //     color: FColors.secondaryColor,
-                            //     shape: BoxShape.circle,
-                            //   ),
-                            // ),
+                            Image.asset("assets/images/place.png", width: sw(22),),
                             SizedBox(width: sw(12)),
                             Expanded(
                               child: TextField(
                                 controller: c.pickupCtrl,
                                 focusNode: c.pickupFocus,
-                                style: FTextTheme.lightTextTheme.titleSmall!.copyWith(fontWeight: FontWeight.w500),
+                                style: FTextTheme.lightTextTheme.titleMedium!
+                                    .copyWith(
+                                      fontWeight: FontWeight.w500,
+                                      fontSize:
+                                          FTextTheme
+                                              .lightTextTheme
+                                              .titleMedium!
+                                              .fontSize! *
+                                          screenWidth /
+                                          baseWidth,
+                                    ),
                                 decoration: InputDecoration(
                                   hintText: "Model Town Link Rd Zainab Tower",
-                                  hintStyle: FTextTheme.lightTextTheme.bodyLarge,
+                                  hintStyle: FTextTheme
+                                      .lightTextTheme
+                                      .titleMedium!
+                                      .copyWith(
+                                    color: FColors.chipBg,
+                                        fontWeight: FontWeight.w500,
+                                        fontSize:
+                                            FTextTheme
+                                                .lightTextTheme
+                                                .titleMedium!
+                                                .fontSize! *
+                                            screenWidth /
+                                            baseWidth,
+                                      ),
                                   border: InputBorder.none,
                                   contentPadding: EdgeInsets.symmetric(
                                     horizontal: sw(5),
@@ -114,8 +136,8 @@ class DropOffScreen extends StatelessWidget {
                         children: [
                           /// Background field
                           Container(
-                            width: double.infinity,
-                            // height: sh(52),
+                            width: sw(393),
+                            height: sh(52),
                             decoration: BoxDecoration(
                               color: const Color(0xFFEFEFEF),
                               borderRadius: BorderRadius.circular(sw(10)),
@@ -125,27 +147,49 @@ class DropOffScreen extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 SizedBox(width: sw(4)),
-                                Icon(
-                                  Icons.near_me_sharp,
-                                  color: FColors.black,
-                                ),
+                                Icon(Icons.near_me_sharp, color: FColors.black, size: sw(20),),
                                 // Container(
-                                  // width: sw(16),
-                                  // height: sw(16),
-                                  // decoration: const BoxDecoration(
-                                  //   color: FColors.secondaryColor,
-                                  //   shape: BoxShape.circle,
-                                  // ),
+                                // width: sw(16),
+                                // height: sw(16),
+                                // decoration: const BoxDecoration(
+                                //   color: FColors.secondaryColor,
+                                //   shape: BoxShape.circle,
+                                // ),
                                 // ),
                                 SizedBox(width: sw(12)),
                                 Expanded(
                                   child: TextField(
                                     controller: c.dropCtrl,
                                     focusNode: c.dropFocus,
-                                    style: FTextTheme.lightTextTheme.titleSmall!.copyWith(fontWeight: FontWeight.w500),
+                                    style: FTextTheme
+                                        .lightTextTheme
+                                        .titleMedium!
+                                        .copyWith(
+                                          fontWeight: FontWeight.w500,
+                                          fontSize:
+                                              FTextTheme
+                                                  .lightTextTheme
+                                                  .titleMedium!
+                                                  .fontSize! *
+                                              screenWidth /
+                                              baseWidth,
+                                        ),
                                     decoration: InputDecoration(
                                       hintText: "Drop Off",
-                                      hintStyle: FTextTheme.lightTextTheme.bodyLarge,
+                                      hintStyle: FTextTheme
+                                          .lightTextTheme
+                                          .titleMedium!
+                                          .copyWith(
+                                            fontWeight: FontWeight.w500,
+                                            color: FColors.chipBg,
+                                            fontSize:
+                                                FTextTheme
+                                                    .lightTextTheme
+                                                    .titleMedium!
+                                                    .fontSize! *
+                                                screenWidth /
+                                                baseWidth,
+                                          ),
                                       border: InputBorder.none,
                                       contentPadding: EdgeInsets.symmetric(
                                         horizontal: sw(2),
@@ -154,7 +198,7 @@ class DropOffScreen extends StatelessWidget {
                                     ),
                                     onTap:
                                         () =>
-                                        c.toggleField(ActiveField.dropoff),
+                                            c.toggleField(ActiveField.dropoff),
                                   ),
                                 ),
                               ],
@@ -163,30 +207,39 @@ class DropOffScreen extends StatelessWidget {
 
                           /// ADD STOP button
                           Positioned(
-                            right: sw(10),
-                            top: sh(14),
+                            right: sw(8),
+                            top: sh(10),
                             child: SizedBox(
-                              width: sw(116),
+                              width: sw(98),
                               height: sh(30),
                               child: TextButton.icon(
                                 style: TextButton.styleFrom(
                                   backgroundColor: const Color(0xFFFFC107),
                                   padding: EdgeInsets.symmetric(
-                                    horizontal: sw(8),
+                                    horizontal: sw(3),
                                   ),
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(sw(9)),
+                                    borderRadius: BorderRadius.circular(sw(10)),
                                   ),
                                 ),
                                 onPressed: c.addStop,
                                 label: Text(
-                                  "ADD STOP",
-                                  style: FTextTheme.lightTextTheme.labelSmall,
+                                  "ADD STOPS",
+                                  style: FTextTheme.lightTextTheme.labelSmall!
+                                      .copyWith(
+                                    fontSize:
+                                    FTextTheme
+                                        .lightTextTheme
+                                        .labelSmall!
+                                        .fontSize! *
+                                        screenWidth /
+                                        baseWidth,
+                                  ),
                                 ),
                                 icon: SvgPicture.asset(
                                   "assets/images/add_stop_plus.svg",
-                                  width: sw(16),
-                                  height: sw(16),
+                                  width: sw(15),
+                                  height: sw(15),
                                   color: Colors.black,
                                 ),
                                 // Icon(
@@ -202,7 +255,7 @@ class DropOffScreen extends StatelessWidget {
                       ),
 
                       /// Choose on Map
-                      SizedBox(height: sh(18)),
+                      SizedBox(height: sh(20)),
                       GestureDetector(
                         onTap: c.chooseOnMap,
                         child: Row(
@@ -211,12 +264,24 @@ class DropOffScreen extends StatelessWidget {
                             // Icon(Icons.near_me_outlined, size: sw(20)),
                             SvgPicture.asset(
                               "assets/images/choose_on_map.svg",
-                              // width: sw(16),
-                              // height: sw(16),
+                              width: sw(24),
+                              height: sw(24),
                               color: Colors.black,
                             ),
                             SizedBox(width: sw(8)),
-                            Text("Choose on Map", style: FTextTheme.lightTextTheme.bodySmall,),
+                            Text(
+                              "Choose on Map",
+                              style: FTextTheme.lightTextTheme.bodyLarge!
+                                  .copyWith(
+                                fontSize:
+                                FTextTheme
+                                    .lightTextTheme
+                                    .bodyLarge!
+                                    .fontSize! *
+                                    screenWidth /
+                                    baseWidth,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -239,18 +304,27 @@ class DropOffScreen extends StatelessWidget {
                           separatorBuilder: (_, __) => const Divider(height: 1),
                           itemBuilder:
                               (_, i) => ListTile(
-                            leading: Icon(
-                              Icons.location_on_outlined,
-                              size: sw(20),
-                            ),
-                            title: Text(c.suggestions[i].description, style: TextStyle(
-                              fontWeight:
-                              FontWeight.w600,
-                              fontSize: sw(14),
-                            ),),
-                            onTap:
-                                () => c.selectSuggestion(c.suggestions[i]),
-                          ),
+                                leading: Icon(
+                                  Icons.location_on_outlined,
+                                  size: sw(18),
+                                  color: FColors.secondaryColor,
+                                ),
+                                title: Text(
+                                  c.suggestions[i].description,
+                                  style: FTextTheme.lightTextTheme.bodyLarge!
+                                      .copyWith(
+                                    fontSize:
+                                    FTextTheme
+                                        .lightTextTheme
+                                        .bodyLarge!
+                                        .fontSize! *
+                                        screenWidth /
+                                        baseWidth,
+                                  ),
+                                ),
+                                onTap:
+                                    () => c.selectSuggestion(c.suggestions[i]),
+                              ),
                         ),
                         SizedBox(height: sh(16)),
                       ],
@@ -261,20 +335,22 @@ class DropOffScreen extends StatelessWidget {
                         Column(
                           children: [
                             Padding(
-                              padding: EdgeInsets.only(bottom: sh(4),top: sh(4)),
+                              padding: EdgeInsets.only(
+                                bottom: sh(4),
+                                top: sh(4),
+                              ),
                               child: InkWell(
-                                onTap: () => c.setFieldValue(c.recent[i]),   //  update field when clicked
+                                onTap: () => c.setFieldValue(c.recent[i]),
+                                //  update field when clicked
                                 child: Row(
-                                  crossAxisAlignment:
-                                  CrossAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Container(
                                       decoration: BoxDecoration(
-                                        borderRadius:
-                                        BorderRadius.circular(
-                                            sw(6)),
-                                        color:
-                                        FColors.phoneInputField,
+                                        borderRadius: BorderRadius.circular(
+                                          sw(6),
+                                        ),
+                                        color: FColors.phoneInputField,
                                       ),
                                       height: sh(34),
                                       width: sw(34),
@@ -282,28 +358,43 @@ class DropOffScreen extends StatelessWidget {
                                       child: Icon(
                                         Icons.near_me_sharp,
                                         color: FColors.black,
+                                        size: sw(18),
                                       ),
                                     ),
-                                    SizedBox(width: sw(12)),
+                                    SizedBox(width: sw(8)),
                                     Expanded(
                                       child: Column(
                                         crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             c.recent[i].description,
-                                            style: TextStyle(
-                                              fontWeight:
-                                              FontWeight.w600,
-                                              fontSize: sw(14),
+                                            style: FTextTheme.lightTextTheme.bodyLarge!
+                                                .copyWith(
+                                              fontSize:
+                                              FTextTheme
+                                                  .lightTextTheme
+                                                  .bodyLarge!
+                                                  .fontSize! *
+                                                  screenWidth /
+                                                  baseWidth,
                                             ),
                                           ),
                                           SizedBox(height: sh(2)),
                                           Text(
                                             "${c.recent[i].city ?? ''}, ${c.recent[i].province ?? ''}, ${c.recent[i].country ?? ''}",
-                                            style: TextStyle(
-                                                fontSize: sw(12),
-                                                color: Colors.grey),
+                                            style: FTextTheme.lightTextTheme.labelSmall!
+                                                .copyWith(
+                                              fontWeight: FontWeight.w400,
+                                              color: FColors.chipBg,
+                                              fontSize:
+                                              FTextTheme
+                                                  .lightTextTheme
+                                                  .labelSmall!
+                                                  .fontSize! *
+                                                  screenWidth /
+                                                  baseWidth,
+                                            ),
                                           ),
                                         ],
                                       ),
@@ -311,71 +402,32 @@ class DropOffScreen extends StatelessWidget {
                                     SizedBox(width: sw(2)),
                                     Text(
                                       c.recent[i].eta ?? '',
-                                      style: TextStyle(
-                                          fontSize: sw(12),
-                                          color: Colors.black54),
+                                      style: FTextTheme.lightTextTheme.labelSmall!
+                                          .copyWith(
+                                        fontWeight: FontWeight.w400,
+                                        color: FColors.chipBg,
+                                        fontSize:
+                                        FTextTheme
+                                            .lightTextTheme
+                                            .labelSmall!
+                                            .fontSize! *
+                                            screenWidth /
+                                            baseWidth,
+                                      ),
                                     ),
                                     SizedBox(width: sw(8)),
                                     Transform(
                                       alignment: Alignment.center,
-                                      transform: Matrix4.rotationY(3.14), // flip horizontally
-                                      child: Icon(Icons.refresh_sharp,
-                                          color: FColors.black,
-                                          size: sw(32)),
+                                      transform: Matrix4.rotationY(3.14),
+                                      // flip horizontally
+                                      child: Icon(
+                                        Icons.refresh_sharp,
+                                        color: FColors.black,
+                                        size: sw(32),
+                                      ),
                                     ),
                                   ],
                                 ),
-                                // Row(
-                                //   children: [
-                                //     // Icon(Icons.near_me_sharp, size: sw(20)),
-                                //     Container(
-                                //       decoration: BoxDecoration(
-                                //         borderRadius:
-                                //         BorderRadius.circular(
-                                //             sw(6)),
-                                //         color:
-                                //         FColors.phoneInputField,
-                                //       ),
-                                //       height: sh(34),
-                                //       width: sw(34),
-                                //       padding: EdgeInsets.all(sw(2)),
-                                //       child: Icon(
-                                //         Icons.near_me_sharp,
-                                //         color: FColors.black,
-                                //       ),
-                                //     ),
-                                //     SizedBox(width: sw(12)),
-                                //     Expanded(
-                                //       child: Column(
-                                //         crossAxisAlignment: CrossAxisAlignment.start,
-                                //         children: [
-                                //           Text(
-                                //             c.recent[i].description,
-                                //             style: const TextStyle(
-                                //               fontWeight: FontWeight.w600,
-                                //             ),
-                                //           ),
-                                //           SizedBox(height: sh(2)),
-                                //           Text(
-                                //             "${c.recent[i].city ?? ''}, ${c.recent[i].province ?? ''}, ${c.recent[i].country ?? ''}",
-                                //             style: const TextStyle(fontSize: 12, color: Colors.grey),
-                                //           ),
-                                //         ],
-                                //       ),
-                                //     ),
-                                //     SizedBox(width: sw(8)),
-                                //     Text(
-                                //       c.recent[i].eta ?? '',
-                                //       style: const TextStyle(fontSize: 12, color: Colors.black54),
-                                //     ),
-                                //     SizedBox(width: sw(8)),
-                                //     Icon(
-                                //       Icons.sync,
-                                //       size: sw(18),
-                                //       color: Colors.black54,
-                                //     ),
-                                //   ],
-                                // ),
                               ),
                             ),
                             Divider(
@@ -400,6 +452,7 @@ class DropOffScreen extends StatelessWidget {
               bottom: sh(30),
               child: SizedBox(
                 height: sh(48),
+                width: sw(358),
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: FColors.secondaryColor,
@@ -408,7 +461,16 @@ class DropOffScreen extends StatelessWidget {
                     ),
                   ),
                   onPressed: c.confirmSelection,
-                  child: Text("Done", style: FTextTheme.darkTextTheme.labelLarge),
+                  child: Text(
+                    FTextStrings.done,
+                    style: FTextTheme.darkTextTheme.titleSmall!.copyWith(
+                      fontWeight: FontWeight.w500,
+                      fontSize: FTextTheme.lightTextTheme
+                          .titleSmall!.fontSize! *
+                          screenWidth /
+                          baseWidth,
+                    ),
+                  ),
                 ),
               ),
             ),

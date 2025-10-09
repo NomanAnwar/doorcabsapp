@@ -45,11 +45,13 @@ class RideInProgressScreen extends StatelessWidget {
                 return const Center(child: CircularProgressIndicator());
               }
               return GoogleMap(
-                initialCameraPosition: CameraPosition(target: c.currentPosition.value!, zoom: 14),
-                myLocationEnabled: true,
-                myLocationButtonEnabled: true,
+                initialCameraPosition: CameraPosition(target: c.currentPosition.value!, zoom: 17),
+                // myLocationEnabled: true,
+                // myLocationButtonEnabled: true,
                 onMapCreated: c.onMapCreated,
-              );
+                markers: c.driverMarkers.values.toSet(),        // ✅ show driver marker
+                polylines: c.polylines.value,                   // ✅ show polyline to dropoff
+              );;
             }),
           ),
 

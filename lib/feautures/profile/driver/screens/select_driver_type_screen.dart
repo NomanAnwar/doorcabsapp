@@ -1,4 +1,3 @@
-// lib/features/rides/screens/select_driver_type_screen.dart
 import 'package:doorcab/feautures/profile/driver/screens/select_vehicle_type_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';

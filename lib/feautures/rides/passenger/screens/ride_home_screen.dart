@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import '../../driver/screens/reuseable_widgets/drawer.dart';
 import '../controllers/ride_home_controller.dart';
 
 class RideHomeScreen extends StatelessWidget {
@@ -26,6 +27,7 @@ class RideHomeScreen extends StatelessWidget {
     double sh(double h) => h * screenHeight / baseHeight;
 
     return Scaffold(
+      drawer: const PassengerDrawer(),
       body: Stack(
         children: [
           /// Map - Fixed at the top (not scrollable)
@@ -58,13 +60,21 @@ class RideHomeScreen extends StatelessWidget {
           Positioned(
             top: sh(39),
             right: sw(33),
-            child: Image.asset(
-              "assets/images/drawer_icon.png",
-              fit: BoxFit.cover,
-              width: sw(39),
-              height: sh(39),
+            child: Builder(
+              builder: (context) => GestureDetector(
+                onTap: () {
+                  Scaffold.of(context).openDrawer(); // ✅ works now
+                },
+                child: Image.asset(
+                  "assets/images/drawer_icon.png",
+                  fit: BoxFit.cover,
+                  width: sw(39),
+                  height: sh(39),
+                ),
+              ),
             ),
           ),
+
 
           /// Back button
           Positioned(
@@ -94,7 +104,7 @@ class RideHomeScreen extends StatelessWidget {
                     width: sw(390),
                     height: sh(90),
                     margin: EdgeInsets.only(
-                        top: sh(24), left: sw(25), right: sw(25)),
+                        top: sh(24), left: sw(5), right: sw(5)),
                     child: Obx(() {
                       if (c.rideTypes.isEmpty && c.isLoadingRideTypes.value) {
                         return const Center(child: CircularProgressIndicator());

@@ -10,8 +10,14 @@ class DriverModel {
   final int eta; // minutes
   final double distance; // km
   final int fare;
-  final String pickup;
-  final String dropoff;
+  final String pickup;   // address
+  final String dropoff;  // address
+
+  // ✅ NEW: exact coordinates for routing
+  final double pickupLat;
+  final double pickupLng;
+  final double dropoffLat;
+  final double dropoffLng;
 
   DriverModel({
     required this.id,
@@ -27,6 +33,10 @@ class DriverModel {
     required this.fare,
     required this.pickup,
     required this.dropoff,
+    required this.pickupLat,
+    required this.pickupLng,
+    required this.dropoffLat,
+    required this.dropoffLng,
   });
 
   factory DriverModel.fromMap(Map m) => DriverModel(
@@ -43,6 +53,10 @@ class DriverModel {
     fare: m['fare'] ?? 250,
     pickup: m['pickup'] ?? '',
     dropoff: m['dropoff'] ?? '',
+    pickupLat: (m['pickupLat'] ?? 0.0).toDouble(),
+    pickupLng: (m['pickupLng'] ?? 0.0).toDouble(),
+    dropoffLat: (m['dropoffLat'] ?? 0.0).toDouble(),
+    dropoffLng: (m['dropoffLng'] ?? 0.0).toDouble(),
   );
 
   Map toMap() => {
@@ -59,5 +73,9 @@ class DriverModel {
     'fare': fare,
     'pickup': pickup,
     'dropoff': dropoff,
+    'pickupLat': pickupLat,
+    'pickupLng': pickupLng,
+    'dropoffLat': dropoffLat,
+    'dropoffLng': dropoffLng,
   };
 }

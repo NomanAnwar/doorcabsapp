@@ -22,6 +22,9 @@ class StorageService {
   // Driver profile completion flag
   static const _kDriverProfileCompleted = 'driver_profile_completed';
 
+  // ✅ ADDED: Driver Online Status
+  static const _kDriverOnlineStatus = 'driver_online_status';
+
   static Future<void> init() async {
     await GetStorage.init();
   }
@@ -127,9 +130,6 @@ class StorageService {
     return (_box.read('cities_cache') as List?)?.cast<Map<String, dynamic>>() ?? [];
   }
 
-
-
-
   /// ================= DRIVER PROFILE STEPS =================
   static void setDriverStep(String step, bool value) {
     _box.write('driver_step_$step', value);
@@ -164,5 +164,23 @@ class StorageService {
     final steps = getDriverSteps();
     print("🚖 Driver Steps Status: $steps");
     print(" Driver Profile Completed: ${isDriverProfileCompleted()}");
+  }
+
+  /// ================= DRIVER ONLINE STATUS =================
+  /// ✅ ADDED: Save driver's online/offline status
+  static Future<void> setDriverOnlineStatus(bool isOnline) async {
+    await _box.write(_kDriverOnlineStatus, isOnline);
+    print('💾 Driver online status saved: $isOnline');
+  }
+
+  /// ✅ ADDED: Get driver's online/offline status
+  static bool getDriverOnlineStatus() {
+    return _box.read<bool>(_kDriverOnlineStatus) ?? false;
+  }
+
+  /// ✅ ADDED: Clear driver online status (useful on logout)
+  static Future<void> clearDriverOnlineStatus() async {
+    await _box.remove(_kDriverOnlineStatus);
+    print('💾 Driver online status cleared');
   }
 }

@@ -2,7 +2,6 @@ import 'package:doorcab/utils/constants/colors.dart';
 import 'package:doorcab/utils/constants/image_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
 import '../../utils/constants/text_strings.dart';
 import '../../utils/theme/custom_theme/text_theme.dart';
 import '../controllers/splash_controller.dart';

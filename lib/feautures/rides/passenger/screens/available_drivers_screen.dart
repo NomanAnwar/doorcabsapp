@@ -2,8 +2,6 @@ import 'package:doorcab/common/widgets/buttons/f_primary_button.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-
-import '../../../../common/widgets/positioned/positioned_scaled.dart';
 import '../../../../utils/constants/colors.dart';
 import '../../../../utils/theme/custom_theme/text_theme.dart';
 import '../controllers/available_drivers_controller.dart';
@@ -15,226 +13,257 @@ class AvailableDriversScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = Get.put(AvailableDriversController());
 
-    // Get the initial fare from previous screen
-    final initialFare = Get.arguments?['fare'] ?? 250;
-    c.fareController.text = initialFare.toString();
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    /// Reference device size (iPhone 16 Pro Max)
+    const baseWidth = 440.0;
+    const baseHeight = 956.0;
+
+    double sw(double w) => w * screenWidth / baseWidth;
+    double sh(double h) => h * screenHeight / baseHeight;
 
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Stack(
-        children: [
-          /// Map full screen
-          Positioned.fill(
-            child: Obx(() {
-              if (c.currentPosition.value == null) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              return GoogleMap(
-                initialCameraPosition: CameraPosition(
-                  target: c.currentPosition.value!,
-                  zoom: 15,
+      body: SingleChildScrollView(
+        child: SizedBox(
+          width: screenWidth,
+          height: screenHeight,
+          child: Stack(
+            children: [
+              /// Map full screen
+              Positioned.fill(
+                child: Obx(() {
+                  if (c.currentPosition.value == null) {
+                    return Center(child: CircularProgressIndicator(strokeWidth: sw(2)));
+                  }
+                  return GoogleMap(
+                    initialCameraPosition: CameraPosition(
+                      target: c.currentPosition.value!,
+                      zoom: 13,
+                    ),
+                    myLocationEnabled: false,
+                    myLocationButtonEnabled: false,
+                    onMapCreated: c.onMapCreated,
+                    markers: c.driverMarkers.values.toSet(),
+                  );
+                }),
+              ),
+
+              /// Back button
+              Positioned(
+                top: sh(44),
+                left: sw(26),
+                child: IconButton(
+                  icon: Icon(Icons.arrow_back, size: sw(24)),
+                  onPressed: Get.back,
                 ),
-                myLocationEnabled: true,
-                myLocationButtonEnabled: false,
-                onMapCreated: c.onMapCreated,
-                markers: c.driverMarkers.values.toSet(),
-              );
-            }),
-          ),
-
-          /// Back button
-          PositionedScaled(
-            top: 44,
-            left: 26,
-            child: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: Get.back,
-            ),
-          ),
-
-          /// Bottom container
-          PositionedScaled(
-            top: 672,
-            left: 0,
-            right: 0,
-            child: Container(
-              height: 284,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
-                boxShadow: [
-                  BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 6,
-                      offset: const Offset(0, -2))
-                ],
               ),
-              child: Stack(
-                children: [
-                  /// "x drivers viewing" text
-                  PositionedScaled(
-                    top: 20, // from top 692 - container top 672 = 20
-                    left: 18,
-                    child: SizedBox(
-                      width: 180,
-                      child: Obx(() => Text(
-                        "${c.viewingDrivers.value} drivers are viewing your request",
-                        style: FTextTheme.lightTextTheme.labelSmall!.copyWith(
-                          fontWeight: FontWeight.w400,
-                          overflow: TextOverflow.ellipsis,
+
+              /// Bottom container
+              Positioned(
+                top: sh(672),
+                left: 0,
+                right: 0,
+                child: Container(
+                  height: sh(284),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(sw(14))),
+                    boxShadow: [
+                      BoxShadow(
+                          color: Colors.black12,
+                          blurRadius: sw(6),
+                          offset: const Offset(0, -2)
+                      )
+                    ],
+                  ),
+                  child: Stack(
+                    children: [
+                      /// "x drivers viewing" text
+                      Positioned(
+                        top: sh(20),
+                        left: sw(18),
+                        child: SizedBox(
+                          width: sw(180),
+                          child: Obx(() => Text(
+                            "${c.viewingDrivers.value} drivers are viewing your request",
+                            style: FTextTheme.lightTextTheme.labelSmall!.copyWith(
+                              fontWeight: FontWeight.w400,
+                              overflow: TextOverflow.ellipsis,
+                              fontSize: sw(14),
+                            ),
+                          )),
                         ),
-                      )),
-                    ),
-                  ),
-
-                  /// Driver avatars row (max 6)
-                  PositionedScaled(
-                    top: 17, // from top 689 - container top 672 = 17
-                    left: 274,
-                    width: 128,
-                    height: 24,
-                    child: Obx(() => ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: c.driverAvatars.take(6).length,
-                      separatorBuilder: (_, __) => const SizedBox(width: 4),
-                      itemBuilder: (_, index) {
-                        final avatar = c.driverAvatars[index];
-                        return CircleAvatar(
-                          radius: 12,
-                          backgroundImage: AssetImage(avatar),
-                        );
-                      },
-                    )
-                    ),
-                  ),
-
-                  /// Grey sub-container
-                  PositionedScaled(
-                    top: 51, // from top 723 - container top 672 = 51
-                    left: 0,
-                    right: 0,
-                    child: Container(
-                      height: 196,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE3E3E3),
-                        borderRadius: BorderRadius.circular(14),
                       ),
-                      child: Stack(
-                        children: [
-                          /// "Waiting for drivers..." text
-                          PositionedScaled(
-                            top: 5, // from top 728 - grey top 723 = 5
-                            left: 22,
-                            child: const Text(
-                              "Waiting for drivers to bid...",
-                              style: TextStyle(fontWeight: FontWeight.w600),
-                            ),
-                          ),
 
-                          /// Countdown timer
-                          PositionedScaled(
-                            top: 25, // from top 748 - grey top 723 = 25
-                            right: 22,
-                            child: Obx(() => Text(
-                              "${c.remainingSeconds.value}s",
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            )),
-                          ),
+                      /// Driver avatars row (max 6)
+                      Positioned(
+                        top: sh(17),
+                        left: sw(274),
+                        width: sw(128),
+                        height: sh(24),
+                        child: Obx(() => ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: c.driverAvatars.take(6).length,
+                          separatorBuilder: (_, __) => SizedBox(width: sw(4)),
+                          itemBuilder: (_, index) {
+                            final avatar = c.driverAvatars[index];
+                            return CircleAvatar(
+                              radius: sw(12),
+                              backgroundImage: AssetImage(avatar),
+                            );
+                          },
+                        )),
+                      ),
 
-                          /// Progress bar
-                          PositionedScaled(
-                            top: 50, // from top 773 - grey top 723 = 50
-                            left: 18,
-                            right: 18,
-                            child: Obx(() => LinearProgressIndicator(
-                              value: c.remainingSeconds.value / 60,
-                              backgroundColor: Colors.white,
-                              color: FColors.secondaryColor,
-                            )),
+                      /// Grey sub-container
+                      Positioned(
+                        top: sh(51),
+                        left: 0,
+                        right: 0,
+                        child: Container(
+                          height: sh(196),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE3E3E3),
+                            borderRadius: BorderRadius.circular(sw(14)),
                           ),
-
-                          /// -5 button
-                          PositionedScaled(
-                            top: 82, // from top 805 - grey top 723 = 82
-                            left: 38,
-                            child: IconButton(
-                              icon: const Icon(Icons.remove_circle_outline),
-                              onPressed: () => c.adjustFare(-5),
-                            ),
-                          ),
-
-                          /// Fare field
-                          PositionedScaled(
-                            top: 76, // from top 799 - grey top 723 = 76
-                            left: 126,
-                            width: 199,
-                            height: 39,
-                            child: TextField(
-                              controller: c.fareController,
-                              keyboardType: TextInputType.number,
-                              textAlign: TextAlign.center,
-                              decoration: InputDecoration(
-                                filled: true,
-                                fillColor: Colors.white,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                prefixText: "PKR ",
-                              ),
-                            ),
-                          ),
-
-                          /// +5 button
-                          PositionedScaled(
-                            top: 82, // from top 805 - grey top 723 = 82
-                            left: 365,
-                            child: IconButton(
-                              icon: const Icon(Icons.add_circle_outline),
-                              onPressed: () => c.adjustFare(5),
-                            ),
-                          ),
-
-                          /// Raise Fare button
-                          PositionedScaled(
-                            top: 135, // from top 858 - grey top 723 = 135
-                            left: 41,
-                            width: 358,
-                            height: 48,
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF595959),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                          child: Stack(
+                            children: [
+                              /// "Waiting for drivers..." text
+                              Positioned(
+                                top: sh(5),
+                                left: sw(22),
+                                child: Text(
+                                  "Waiting for drivers to bid...",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: sw(16),
+                                  ),
                                 ),
                               ),
-                              onPressed: c.raiseFare,
-                              child: Text("Raise Fare",),
-                            ),
-                          ),
 
-                          /// Raise Fare button
-                          PositionedScaled(
-                            top: 135, // from top 858 - grey top 723 = 135
-                            left: 41,
-                            width: 358,
-                            height: 48,
-                            child: FPrimaryButton(
-                              onPressed: c.raiseFare,
-                              text: 'Raise Fare',
-                            ),
+                              /// Countdown timer
+                              Positioned(
+                                top: sh(25),
+                                right: sw(22),
+                                child: Obx(() => Text(
+                                  "${c.remainingSeconds.value}s",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: sw(16),
+                                  ),
+                                )),
+                              ),
+
+                              /// Progress bar
+                              Positioned(
+                                top: sh(50),
+                                left: sw(18),
+                                right: sw(18),
+                                child: Obx(() => LinearProgressIndicator(
+                                  value: c.remainingSeconds.value / 60,
+                                  backgroundColor: Colors.white,
+                                  color: FColors.primaryColor,
+                                )),
+                              ),
+
+                              /// -5 button
+                              Positioned(
+                                top: sh(75),
+                                left: sw(38),
+                                child: IconButton(
+                                  icon: Image.asset(
+                                    "assets/images/minus5.png",
+                                    width: sw(40),
+                                    height: sh(40),
+                                  ),
+                                  onPressed: () => c.adjustFare(-5),
+                                ),
+                              ),
+
+                              /// Fare field
+                              Positioned(
+                                top: sh(82),
+                                left: sw(126),
+                                width: sw(199),
+                                height: sh(39),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: FColors.primaryColor,
+                                    borderRadius: BorderRadius.circular(sw(10)),
+                                    border: Border.all(color: Colors.grey),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Padding(
+                                        padding: EdgeInsets.only(left: sw(32)),
+                                        child: Text(
+                                          "PKR",
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.w700,
+                                              fontSize: sw(20)
+                                          ),
+                                        ),
+                                      ),
+                                      Expanded(
+                                        child: TextField(
+                                          controller: c.fareController,
+                                          keyboardType: TextInputType.number,
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.w700,
+                                              fontSize: sw(20)
+                                          ),
+                                          decoration: InputDecoration(
+                                            border: InputBorder.none,
+                                            contentPadding: EdgeInsets.symmetric(vertical: sh(11)),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+
+                              /// +5 button
+                              Positioned(
+                                top: sh(75),
+                                right: sw(38),
+                                child: IconButton(
+                                  icon: Image.asset(
+                                    "assets/images/plus5.png",
+                                    width: sw(40),
+                                    height: sh(40),
+                                  ),
+                                  onPressed: () => c.adjustFare(5),
+                                ),
+                              ),
+
+                              /// Raise Fare button
+                              Positioned(
+                                top: sh(135),
+                                left: sw(41),
+                                width: sw(358),
+                                height: sh(48),
+                                child: FPrimaryButton(
+                                  onPressed: c.raiseFare,
+                                  text: 'Raise Fare',
+                                  backgroundColor: FColors.chipBg,
+                                  textStyle: TextStyle(fontSize: sw(16)),
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
-              ),
-            ),
-          )
-        ],
+                ),
+              )
+            ],
+          ),
+        ),
       ),
     );
   }

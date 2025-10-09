@@ -2,6 +2,7 @@ import 'package:doorcab/feautures/profile/driver/screens/referral_screen.dart';
 import 'package:doorcab/feautures/rides/driver/screens/ride_request_list_screen.dart';
 import 'package:get/get.dart';
 
+import '../../feautures/profile/driver/controllers/vehicle_binding.dart';
 import '../../feautures/profile/driver/screens/profile_completion_screen.dart';
 import '../../feautures/profile/driver/screens/select_driver_type_screen.dart';
 import '../../feautures/profile/driver/screens/select_vehicle_type_screen.dart';
@@ -11,6 +12,8 @@ import '../../feautures/profile/driver/screens/upload_registration_screen.dart';
 import '../../feautures/profile/driver/screens/upload_selfie_screen.dart';
 import '../../feautures/profile/driver/screens/upload_vehicle_info_screen.dart';
 import '../../feautures/profile/passenger/screens/profile_screen.dart';
+import '../../feautures/rides/driver/screens/go_online_screen.dart';
+import '../../feautures/rides/driver/screens/go_to_pickup_screen.dart';
 import '../../feautures/rides/driver/screens/ride_request_detail_screen.dart';
 import '../../feautures/rides/passenger/screens/available_bids_screen.dart';
 import '../../feautures/rides/passenger/screens/available_drivers_screen.dart';
@@ -19,11 +22,13 @@ import '../../feautures/rides/passenger/screens/drivers_waiting_screen.dart';
 import '../../feautures/rides/passenger/screens/dropoff_screen.dart';
 import '../../feautures/rides/passenger/screens/map_selection_screen.dart';
 import '../../feautures/rides/passenger/screens/rate_driver_screen.dart';
+import '../../feautures/rides/passenger/screens/ride_booking_screen.dart';
 import '../../feautures/rides/passenger/screens/ride_detail_screen.dart';
 import '../../feautures/rides/passenger/screens/ride_history_screen.dart';
 import '../../feautures/rides/passenger/screens/ride_home_screen.dart';
 import '../../feautures/rides/passenger/screens/ride_in_progress_screen.dart';
 import '../../feautures/rides/passenger/screens/ride_request_screen.dart';
+import '../../feautures/rides/passenger/screens/ride_type_screen.dart';
 import '../../feautures/start/views/getting_started_screen.dart';
 import '../../feautures/start/views/otp_screen.dart';
 import '../../splash/views/home_screen.dart';
@@ -44,10 +49,12 @@ class AppPages {
 
 
     // Passenger Side Routes
+    GetPage(name: '/ride-type', page: () =>  RideTypeScreen()),
     GetPage(name: '/ride-home', page: () =>  RideHomeScreen()),
     GetPage(name: '/dropoff', page: () =>  DropOffScreen()),
     GetPage(name: '/map-selection', page: () => MapSelectionScreen()),
     GetPage(name: '/ride-request', page: () => RideRequestScreen()),
+    GetPage(name: '/ride-booking', page: () => RideBookingScreen()),
     GetPage(name: '/available-drivers', page: () => AvailableDriversScreen()),
     GetPage(name: '/available-bids', page: () => AvailableBidsScreen()),
     GetPage(name: "/drivers-waiting", page: () => DriversWaitingScreen(),),
@@ -65,12 +72,14 @@ class AppPages {
     GetPage(name: "/profile-completion", page: () => ProfileCompletionScreen()),
     GetPage(name: '/upload-cnic', page: () => UploadCnicScreen()),
     GetPage(name: '/upload-selfie', page: () => UploadSelfieScreen()),
-    GetPage(name: '/upload-vehicle-info', page: () => UploadVehicleInfoScreen()),
+    GetPage(name: '/upload-vehicle-info', page: () => UploadVehicleInfoScreen(),binding: VehicleBinding(),),
     GetPage(name: '/upload-registration', page: () => UploadRegistrationScreen()),
     GetPage(name: '/upload-license', page: () => UploadLicenseScreen()),
     GetPage(name: '/referral', page: () => ReferralScreen()),
+    GetPage(name: '/go-online', page: () => GoOnlineScreen()),
     GetPage(name: '/ride-request-list', page: () => RideRequestListScreen()),
     GetPage(name: '/ride-request-detail', page: () => RideRequestDetailScreen()),
+    GetPage(name: '/go-to-pickup', page: () => GoToPickupScreen()),
 
 
     // GetPage(name: "/basic-info", page: () => const BasicInfoScreen()),
