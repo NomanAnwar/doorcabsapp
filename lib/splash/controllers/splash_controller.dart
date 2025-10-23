@@ -1,16 +1,45 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:get/get.dart';
 import '../../feautures/shared/controllers/base_controller.dart';
+import '../../feautures/shared/services/driver_location_service.dart';
+import '../../feautures/shared/services/enhanced_pusher_manager.dart';
+import '../../feautures/shared/services/pusher_beams.dart';
 import '../../feautures/shared/services/storage_service.dart';
+import '../../utils/http/http_client.dart';
+
+final EnhancedPusherManager _pusherManager = EnhancedPusherManager();
+final PusherBeamsService _pusherBeams = PusherBeamsService();
+final DriverLocationService _driverLocationService = DriverLocationService();
+
 
 class SplashController extends BaseController {
   @override
   void onReady() {
     super.onReady();
+    _initializeCoreServices();
     _checkNavigation();
   }
 
+  Future<void> _initializeCoreServices() async {
+    try {
+      await Firebase.initializeApp();
+      FHttpHelper.setBaseUrl("https://dc.tricasol.pk");
+      await _pusherManager.initializeOnce();
+      await _pusherBeams.initialize();
+      await _pusherBeams.registerDevice();
+
+      // Configure location service if driver
+      if (StorageService.getRole() == "Driver" || StorageService.getRole() == "driver") {
+        await _driverLocationService.configure();
+        await _driverLocationService.start();
+      }
+    } catch (e) {
+      print('⚠️ Service initialization error: $e');
+    }
+  }
+
   Future<void> _checkNavigation() async {
-    await Future.delayed(const Duration(seconds: 2));
+    await Future.delayed(const Duration(seconds: 1));
 
     await executeWithRetry(() async {
       final lang = StorageService.getLanguage();
@@ -48,10 +77,15 @@ class SplashController extends BaseController {
     final isCompleted = hasStartedSteps ? _validateDriverSteps(driverSteps) : false;
 
     if (!hasStartedSteps) {
+      print("Driver 1");
       Get.offAllNamed('/select_driver_type');
     } else if (!isCompleted) {
+      print("Driver 11: $isCompleted");
       Get.offAllNamed('/profile-completion');
-    } else {
+    } else if(isCompleted) {
+      print("Driver 12: $isCompleted");
+      Get.offAllNamed('/go-online');
+    }else {
       Get.offAllNamed('/ride-type');
     }
   }
@@ -70,9 +104,10 @@ class SplashController extends BaseController {
         steps['cnic'] == true &&
         steps['selfie'] == true &&
         steps['licence'] == true &&
-        steps['vehicle'] == true &&
-        steps['referral'] == true &&
-        steps['policy'] == true;
+        steps['vehicle'] == true
+    // && steps['referral'] == true
+    //     && steps['policy'] == true
+    ;
   }
 }
 

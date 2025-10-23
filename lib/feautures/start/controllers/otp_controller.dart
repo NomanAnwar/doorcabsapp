@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:doorcab/common/widgets/snakbar/snackbar.dart';
+import 'package:doorcab/feautures/shared/services/driver_location_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
@@ -21,6 +22,8 @@ class OtpController extends GetxController {
 
   final Rxn<SignUpResponse> signUpResponse = Rxn<SignUpResponse>();
 
+  DriverLocationService _driverLocationService = DriverLocationService();
+
   @override
   void onInit() {
     super.onInit();
@@ -33,6 +36,7 @@ class OtpController extends GetxController {
 
     if (phone.isEmpty) {
       Get.snackbar("Error", "Phone number is missing.");
+      FSnackbar.show(title: 'Error', message: 'Phone Number is missing.', isError: true);
       Get.back();
       return;
     }
@@ -115,13 +119,8 @@ class OtpController extends GetxController {
   // ✅ UPDATED: Resend OTP with retry
   Future<void> resendOtp() async {
     if (resendAttempts.value >= maxResends) {
-      Get.snackbar(
-        "Try Later",
-        "Try after an hour if you did not receive the OTP",
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade100,
-        colorText: Colors.black,
-      );
+
+      FSnackbar.show(title: 'Try Later', message: 'Try after an hour if you did not receive the OTP', isError: true);
       return;
     }
 
@@ -166,7 +165,7 @@ class OtpController extends GetxController {
           );
           return response;
         },
-        maxRetries: 2,
+        maxRetries: 3,
       );
     } catch (e) {
       Get.snackbar("Error", e.toString());
@@ -180,7 +179,12 @@ class OtpController extends GetxController {
     otp.value = pin;
 
     if (pin.length != 4) {
-      Get.snackbar("Error", "Please enter valid 4 digit OTP");
+      // Get.snackbar("Error", "Please enter valid 4 digit OTP");
+      FSnackbar.show(
+        title: "Error",
+        message: "Please Enter Valid 4 digit OTP",
+        isError: true,
+      );
       return;
     }
 
@@ -238,12 +242,19 @@ class OtpController extends GetxController {
               }
             }
 
-            Get.snackbar("Success", response["message"] ?? "Phone verified");
-
+            FSnackbar.show(title: "Success", message:  response["message"] ?? "Phone verified");
             // go to profile completion step next
             if (role == "Driver") {
+              await _driverLocationService.configure();
+              await _driverLocationService.start();
+
               print("Navigating to Select Driver Type Screen...");
-              Get.offAllNamed('/select_driver_type');
+              if (response["isProfileUpdated"] && response["isCnicUploaded"] && response["isLicenseUploaded"] && response["isSelfieUploaded"] && response["isVehicleDocsUploaded"] && response["isRegistrationUploaded"] ){
+                Get.offAllNamed('/go-online');
+              } else {
+                Get.offAllNamed('/select_driver_type');
+              }
+
             } else {
               print("Navigating to Ride Home Screen...");
               if (response["isProfileUpdated"]) {
@@ -262,7 +273,7 @@ class OtpController extends GetxController {
         maxRetries: 2,
       );
     } catch (e) {
-      Get.snackbar("Error", e.toString());
+      FSnackbar.show(title: "Error", message:  e.toString());
     } finally {
       isLoading.value = false;  // ✅ Hide loader
     }
@@ -273,6 +284,47 @@ class OtpController extends GetxController {
     _timer?.cancel();
     super.onClose();
   }
+
+  void _handleDriverFlow(Map<String, dynamic> driverSteps) {
+
+    final hasStartedSteps = driverSteps.values.any((v) => v == true);
+    final isCompleted = hasStartedSteps ? _validateDriverSteps(driverSteps) : false;
+
+    if (!hasStartedSteps) {
+      print("Driver 1");
+      Get.offAllNamed('/select_driver_type');
+    } else if (!isCompleted) {
+      print("Driver 11: $isCompleted");
+      Get.offAllNamed('/profile-completion');
+    } else if(isCompleted) {
+      print("Driver 12: $isCompleted");
+      Get.offAllNamed('/go-online');
+    }else {
+      Get.offAllNamed('/ride-type');
+    }
+  }
+
+  bool _validateProfile(Map<String, dynamic> data) {
+    return data['firstName']?.toString().isNotEmpty == true &&
+        data['lastName']?.toString().isNotEmpty == true &&
+        data['email']?.toString().isNotEmpty == true &&
+        data['emergency_no']?.toString().isNotEmpty == true &&
+        data['country']?.toString().isNotEmpty == true &&
+        data['city']?.toString().isNotEmpty == true;
+  }
+
+  bool _validateDriverSteps(Map<String, dynamic> steps) {
+    return steps['basic'] == true &&
+        steps['cnic'] == true &&
+        steps['selfie'] == true &&
+        steps['licence'] == true &&
+        steps['vehicle'] == true
+        // && steps['referral'] == true
+        && steps['policy'] == true
+    ;
+  }
+
+
 }
 
 

@@ -35,11 +35,21 @@ class RequestModel {
 
   // ---------- JSON Factory ----------
   factory RequestModel.fromJson(Map<String, dynamic> json) {
+    // FIXED: Handle rating field which can be string or number
+    double ratingValue = 0.0;
+    if (json['rating'] != null) {
+      if (json['rating'] is num) {
+        ratingValue = (json['rating'] as num).toDouble();
+      } else if (json['rating'] is String && json['rating'].toString().isNotEmpty) {
+        ratingValue = double.tryParse(json['rating'].toString()) ?? 0.0;
+      }
+    }
+
     return RequestModel(
       id: json['rideId']?.toString() ?? json['id']?.toString() ?? '',
       passengerName: json['passengerName']?.toString() ?? 'Unknown Passenger',
       passengerImage: json['passengerImage']?.toString() ?? '',
-      rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
+      rating: ratingValue, // FIXED: Use the properly parsed rating
       pickupAddress: LocationPoint.fromJson(json['pickupAddress'] ?? {}),
       dropoffAddress: (json['dropoffAddress'] is List)
           ? (json['dropoffAddress'] as List)
@@ -87,9 +97,9 @@ class LocationPoint {
 
   factory LocationPoint.fromJson(Map<String, dynamic> json) {
     return LocationPoint(
-      lat: (json['lat'] as num).toDouble(),
-      lng: (json['lng'] as num).toDouble(),
-      address: json['address'],
+      lat: (json['lat'] as num?)?.toDouble() ?? 0.0, // FIXED: Handle null case
+      lng: (json['lng'] as num?)?.toDouble() ?? 0.0, // FIXED: Handle null case
+      address: json['address']?.toString() ?? '',
     );
   }
 
@@ -114,9 +124,9 @@ class DropoffPoint extends LocationPoint {
 
   factory DropoffPoint.fromJson(Map<String, dynamic> json) {
     return DropoffPoint(
-      lat: (json['lat'] as num).toDouble(),
-      lng: (json['lng'] as num).toDouble(),
-      address: json['address'],
+      lat: (json['lat'] as num?)?.toDouble() ?? 0.0, // FIXED: Handle null case
+      lng: (json['lng'] as num?)?.toDouble() ?? 0.0, // FIXED: Handle null case
+      address: json['address']?.toString() ?? '',
       stopOrder: json['stop_order'] ?? json['order'] ?? 0,
     );
   }

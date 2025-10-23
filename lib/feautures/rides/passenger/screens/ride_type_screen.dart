@@ -115,33 +115,42 @@ class RideTypeScreen extends StatelessWidget {
   }
 
   void _navigateToService(RideTypeScreenModel service, BuildContext context) {
-    // ✅ CHECK: Only allow navigation when ALL data is loaded
-    if (!controller.isReadyForNavigation) {
-      _showFeatureSnack("Data is still loading...", context);
+    // Quick check without complex computations
+    if (controller.isLoading.value || controller.isLoadingLocation.value) {
+      _showFeatureSnack("Please wait...", context);
       return;
     }
 
     if (service.vehicleList.isEmpty) {
       _showFeatureSnack(service.categoryName, context);
-    } else {
-      // route resolution from category
-      final route = _routeFromCategory(service.categoryName);
-
-      // ✅ Navigate with COMPLETE data including user location
-      Get.toNamed(
-        route,
-        arguments: {
-          'service': service,
-          'vehicles': service.vehicleList,
-          'cities': controller.cities,
-          'userLocation': controller.userLocation.value?.toJson(),
-          'userCurrentLocation': controller.userLocation.value?.toLatLng(),
-          'userCurrentAddress': controller.userLocation.value?.address,
-          'pickup': controller.userLocation.value?.address,
-          'pickupLatLng': controller.userLocation.value?.toLatLng(),
-        },
-      );
+      return;
     }
+
+    // Prepare arguments efficiently
+    final userLocation = controller.userLocation.value;
+    final arguments = {
+      'service': service,
+      'vehicles': service.vehicleList,
+      'cities': controller.cities,
+      if (userLocation != null) ...{
+        'userLocation': userLocation.toJson(),
+        'userCurrentLocation': userLocation.toLatLng(),
+        'userCurrentAddress': userLocation.address,
+        'pickup': userLocation.address,
+        'pickupLatLng': userLocation.toLatLng(),
+      }
+    };
+
+    // Use a small delay to ensure the ripple effect is visible
+    Future.delayed(Duration(milliseconds: 50), () {
+      Get.toNamed(
+        _routeFromCategory(service.categoryName),
+        arguments: arguments,
+        // Add these for smoother transition
+        // duration: Duration(milliseconds: 300),
+        // transition: Transition.cupertino,
+      );
+    });
   }
 
   // Helper widget to handle both base64 and network images (falls back to asset)
@@ -236,7 +245,23 @@ class RideTypeScreen extends StatelessWidget {
     }
   }
 
-  // Build the positioned widgets; skip a widget if API didn't return that category
+  // Tappable container with ripple effect (same as IconButton)
+  Widget _buildTappableContainer({
+    required Widget child,
+    required VoidCallback onTap,
+    BorderRadius? borderRadius,
+  }) {
+    return Material(
+      color: FColors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: borderRadius ?? BorderRadius.circular(12),
+        child: child,
+      ),
+    );
+  }
+
+// Build the positioned widgets; skip a widget if API didn't return that category
   List<Widget> _buildServiceWidgets(
       RxList<RideTypeScreenModel> services,
       double Function(num) sw,
@@ -254,26 +279,56 @@ class RideTypeScreen extends StatelessWidget {
     final delivery = _findService(services, 'delivery');
     final scheduleRide = _findService(services, 'schedule ride');
 
-    // Courier Box Image + label (only if courier exists)
-    if (courier != null) {
-      widgets.addAll([
-        Positioned(
-          top: sh(332),
-          left: sw(33),
-          child: GestureDetector(
-            onTap: () => _navigateToService(courier, context),
-            child: SizedBox(
-              width: sw(184),
-              height: sh(95),
-              child: _buildServiceImage(courier, sw(184), sh(95)),
+    // Enhanced tappable container with better hit detection
+    Widget _buildTappableContainer({
+      required Widget child,
+      required VoidCallback onTap,
+      required double top,
+      required double left,
+      required double width,
+      required double height,
+      BorderRadius? borderRadius,
+    }) {
+      return Positioned(
+        top: top,
+        left: left,
+        child: Container(
+          width: width,
+          height: height,
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onTap,
+              borderRadius: borderRadius ?? BorderRadius.circular(12),
+              splashColor: FColors.primaryColor.withOpacity(0.3),
+              highlightColor: FColors.primaryColor.withOpacity(0.1),
+              child: child,
             ),
           ),
         ),
-        Positioned(
+      );
+    }
+
+    // Courier Box Image + label
+    if (courier != null) {
+      widgets.addAll([
+        _buildTappableContainer(
+          top: sh(332),
+          left: sw(33),
+          width: sw(184),
+          height: sh(95),
+          onTap: () => _navigateToService(courier, context),
+          borderRadius: BorderRadius.circular(12),
+          child: _buildServiceImage(courier, sw(184), sh(95)),
+        ),
+        _buildTappableContainer(
           top: sh(434),
           left: sw(47),
-          child: GestureDetector(
-            onTap: () => _navigateToService(courier, context),
+          width: sw(120),
+          height: sh(30),
+          onTap: () => _navigateToService(courier, context),
+          child: Padding(
+            padding: EdgeInsets.all(sw(8)),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -298,23 +353,23 @@ class RideTypeScreen extends StatelessWidget {
     // Freight Box Image + label
     if (freight != null) {
       widgets.addAll([
-        Positioned(
+        _buildTappableContainer(
           top: sh(329),
           left: sw(249),
-          child: GestureDetector(
-            onTap: () => _navigateToService(freight, context),
-            child: SizedBox(
-              width: sw(184),
-              height: sh(95),
-              child: _buildServiceImage(freight, sw(184), sh(95)),
-            ),
-          ),
+          width: sw(184),
+          height: sh(95),
+          onTap: () => _navigateToService(freight, context),
+          borderRadius: BorderRadius.circular(12),
+          child: _buildServiceImage(freight, sw(184), sh(95)),
         ),
-        Positioned(
+        _buildTappableContainer(
           top: sh(432),
           left: sw(278),
-          child: GestureDetector(
-            onTap: () => _navigateToService(freight, context),
+          width: sw(120),
+          height: sh(30),
+          onTap: () => _navigateToService(freight, context),
+          child: Padding(
+            padding: EdgeInsets.all(sw(8)),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -339,23 +394,23 @@ class RideTypeScreen extends StatelessWidget {
     // City to City image + label
     if (cityToCity != null) {
       widgets.addAll([
-        Positioned(
+        _buildTappableContainer(
           top: sh(448),
           left: sw(18),
-          child: GestureDetector(
-            onTap: () => _navigateToService(cityToCity, context),
-            child: SizedBox(
-              width: sw(220),
-              height: sh(160),
-              child: _buildServiceImage(cityToCity, sw(220), sh(160)),
-            ),
-          ),
+          width: sw(220),
+          height: sh(160),
+          onTap: () => _navigateToService(cityToCity, context),
+          borderRadius: BorderRadius.circular(12),
+          child: _buildServiceImage(cityToCity, sw(220), sh(160)),
         ),
-        Positioned(
+        _buildTappableContainer(
           top: sh(602),
           left: sw(47),
-          child: GestureDetector(
-            onTap: () => _navigateToService(cityToCity, context),
+          width: sw(120),
+          height: sh(30),
+          onTap: () => _navigateToService(cityToCity, context),
+          child: Padding(
+            padding: EdgeInsets.all(sw(8)),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -380,23 +435,23 @@ class RideTypeScreen extends StatelessWidget {
     // Instant Ride image + label
     if (instantRide != null) {
       widgets.addAll([
-        Positioned(
+        _buildTappableContainer(
           top: sh(448),
           left: sw(244),
-          child: GestureDetector(
-            onTap: () => _navigateToService(instantRide, context),
-            child: SizedBox(
-              width: sw(220),
-              height: sh(160),
-              child: _buildServiceImage(instantRide, sw(220), sh(160)),
-            ),
-          ),
+          width: sw(220),
+          height: sh(160),
+          onTap: () => _navigateToService(instantRide, context),
+          borderRadius: BorderRadius.circular(12),
+          child: _buildServiceImage(instantRide, sw(220), sh(160)),
         ),
-        Positioned(
+        _buildTappableContainer(
           top: sh(601),
           left: sw(278),
-          child: GestureDetector(
-            onTap: () => _navigateToService(instantRide, context),
+          width: sw(120),
+          height: sh(30),
+          onTap: () => _navigateToService(instantRide, context),
+          child: Padding(
+            padding: EdgeInsets.all(sw(8)),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -421,29 +476,26 @@ class RideTypeScreen extends StatelessWidget {
     // Delivery image + label
     if (delivery != null) {
       widgets.addAll([
-        Positioned(
+        _buildTappableContainer(
           top: sh(634),
           left: sw(33),
-          child: GestureDetector(
-            onTap: () => _navigateToService(delivery, context),
-            child: Container(
-              width: sw(82),
-              height: sh(85),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10.0),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(10.0),
-                child: _buildServiceImage(delivery, sw(82), sh(85)),
-              ),
-            ),
+          width: sw(82),
+          height: sh(85),
+          onTap: () => _navigateToService(delivery, context),
+          borderRadius: BorderRadius.circular(10.0),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(10.0),
+            child: _buildServiceImage(delivery, sw(82), sh(85)),
           ),
         ),
-        Positioned(
+        _buildTappableContainer(
           top: sh(722),
           left: sw(47),
-          child: GestureDetector(
-            onTap: () => _navigateToService(delivery, context),
+          width: sw(120),
+          height: sh(30),
+          onTap: () => _navigateToService(delivery, context),
+          child: Padding(
+            padding: EdgeInsets.all(sw(8)),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -468,81 +520,80 @@ class RideTypeScreen extends StatelessWidget {
     // Schedule box + image
     if (scheduleRide != null) {
       widgets.addAll([
-        Positioned(
+        _buildTappableContainer(
           top: sh(632),
           left: sw(162),
-          child: GestureDetector(
-            onTap: () => _navigateToService(scheduleRide, context),
-            child: Container(
-              width: sw(257),
-              height: sh(95),
-              decoration: BoxDecoration(
-                color: FColors.primaryColor.withOpacity(0.4),
-                borderRadius: BorderRadius.circular(10.0),
-              ),
-              padding: EdgeInsets.all(sw(12)),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    "Schedule Your Ride?",
-                    textAlign: TextAlign.right,
-                    style: FTextTheme.lightTextTheme.headlineSmall!.copyWith(
-                      fontSize:
-                      FTextTheme.lightTextTheme.headlineSmall!.fontSize! *
-                          screenWidth /
-                          baseWidth,
-                      fontWeight: FontWeight.w600,
-                    ),
+          width: sw(257),
+          height: sh(95),
+          onTap: () => _navigateToService(scheduleRide, context),
+          borderRadius: BorderRadius.circular(10.0),
+          child: Container(
+            decoration: BoxDecoration(
+              color: FColors.primaryColor.withOpacity(0.4),
+              borderRadius: BorderRadius.circular(10.0),
+            ),
+            padding: EdgeInsets.all(sw(12)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "Schedule Your Ride?",
+                  textAlign: TextAlign.right,
+                  style: FTextTheme.lightTextTheme.headlineSmall!.copyWith(
+                    fontSize:
+                    (FTextTheme.lightTextTheme.headlineSmall!.fontSize! - 1) *
+                        screenWidth /
+                        baseWidth,
+                    fontWeight: FontWeight.w600,
                   ),
-                  Text(
-                    "(up to 20% off)",
-                    style: FTextTheme.lightTextTheme.labelSmall!.copyWith(
-                      fontSize:
-                      FTextTheme.lightTextTheme.labelSmall!.fontSize! *
-                          screenWidth /
-                          baseWidth,
-                      fontWeight: FontWeight.w600,
-                    ),
+                ),
+                Text(
+                  "(up to 20% off)",
+                  style: FTextTheme.lightTextTheme.labelSmall!.copyWith(
+                    fontSize:
+                    FTextTheme.lightTextTheme.labelSmall!.fontSize! *
+                        screenWidth /
+                        baseWidth,
+                    fontWeight: FontWeight.w600,
                   ),
-                  Align(
-                    alignment: Alignment.bottomRight,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Text(
-                          scheduleRide.categoryName,
-                          style: FTextTheme.lightTextTheme.labelSmall!.copyWith(
-                            fontSize: FTextTheme
-                                .lightTextTheme.labelSmall!.fontSize! *
-                                screenWidth /
-                                baseWidth,
-                            fontWeight: FontWeight.w600,
-                          ),
+                ),
+                Align(
+                  alignment: Alignment.bottomRight,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      Text(
+                        scheduleRide.categoryName,
+                        style: FTextTheme.lightTextTheme.labelSmall!.copyWith(
+                          fontSize: FTextTheme
+                              .lightTextTheme.labelSmall!.fontSize! *
+                              screenWidth /
+                              baseWidth,
+                          fontWeight: FontWeight.w600,
                         ),
-                        const SizedBox(width: 4),
-                        Image.asset(
-                          "assets/images/rightarrow.png",
-                          height: sh(14),
-                        ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(width: 4),
+                      Image.asset(
+                        "assets/images/rightarrow.png",
+                        height: sh(14),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
-        Positioned(
+        _buildTappableContainer(
           top: sh(653),
           left: sw(148),
-          child: SizedBox(
-            width: sw(125),
-            height: sh(113),
-            child: _buildServiceImage(scheduleRide, sw(125), sh(113)),
-          ),
+          width: sw(125),
+          height: sh(113),
+          onTap: () => _navigateToService(scheduleRide, context),
+          borderRadius: BorderRadius.circular(12),
+          child: _buildServiceImage(scheduleRide, sw(125), sh(113)),
         ),
       ]);
     }

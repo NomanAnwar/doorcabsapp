@@ -158,7 +158,7 @@ class RideBookingScreen extends StatelessWidget {
       // Selected: Expanded view
       return Container(
         width: sw(419),
-        height: sh(183),
+        height: sh(195),
         // margin: EdgeInsets.symmetric(vertical: sh(8), horizontal: sw(13)),
         decoration: BoxDecoration(
           color: Color(0xFFF2F2F2),
@@ -178,7 +178,7 @@ class RideBookingScreen extends StatelessWidget {
               child: Container(
                 width: sw(400),
                 height: sh(75),
-                margin: EdgeInsets.all(sh(6)),
+                margin: EdgeInsets.all(sh(8)),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(sw(14)),
@@ -331,6 +331,7 @@ class RideBookingScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          // Replace the passenger controls section in the expanded view
                           Row(
                             children: [
                               SvgPicture.asset(
@@ -351,20 +352,26 @@ class RideBookingScreen extends StatelessWidget {
                               const Spacer(),
                               Row(
                                 children: [
-                                  GestureDetector(
-                                    onTap: () => controller.decrementPassengers(option.id),
-                                    child: Container(
-                                      width: sw(20),
-                                      height: sh(20),
-                                      // padding: EdgeInsets.all(sw(6)),
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey,
-                                        borderRadius: BorderRadius.circular(sw(10)),
-                                        // border: Border.all(color: Colors.grey[300]!),
+                                  // Decrement button
+                                  Obx(() {
+                                    final isDisabled = controller.isPassengerDecrementDisabled(option.id);
+                                    return GestureDetector(
+                                      onTap: isDisabled ? null : () => controller.decrementPassengers(option.id),
+                                      child: Container(
+                                        width: sw(20),
+                                        height: sh(20),
+                                        decoration: BoxDecoration(
+                                          color: isDisabled ? Colors.grey[400] : Colors.grey,
+                                          borderRadius: BorderRadius.circular(sw(10)),
+                                        ),
+                                        child: Icon(
+                                            Icons.remove,
+                                            size: sw(12),
+                                            color: isDisabled ? Colors.grey[600] : Colors.black
+                                        ),
                                       ),
-                                      child: Icon(Icons.remove, size: sw(12), color: Colors.black),
-                                    ),
-                                  ),
+                                    );
+                                  }),
                                   SizedBox(width: sw(6)),
                                   Obx(() => Container(
                                     width: sw(27),
@@ -392,50 +399,61 @@ class RideBookingScreen extends StatelessWidget {
                                     ),
                                   )),
                                   SizedBox(width: sw(9)),
-                                  GestureDetector(
-                                    onTap: () => controller.incrementPassengers(option.id),
-                                    child: Container(
-                                      width: sw(20),
-                                      height: sh(20),
-                                      // padding: EdgeInsets.all(sw(6)),
-                                      decoration: BoxDecoration(
-                                        color: const Color.fromRGBO(0, 0, 0, 0.54),
-                                        borderRadius: BorderRadius.circular(sw(20)),
-                                        // border: Border.all(color: Colors.grey[300]!),
+                                  // Increment button
+                                  Obx(() {
+                                    final isDisabled = controller.isPassengerIncrementDisabled(option.id);
+                                    return GestureDetector(
+                                      onTap: isDisabled ? null : () => controller.incrementPassengers(option.id),
+                                      child: Container(
+                                        width: sw(20),
+                                        height: sh(20),
+                                        decoration: BoxDecoration(
+                                          color: isDisabled ? Colors.grey[400] : const Color.fromRGBO(0, 0, 0, 0.54),
+                                          borderRadius: BorderRadius.circular(sw(20)),
+                                        ),
+                                        child: Icon(
+                                            Icons.add,
+                                            size: sw(18),
+                                            color: isDisabled ? Colors.grey[600] : Colors.black
+                                        ),
                                       ),
-                                      child: Icon(Icons.add, size: sw(18), color: Colors.black),
-                                    ),
-                                  ),
+                                    );
+                                  }),
                                 ],
                               ),
                             ],
                           ),
                           SizedBox(height: sh(5),),
                           Divider(height: sh(0.5), thickness: sh(1), color: const Color(0xFF2B2D30)),
+                          // Replace the fare controls section
                           Row(
                             children: [
-                              GestureDetector(
-                                onTap: () => controller.decrementFare(option.id),
-                                child: Container(
-                                  width: sw(35),
-                                  height: sh(35),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[600],
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Center(
-                                    child: SizedBox(
-                                      width: sw(20),
-                                      height: sh(5),
-                                      child: SvgPicture.asset(
-                                        'assets/images/minus.svg',
-                                        fit: BoxFit.contain,
-                                        color: Colors.white,
+                              // Fare decrement button
+                              Obx(() {
+                                final isDisabled = controller.isFareDecrementDisabled(option.id);
+                                return GestureDetector(
+                                  onTap: isDisabled ? null : () => controller.decrementFare(option.id),
+                                  child: Container(
+                                    width: sw(35),
+                                    height: sh(35),
+                                    decoration: BoxDecoration(
+                                      color: isDisabled ? Colors.grey[400] : Colors.grey[600],
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Center(
+                                      child: SizedBox(
+                                        width: sw(20),
+                                        height: sh(5),
+                                        child: SvgPicture.asset(
+                                          'assets/images/minus.svg',
+                                          fit: BoxFit.contain,
+                                          color: isDisabled ? Colors.grey[600] : Colors.white,
+                                        ),
                                       ),
                                     ),
                                   ),
-                                ),
-                              ),
+                                );
+                              }),
                               const Spacer(),
                               Column(
                                 children: [
@@ -450,7 +468,6 @@ class RideBookingScreen extends StatelessWidget {
                                           baseWidth,
                                     ),
                                   )),
-                                  // ✅ UPDATED: Show "Calculating..." while fares are being calculated
                                   Obx(() => controller.isCalculatingFare.value
                                       ? Text(
                                     'Calculating fare...',
@@ -474,27 +491,32 @@ class RideBookingScreen extends StatelessWidget {
                                 ],
                               ),
                               const Spacer(),
-                              GestureDetector(
-                                onTap: () => controller.incrementFare(option.id),
-                                child: Container(
-                                  width: sw(35),
-                                  height: sh(35),
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFFFFC107),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Center(
-                                    child: SizedBox(
-                                      width: sw(20),
-                                      height: sh(20),
-                                      child: SvgPicture.asset(
-                                        'assets/images/add_stop_plus.svg',
-                                        fit: BoxFit.contain,
+                              // Fare increment button
+                              Obx(() {
+                                final isDisabled = controller.isFareIncrementDisabled(option.id);
+                                return GestureDetector(
+                                  onTap: isDisabled ? null : () => controller.incrementFare(option.id),
+                                  child: Container(
+                                    width: sw(35),
+                                    height: sh(35),
+                                    decoration: BoxDecoration(
+                                      color: isDisabled ? Colors.grey[400] : const Color(0xFFFFC107),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Center(
+                                      child: SizedBox(
+                                        width: sw(20),
+                                        height: sh(20),
+                                        child: SvgPicture.asset(
+                                          'assets/images/add_stop_plus.svg',
+                                          fit: BoxFit.contain,
+                                          color: isDisabled ? Colors.grey[600] : Colors.black,
+                                        ),
                                       ),
                                     ),
                                   ),
-                                ),
-                              ),
+                                );
+                              }),
                             ],
                           ),
                         ],
@@ -649,6 +671,7 @@ class RideBookingScreen extends StatelessWidget {
                             left: sw(20),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 GestureDetector(
                                   onTap: () => Get.back(),
@@ -734,14 +757,14 @@ class RideBookingScreen extends StatelessWidget {
                             top: sh(65),
                             left: sw(280),
                             child: SizedBox(
-                              width: sw(98),
+                              width: sw(105),
                               height: sh(30),
                               child: TextButton.icon(
                                 style: TextButton.styleFrom(
                                   backgroundColor: const Color(0xFFFFC107),
                                   padding: EdgeInsets.only(
-                                    left: sw(4),
-                                    right: sw(1)
+                                    left: sw(3),
+                                    right: sw(2)
                                   ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(sw(10)),
@@ -753,10 +776,10 @@ class RideBookingScreen extends StatelessWidget {
                                   style: FTextTheme.lightTextTheme.labelSmall!
                                       .copyWith(
                                     fontSize:
-                                    FTextTheme
+                                    (FTextTheme
                                         .lightTextTheme
                                         .labelSmall!
-                                        .fontSize! *
+                                        .fontSize!) *
                                         screenWidth /
                                         baseWidth,
                                   ),
@@ -897,7 +920,7 @@ class RideBookingScreen extends StatelessWidget {
                         children: [
                           Positioned(
                             top: sh(18),
-                            left: sw(50),
+                            left: sw(35),
                             child: SvgPicture.asset(
                               'assets/images/forward.svg',
                               width: sw(26.43),
@@ -943,52 +966,47 @@ class RideBookingScreen extends StatelessWidget {
                               ),
                             )),
                           ),
+                          // Replace the Request Ride button section
                           Positioned(
                             top: sh(55),
                             left: sw(77),
                             child: SizedBox(
                               width: sw(287),
                               height: sh(48),
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF003566),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(sw(14)),
+                              child: Obx(() {
+                                final isDisabled = controller.isRequestRideDisabled;
+                                return ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: isDisabled ? Colors.grey[400] : const Color(0xFF003566),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(sw(14)),
+                                    ),
                                   ),
-                                ),
-                                onPressed: () {
-                                  // ✅ ADDED: Validation before API call
-                                  if (controller.selectedRideType.value.isEmpty) {
-                                    Get.snackbar(
-                                      'Select Vehicle Type',
-                                      'Please select a Vehicle type first',
-                                      backgroundColor: Colors.orange,
-                                      colorText: Colors.white,
-                                    );
-                                    return;
-                                  }
-                                  controller.onRequestRide();
-                                },
-                                child: Obx(() => controller.isRequestingRide.value
-                                    ? SizedBox(
-                                  width: sw(20),
-                                  height: sw(20),
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  onPressed: isDisabled ? null : () {
+                                    controller.onRequestRide();
+                                  },
+                                  child: controller.isRequestingRide.value
+                                      ? SizedBox(
+                                    width: sw(20),
+                                    height: sw(20),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    ),
+                                  )
+                                      : Text(
+                                    'Request Ride',
+                                    style: FTextTheme.darkTextTheme.titleSmall!.copyWith(
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: FTextTheme.lightTextTheme
+                                          .titleSmall!.fontSize! *
+                                          screenWidth /
+                                          baseWidth,
+                                      color: isDisabled ? Colors.grey[600] : Colors.white,
+                                    ),
                                   ),
-                                )
-                                    : Text(
-                                  'Request Ride',
-                                  style: FTextTheme.darkTextTheme.titleSmall!.copyWith(
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: FTextTheme.lightTextTheme
-                                        .titleSmall!.fontSize! *
-                                        screenWidth /
-                                        baseWidth,
-                                  ),
-                                )),
-                              ),
+                                );
+                              }),
                             ),
                           ),
                           Positioned(
@@ -1006,8 +1024,8 @@ class RideBookingScreen extends StatelessWidget {
                             ),
                           ),
                           Positioned(
-                            top: sh(50),
-                            left: sw(10),
+                            top: sh(55),
+                            left: sw(12),
                             child: InkWell(
                               onTap: controller.isRequestingRide.value ? null : controller.openPaymentMethods,
                               child: Opacity(
@@ -1019,13 +1037,13 @@ class RideBookingScreen extends StatelessWidget {
                                       width: sw(30),
                                       height: sh(30),
                                     ),
-                                    SizedBox(height: sh(1)),
+                                    SizedBox(height: sh(0)),
                                     Obx(() => Text(
                                       _getPaymentText(controller.selectedPaymentLabel.value),
                                       style: FTextTheme.lightTextTheme.labelSmall!.copyWith(
                                         fontWeight: FontWeight.w400,
-                                        fontSize: FTextTheme.lightTextTheme
-                                            .labelSmall!.fontSize! *
+                                        fontSize: (FTextTheme.lightTextTheme
+                                            .labelSmall!.fontSize!-1) *
                                             screenWidth /
                                             baseWidth,
                                       ),

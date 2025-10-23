@@ -34,14 +34,14 @@ class RideRequestDetailScreen extends StatelessWidget {
                   left: sw(33),
                   child: IconButton(
                     icon: const Icon(Icons.arrow_back, color: Colors.black),
-                    onPressed: () => Get.back(),
+                    onPressed: c.isBidSubmitted.value ? null : () => c.closeScreen(),
                   ),
                 ),
 
                 /// Menu icon
                 Positioned(
-                  top: sh(25),
-                  left: sw(382),
+                  top: sh(39),
+                  right: sw(33),
                   child: Icon(Icons.menu, size: sw(39), color: Colors.black),
                 ),
 
@@ -87,12 +87,16 @@ class RideRequestDetailScreen extends StatelessWidget {
                         Positioned(
                           top: sh(12),
                           left: sw(18),
-                          child: CircleAvatar(
-                            radius: sw(30),
-                            backgroundImage: c.request.passengerImage.isNotEmpty
-                                ? NetworkImage(c.request.passengerImage)
-                                : const AssetImage(FImages.profile_img_sample)
-                            as ImageProvider,
+                          child: SizedBox(
+                            width: sw(60),
+                            height: sh(60),
+                            child: CircleAvatar(
+                              radius: sw(30),
+                              backgroundImage: c.request.passengerImage.isNotEmpty
+                                  ? NetworkImage(c.request.passengerImage,)
+                                  : const AssetImage(FImages.profile_img_sample)
+                              as ImageProvider,
+                            ),
                           ),
                         ),
 
@@ -104,9 +108,10 @@ class RideRequestDetailScreen extends StatelessWidget {
                             children: [
                               Obx(
                                     () => Text(
-                                  c.passengerName.value,
-                                  style:
-                                  FTextTheme.lightTextTheme.titleMedium,
+                                  c.passengerName.value.toUpperCase(),
+                                  style: FTextTheme.lightTextTheme.titleSmall!.copyWith(
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ),
                               SizedBox(width: sw(15)),
@@ -119,9 +124,9 @@ class RideRequestDetailScreen extends StatelessWidget {
                               Obx(
                                     () => Text(
                                   c.passengerRating.value.toString(),
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
+                                  style: FTextTheme.lightTextTheme.labelSmall!.copyWith(
+                                    fontWeight: FontWeight.w400,
+                                    fontSize: 10,
                                   ),
                                 ),
                               ),
@@ -131,75 +136,144 @@ class RideRequestDetailScreen extends StatelessWidget {
 
                         /// Pickup
                         Positioned(
-                          top: sh(43),
+                          top: sh(50),
                           left: sw(90),
                           child: Obx(
-                                () => Text(
-                              "Pickup: ${c.pickupAddress.value}",
-                              style: const TextStyle(fontSize: 12),
+                                () => RichText(
+                              text: TextSpan(
+                                children: [
+                                  TextSpan(
+                                    text: 'Pickup : ',
+                                    style: FTextTheme.lightTextTheme.labelSmall!.copyWith(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  TextSpan(
+                                    text: c.pickupAddress.value,
+                                    style: FTextTheme.lightTextTheme.labelSmall!.copyWith(
+                                      fontWeight: FontWeight.w400,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
                             ),
                           ),
                         ),
 
                         /// Dropoff
                         Positioned(
-                          top: sh(65),
+                          top: sh(75),
                           left: sw(90),
                           child: Obx(
-                                () => Text(
-                              "Dropoff: ${c.dropoffAddress.value}",
-                              style: const TextStyle(fontSize: 12),
+                                () => RichText(
+                              text: TextSpan(
+                                children: [
+                                  TextSpan(
+                                    text: 'Dropoff : ',
+                                    style: FTextTheme.lightTextTheme.labelSmall!.copyWith(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  TextSpan(
+                                    text: c.dropoffAddress.value,
+                                    style: FTextTheme.lightTextTheme.labelSmall!.copyWith(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
                             ),
                           ),
                         ),
 
                         /// Estimated arrival
                         Positioned(
-                          top: sh(88),
+                          top: sh(100),
                           left: sw(90),
                           child: Obx(
                                 () => Text(
-                              "Estimated Arrival time: ${c.estimatedPickupTime.value}",
-                              style: const TextStyle(fontSize: 12),
+                              "Estimated Arrival time ${c.estimatedPickupTime.value}",
+                              style: FTextTheme.lightTextTheme.labelSmall!.copyWith(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w400,
+                              ),
                             ),
                           ),
                         ),
 
                         /// Estimated dropoff
                         Positioned(
-                          top: sh(106),
+                          top: sh(125),
                           left: sw(90),
                           child: Obx(
                                 () => Text(
-                              "Estimated Dropoff time: ${c.estimatedDropoffTime.value}",
-                              style: const TextStyle(fontSize: 12),
+                              "Estimated Dropoff time ${c.estimatedDropoffTime.value}",
+                              style: FTextTheme.lightTextTheme.labelSmall!.copyWith(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w400,
+                              ),
                             ),
                           ),
                         ),
 
                         /// Time + Distance
                         Positioned(
-                          top: sh(134),
+                          top: sh(150),
                           left: sw(260),
                           child: Obx(
                                 () => Text(
                               c.estimatedPickupTime.value,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.w600),
+                              style: FTextTheme.lightTextTheme.labelSmall!.copyWith(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
                         ),
                         Positioned(
-                          top: sh(134),
-                          left: sw(365),
+                          top: sh(150),
+                          right: sw(35),
                           child: Obx(
                                 () => Text(
                               c.distance.value,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.w600),
+                              style: FTextTheme.lightTextTheme.labelSmall!.copyWith(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
                         ),
+
+                        /// NEW: Bid status indicator
+                        // if (c.isBidSubmitted.value)
+                        //   Positioned(
+                        //     top: sh(170),
+                        //     left: sw(90),
+                        //     right: sw(15),
+                        //     child: Container(
+                        //       padding: EdgeInsets.symmetric(horizontal: sw(8), vertical: sh(2)),
+                        //       decoration: BoxDecoration(
+                        //         color: Colors.blue.withOpacity(0.1),
+                        //         borderRadius: BorderRadius.circular(4),
+                        //       ),
+                        //       child: Text(
+                        //         "Bid Submitted - Waiting for response...",
+                        //         style: FTextTheme.lightTextTheme.labelSmall!.copyWith(
+                        //           fontSize: 10,
+                        //           color: Colors.blue,
+                        //           fontWeight: FontWeight.w600,
+                        //         ),
+                        //       ),
+                        //     ),
+                        //   ),
                       ],
                     ),
                   ),
@@ -209,93 +283,122 @@ class RideRequestDetailScreen extends StatelessWidget {
                 Positioned(
                   top: sh(617),
                   left: sw(28),
+                  right: sw(28),
                   child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Obx(
-                            () => ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF003566),
-                            minimumSize: Size(sw(185), sh(37)),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
+                      // PKR Amount Container
+                      Container(
+                        width: sw(185),
+                        height: sh(37),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: sw(8),
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF003566),
+                          borderRadius: BorderRadius.circular(sw(10)),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: sw(48),
+                              height: sh(30),
+                              padding: EdgeInsets.symmetric(vertical: 1),
+                              decoration: BoxDecoration(
+                                color: FColors.white,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Image.asset("assets/images/cash.png"),
                             ),
-                          ),
-                          onPressed: () {},
-                          icon: Image.asset("assets/images/cash.png"),
-                          label: Text(
-                            "PKR ${c.fare.value}",
-                            style: const TextStyle(color: Colors.white),
-                          ),
+                            SizedBox(width: sw(8)),
+                            Obx(() => Text(
+                              'PKR ${c.fare.value.toStringAsFixed(0)}',
+                              style: FTextTheme.lightTextTheme.headlineSmall!.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: FColors.white,
+                              ),
+                            )),
+                          ],
                         ),
                       ),
-                      SizedBox(width: sw(20)),
-                      Obx(
-                            () => ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: c.offerSecondsLeft.value > 0
-                                ? const Color(0xFFF8DC25)
-                                : const Color(0xFFFFC300),
-                            minimumSize: Size(sw(160), sh(37)),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                          onPressed: c.offerSecondsLeft.value > 0
-                              ? () {
-                            c.acceptRide(
-                              c.request.id,
-                              c.fare.value.toDouble(),
-                            );
-                          }
-                              : null,
-                          child: Text(
-                            "Accept (${c.offerSecondsLeft.value})",
-                            style: const TextStyle(color: Colors.black),
+
+                      // Accept Button
+                      Obx(() => ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: c.isBidSubmitted.value
+                              ? Colors.grey
+                              : const Color(0xFFF8DC25),
+                          minimumSize: Size(sw(160), sh(37)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
                           ),
                         ),
-                      ),
+                        onPressed: c.isBidSubmitted.value
+                            ? null
+                            : () {
+                          c.acceptRide(
+                            c.request.id,
+                            c.fare.value.toDouble(),
+                          );
+                        },
+                        child: Text(
+                          "Accept",
+                          style: FTextTheme.lightTextTheme.titleSmall!.copyWith(),
+                        ),
+                      )),
                     ],
                   ),
                 ),
 
                 /// Quick fare buttons
-                Positioned(
-                  top: sh(687),
-                  left: sw(59),
-                  child: Row(
-                    children: [
-                      _fareChip("260", sw, c),
-                      SizedBox(width: sw(10)),
-                      _fareChip("270", sw, c, selected: true),
-                      SizedBox(width: sw(10)),
-                      _fareChip("280", sw, c),
-                    ],
+                if (!c.isBidSubmitted.value) // Hide fare chips when bid submitted
+                  Positioned(
+                    top: sh(687),
+                    left: sw(59),
+                    child: Obx(() => Row(
+                      children: [
+                        _fareChip(c.originalFare.value + 20, sw, c),
+                        SizedBox(width: sw(10)),
+                        _fareChip(c.originalFare.value + 30, sw, c),
+                        SizedBox(width: sw(10)),
+                        _fareChip(c.originalFare.value + 40, sw, c),
+                      ],
+                    )),
                   ),
-                ),
 
                 /// Offer amount input
-                Positioned(
-                  top: sh(750),
-                  left: sw(19),
-                  child: Container(
-                    width: sw(393),
-                    height: sh(45),
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE3E3E3),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: TextField(
-                      controller: c.offerController,
-                      keyboardType: TextInputType.number,
-                      textAlign: TextAlign.center,
-                      decoration: const InputDecoration(
-                        border: InputBorder.none,
-                        hintText: "Type your offer amount",
+                if (!c.isBidSubmitted.value) // Hide input when bid submitted
+                  Positioned(
+                    top: sh(750),
+                    left: sw(19),
+                    child: Container(
+                      width: sw(393),
+                      height: sh(45),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE3E3E3),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: TextField(
+                        controller: c.offerController,
+                        keyboardType: TextInputType.number,
+                        textAlign: TextAlign.center,
+                        style: FTextTheme.lightTextTheme.titleMedium!.copyWith(fontWeight: FontWeight.w500),
+                        decoration: const InputDecoration(
+                          border: InputBorder.none,
+                          hintText: "Type your offer amount",
+                        ),
+                        onChanged: (value) {
+                          // ✅ FIXED: Update fare when user types
+                          if (value.isNotEmpty) {
+                            final enteredAmount = int.tryParse(value);
+                            if (enteredAmount != null && enteredAmount >= c.originalFare.value) {
+                              c.fare.value = enteredAmount;
+                            }
+                          }
+                        },
                       ),
                     ),
                   ),
-                ),
 
                 /// Close Request button
                 Positioned(
@@ -311,9 +414,9 @@ class RideRequestDetailScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(14),
                         ),
                       ),
-                      onPressed: () => Get.back(),
-                      child: const Text(
-                        "Close Request",
+                      onPressed: c.isBidSubmitted.value ? null : () => c.closeScreen(),
+                      child: Text(
+                        c.isBidSubmitted.value ? "Waiting for Response..." : "Close Request",
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,
@@ -331,8 +434,22 @@ class RideRequestDetailScreen extends StatelessWidget {
                 width: double.infinity,
                 height: double.infinity,
                 color: Colors.black54,
-                child: const Center(
-                  child: CircularProgressIndicator(color: Colors.white),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const CircularProgressIndicator(color: Colors.white),
+                    SizedBox(height: sh(20)),
+                    Text(
+                      c.isBidSubmitted.value
+                          ? "Waiting for passenger response..."
+                          : "Submitting your bid...",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: sw(16),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
               ),
           ],
@@ -342,16 +459,18 @@ class RideRequestDetailScreen extends StatelessWidget {
   }
 
   Widget _fareChip(
-      String amount,
+      int amount,
       double Function(double) sw,
       RideRequestDetailController c, {
         bool selected = false,
       }) {
     return InkWell(
-      onTap: () => c.fare.value = int.parse(amount),
+      onTap: () {
+        // ✅ FIXED: Set the selected chip amount as current fare
+        c.fare.value = amount;
+      },
       child: Obx(() {
-        final isSelected =
-            c.fare.value.toString() == amount || (selected && true);
+        final isSelected = c.fare.value == amount;
         return Container(
           width: sw(100),
           height: 40,
@@ -363,8 +482,12 @@ class RideRequestDetailScreen extends StatelessWidget {
             borderRadius: BorderRadius.circular(10),
           ),
           child: Text(
-            "PKR $amount",
-            style: const TextStyle(color: Colors.white),
+            "$amount",
+            style: FTextTheme.lightTextTheme.displaySmall!.copyWith(
+                fontWeight: FontWeight.w600,
+                fontSize: 30,
+                color: FColors.white
+            ),
           ),
         );
       }),

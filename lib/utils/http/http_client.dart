@@ -4,6 +4,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:io';
 
+import '../../common/widgets/snakbar/snackbar.dart';
+
 class FHttpHelper {
   static String _baseUrl = '';
 
@@ -91,22 +93,22 @@ class FHttpHelper {
         case 'POST':
           response = await http
               .post(uri, headers: headers, body: json.encode(body))
-              .timeout(const Duration(seconds: 15));
+              .timeout(const Duration(seconds: 120));
           break;
         case 'PUT':
           response = await http
               .put(uri, headers: headers, body: json.encode(body))
-              .timeout(const Duration(seconds: 15));
+              .timeout(const Duration(seconds: 45));
           break;
         case 'DELETE':
           response = await http
               .delete(uri, headers: headers)
-              .timeout(const Duration(seconds: 15));
+              .timeout(const Duration(seconds: 45));
           break;
         default:
           response = await http
               .get(uri, headers: headers)
-              .timeout(const Duration(seconds: 30));
+              .timeout(const Duration(seconds: 120));
       }
 
       return _handleResponse(response);
@@ -123,6 +125,7 @@ class FHttpHelper {
 
   /// Handle API response
   static Map<String, dynamic> _handleResponse(http.Response response) {
+    // FSnackbar.show(title: 'Request', message: response.body.toString());
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return json.decode(response.body);
     } else {

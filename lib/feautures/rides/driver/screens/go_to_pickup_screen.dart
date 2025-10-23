@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import '../../../../utils/constants/colors.dart';
 import '../../../../utils/constants/image_strings.dart';
 import '../../../../utils/theme/custom_theme/text_theme.dart';
 import '../../driver/screens/reuseable_widgets/drawer.dart';
@@ -13,13 +14,12 @@ class GoToPickupScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Replace DriversWaitingController with GoToPickupController
+    final raw = Get.arguments;
     final c = Get.put(GoToPickupController());
 
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
 
-    /// Reference (iPhone 16 Pro Max)
     const baseWidth = 440.0;
     const baseHeight = 956.0;
 
@@ -34,7 +34,7 @@ class GoToPickupScreen extends StatelessWidget {
         height: screenHeight,
         child: Stack(
           children: [
-            /// Map (top → till 510)
+            /// Map (top → till 520)
             Positioned(
               top: 0,
               left: 0,
@@ -45,12 +45,11 @@ class GoToPickupScreen extends StatelessWidget {
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                // Build initial camera position
                 CameraPosition initial;
                 if (c.currentPosition.value != null) {
-                  initial = CameraPosition(target: c.currentPosition.value!, zoom: 17);
+                  initial = CameraPosition(target: c.currentPosition.value!, zoom: 14);
                 } else {
-                  initial = CameraPosition(target: c.pickupPosition.value!, zoom: 17);
+                  initial = CameraPosition(target: c.pickupPosition.value!, zoom: 14);
                 }
 
                 final poly = c.routePolyline.value;
@@ -58,8 +57,6 @@ class GoToPickupScreen extends StatelessWidget {
 
                 return GoogleMap(
                   initialCameraPosition: initial,
-                  // myLocationEnabled: true,
-                  // myLocationButtonEnabled: false,
                   onMapCreated: c.onMapCreated,
                   markers: markers,
                   polylines: poly != null ? {poly} : <Polyline>{},
@@ -101,7 +98,7 @@ class GoToPickupScreen extends StatelessWidget {
               ),
             ),
 
-            /// Driver Info Card
+            /// Passenger Info Card
             Positioned(
               top: sh(535),
               left: sw(10),
@@ -118,163 +115,153 @@ class GoToPickupScreen extends StatelessWidget {
                     Positioned(
                       top: sh(12),
                       left: sw(18),
-                      child: CircleAvatar(
+                      child: Obx(() => CircleAvatar(
                         radius: sw(30),
-                        backgroundImage:
-                        AssetImage('assets/images/profile_img_sample.png') as ImageProvider,
-                      ),
+                        backgroundImage: c.passengerProfileUrl.value.isNotEmpty
+                            ? NetworkImage(c.passengerProfileUrl.value)
+                            : const AssetImage('assets/images/profile_img_sample.png') as ImageProvider,
+                      )),
                     ),
 
-                    /// Passenger Name, Rating Star, and Rating Value in a single row
+                    /// Passenger Name + Rating
                     Positioned(
-                      top: sh(13),
+                      top: sh(10),
                       left: sw(90),
                       child: Row(
                         children: [
-                          /// Passenger Name
                           Obx(() => Text(
-                            c.passengerName.value.isNotEmpty ? c.passengerName.value : "name",
-                            style: FTextTheme.lightTextTheme.titleMedium,
+                            c.passengerName.value.isNotEmpty ? c.passengerName.value.toUpperCase() : "NAME",
+                            style: FTextTheme.lightTextTheme.bodyLarge,
                           )),
-
                           SizedBox(width: sw(15)),
-                          // Spacing between name and star
-
-                          /// Passenger Rating Star
-                          const Icon(
-                            Icons.star,
-                            size: 14,
-                            color: Color(0xFFFFC300),
-                          ),
-
+                          const Icon(Icons.star, size: 14, color: Color(0xFFFFC300)),
                           SizedBox(width: sw(5)),
-                          // Spacing between star and rating value
-
-                          /// Passenger Rating Value
-                          Text(
-                            "00",
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
+                          Obx(() => Text(
+                            c.passengerRating.value.isNotEmpty ? c.passengerRating.value : "0",
+                            style: FTextTheme.lightTextTheme.bodyLarge!.copyWith(
+                              fontSize: 10,
                             ),
-                          ),
+                          )),
                         ],
                       ),
                     ),
 
                     /// Pickup
                     Positioned(
-                      top: sh(43),
+                      top: sh(40),
                       left: sw(90),
-                      child: Obx(() => RichText(
-                        text: TextSpan(
-                          children: [
-                            TextSpan(
-                              text: 'Pickup: ',
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black),
-                            ),
-                            TextSpan(
-                              text: c.pickupAddress.value.isNotEmpty ? c.pickupAddress.value : 'location',
-                              style: const TextStyle(fontSize: 12, color: Colors.black),
-                            ),
-                          ],
+                      child: Obx(() => SizedBox(
+                        width: sw(260), // ✅ restrict width
+                        child: RichText(
+                          overflow: TextOverflow.ellipsis, // ✅ show ellipsis if too long
+                          text: TextSpan(
+                            children: [
+                              TextSpan(
+                                text: 'Pickup: ',
+                                style: FTextTheme.lightTextTheme.bodyLarge!.copyWith(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold, // ✅ bold only this
+                                ),
+                              ),
+                              TextSpan(
+                                text: c.pickupAddress.value.isNotEmpty
+                                    ? c.pickupAddress.value
+                                    : 'location',
+                                style: FTextTheme.lightTextTheme.bodyLarge!.copyWith(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.normal, // ✅ normal text
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       )),
                     ),
 
                     /// Dropoff
                     Positioned(
-                      top: sh(66),
+                      top: sh(63),
                       left: sw(90),
-                      child: Obx(() => RichText(
-                        text: TextSpan(
-                          children: [
-                            TextSpan(
-                              text: 'Dropoff: ',
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black),
-                            ),
-                            TextSpan(
-                              text: c.dropoffAddress.value.isNotEmpty ? c.dropoffAddress.value : 'location',
-                              style: const TextStyle(fontSize: 12, color: Colors.black),
-                            ),
-                          ],
+                      child: Obx(() => SizedBox(
+                        width: sw(260), // ✅ restrict width
+                        child: RichText(
+                          overflow: TextOverflow.ellipsis, // ✅ ellipsis overflow
+                          text: TextSpan(
+                            children: [
+                              TextSpan(
+                                text: 'Dropoff: ',
+                                style: FTextTheme.lightTextTheme.bodyLarge!.copyWith(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold, // ✅ bold only this
+                                ),
+                              ),
+                              TextSpan(
+                                text: c.dropoffAddress.value.isNotEmpty
+                                    ? c.dropoffAddress.value
+                                    : 'location',
+                                style: FTextTheme.lightTextTheme.bodyLarge!.copyWith(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.normal, // ✅ normal text
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       )),
                     ),
 
                     /// Estimated arrival
                     Positioned(
-                      top: sh(89),
+                      top: sh(86),
                       left: sw(90),
-                      child: Obx(() => RichText(
-                        text: TextSpan(
-                          children: [
-                            TextSpan(
-                              text: 'Estimated Arrival time: ',
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black),
-                            ),
-                            TextSpan(
-                              text: c.estimatedArrivalTime.value.isNotEmpty ? c.estimatedArrivalTime.value : '0000',
-                              style: const TextStyle(fontSize: 12, color: Colors.black),
-                            ),
-                          ],
-                        ),
+                      child: Obx(() => Text(
+                        "Estimated Arrival: ${c.estimatedArrivalTime.value.isNotEmpty ? c.estimatedArrivalTime.value : '0000'}",
+                        style: FTextTheme.lightTextTheme.bodyLarge!.copyWith(fontSize: 10),
                       )),
                     ),
 
                     /// Estimated dropoff
                     Positioned(
-                      top: sh(112),
+                      top: sh(109),
                       left: sw(90),
-                      child: Obx(() => RichText(
-                        text: TextSpan(
-                          children: [
-                            TextSpan(
-                              text: 'Estimated Dropoff time: ',
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black),
-                            ),
-                            TextSpan(
-                              text: c.estimatedDropoffTime.value.isNotEmpty ? c.estimatedDropoffTime.value : '11:00 am',
-                              style: const TextStyle(fontSize: 12, color: Colors.black),
-                            ),
-                          ],
-                        ),
+                      child: Obx(() => Text(
+                        "Estimated Dropoff: ${c.estimatedDropoffTime.value.isNotEmpty ? c.estimatedDropoffTime.value : '11:00 am'}",
+                        style: FTextTheme.lightTextTheme.bodyLarge!.copyWith(fontSize: 10),
                       )),
                     ),
 
                     /// Estimated distance
                     Positioned(
-                      top: sh(135),
+                      top: sh(132),
                       left: sw(90),
-                      child: Obx(() => RichText(
-                        text: TextSpan(
-                          children: [
-                            TextSpan(
-                              text: 'Estimated Distance: ',
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black),
-                            ),
-                            TextSpan(
-                              text: c.estimatedDistance.value.isNotEmpty ? c.estimatedDistance.value : '0 km',
-                              style: const TextStyle(fontSize: 12, color: Colors.black),
-                            ),
-                          ],
-                        ),
+                      child: Obx(() => Text(
+                        "Estimated Distance: ${c.estimatedDistance.value.isNotEmpty ? c.estimatedDistance.value : '0 km'}",
+                        style: FTextTheme.lightTextTheme.bodyLarge!.copyWith(fontSize: 10),
                       )),
                     ),
 
                     /// Time (top-right)
                     Positioned(
                       top: sh(12),
-                      right: sw(54),
-                      child: Text("2 min", style: TextStyle(fontSize: sw(14))),
+                      right: sw(20),
+                      child: Text(
+                        "2 min",
+                        style: FTextTheme.lightTextTheme.bodyLarge!.copyWith(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
 
                     /// Call
                     Positioned(
                       top: sh(50),
-                      right: sw(54),
+                      right: sw(20),
                       child: GestureDetector(
-                        onTap: () => c.callPhone(),
+                        onTap: () {
+                          launchUrl(Uri(scheme: 'tel', path: c.phone.value));
+                        },
+                        // onTap: () => c.callPhone(),
                         child: Image.asset("assets/images/call.png", width: sw(30), height: sh(30)),
                       ),
                     ),
@@ -282,21 +269,52 @@ class GoToPickupScreen extends StatelessWidget {
                     /// Message
                     Positioned(
                       top: sh(90),
-                      right: sw(54),
+                      right: sw(20),
                       child: GestureDetector(
-                        onTap: () => Get.toNamed("/chat-with_driver", ),
+                        onTap: () => Get.toNamed("/chat", arguments: raw),
                         child: Image.asset("assets/images/chat.png", width: sw(30), height: sh(30)),
                       ),
                     ),
 
                     /// Fare
                     Positioned(
-                      top: sh(160),
-                      left: sw(40),
+                      top: sh(157),
+                      left: sw(18),
                       child: Obx(() => Row(
                         children: [
-                          Text("PKR ", style: TextStyle(fontWeight: FontWeight.w600, fontSize: sw(14))),
-                          Text("${c.fare.value}", style: TextStyle(fontWeight: FontWeight.w800, fontSize: sw(20))),
+                          Container(
+                            width: sw(185),
+                            height: sh(37),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: sw(8),
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF003566),
+                              borderRadius: BorderRadius.circular(sw(10)),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: sw(48),
+                                  height: sh(30),
+                                  padding: EdgeInsets.symmetric(vertical: 1),
+                                  decoration: BoxDecoration(
+                                    color: FColors.white,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Image.asset("assets/images/cash.png"),
+                                ),
+                                SizedBox(width: sw(8)),
+                                Text(
+                                  'PKR ${c.fare.value.toStringAsFixed(0)}',
+                                  style: FTextTheme.lightTextTheme.headlineSmall!.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    color: FColors.white,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ],
                       )),
                     ),
@@ -305,9 +323,9 @@ class GoToPickupScreen extends StatelessWidget {
               ),
             ),
 
-            /// "I am at pickup location"
+            /// "I am at pickup location" Button
             Obx(() => c.rideStarted.value
-                ? const SizedBox.shrink() // ✅ hide when ride started
+                ? const SizedBox.shrink()
                 : Positioned(
               top: sh(749),
               left: sw(30),
@@ -323,16 +341,20 @@ class GoToPickupScreen extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text("I am at pick up Location",
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: sw(14))),
+                      Text(
+                        "I am at pick up Location",
+                        style: FTextTheme.lightTextTheme.bodyLarge!.copyWith(
+                          fontWeight: FontWeight.bold,
+                          fontSize: sw(14),
+                        ),
+                      ),
                       SizedBox(width: sw(12)),
                       Icon(Icons.arrow_forward_ios, color: Colors.black, size: sw(18)),
                     ],
                   ),
                 ),
               ),
-            ),
-            ),
+            )),
 
             /// Cancel Ride
             Positioned(
@@ -345,7 +367,14 @@ class GoToPickupScreen extends StatelessWidget {
                   children: [
                     Image.asset("assets/images/vector_icon.png", width: sw(20), height: sh(20)),
                     SizedBox(width: sw(8)),
-                    Text("Cancel Ride", style: TextStyle(fontSize: sw(14), fontWeight: FontWeight.bold, color: Colors.red)),
+                    Text(
+                      "Cancel Ride",
+                      style: FTextTheme.lightTextTheme.bodyLarge!.copyWith(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.red,
+                      ),
+                    ),
                     const Spacer(),
                     Image.asset("assets/images/polygon_icon.png", width: sw(18), height: sh(18)),
                   ],
@@ -353,7 +382,6 @@ class GoToPickupScreen extends StatelessWidget {
               ),
             ),
 
-            /// Start Ride Button
             /// Start / Complete Ride Button
             Obx(() => Positioned(
               top: sh(870),
@@ -366,23 +394,65 @@ class GoToPickupScreen extends StatelessWidget {
                     backgroundColor: const Color(0xFF003366),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(sw(12))),
                   ),
-                  onPressed: () {
+                  onPressed: (c.isStartingRide.value || c.isCompletingRide.value) ? null : () {
                     if (!c.rideStarted.value) {
                       c.markDriverStarted();
                     } else {
                       c.markDriverEnded();
                     }
                   },
-                  child: Text(
+                  child: (c.isStartingRide.value || c.isCompletingRide.value)
+                      ? SizedBox(
+                    width: sw(20),
+                    height: sw(20),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                      : Text(
                     c.rideStarted.value ? "Mark Complete" : "Start a Ride",
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: sw(16), color: Colors.white),
+                    style: FTextTheme.darkTextTheme.labelLarge,
                   ),
                 ),
               ),
             )),
+
+            /// ✅ ADDED: Fullscreen loader overlay for THREE SPECIFIC ACTIONS
+            if (c.isStartingRide.value || c.isCompletingRide.value || c.isCancelingRide.value)
+              Container(
+                width: double.infinity,
+                height: double.infinity,
+                color: Colors.black54,
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const CircularProgressIndicator(color: Colors.white),
+                      const SizedBox(height: 20),
+                      Text(
+                        _getLoadingText(c),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
           ],
         ),
       ),
     );
+  }
+
+  // ✅ ADDED: Helper method to get appropriate loading text
+  String _getLoadingText(GoToPickupController c) {
+    if (c.isStartingRide.value) return "Starting ride...";
+    if (c.isCompletingRide.value) return "Completing ride...";
+    if (c.isCancelingRide.value) return "Canceling ride...";
+    return "Loading...";
   }
 }

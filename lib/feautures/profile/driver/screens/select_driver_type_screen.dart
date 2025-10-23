@@ -1,7 +1,9 @@
 import 'package:doorcab/feautures/profile/driver/screens/select_vehicle_type_screen.dart';
+import 'package:doorcab/utils/constants/colors.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
-import '../../../../common/widgets/positioned/positioned_scaled.dart';
+import '../../../../utils/theme/custom_theme/text_theme.dart';
 import '../controllers/select_driver_type_controller.dart';
 
 class SelectDriverTypeScreen extends StatelessWidget {
@@ -11,7 +13,17 @@ class SelectDriverTypeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = Get.put(SelectDriverTypeController());
 
-    // helper builder for radio tile
+    // Responsive scaling setup (same as OtpScreen)
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    const baseWidth = 440.0;
+    const baseHeight = 956.0;
+
+    double sw(double w) => w * screenWidth / baseWidth;
+    double sh(double h) => h * screenHeight / baseHeight;
+
+    // ---- Reusable radio tile ----
     Widget _radioTile({
       required String keyName,
       required Widget leadingIcon,
@@ -22,53 +34,70 @@ class SelectDriverTypeScreen extends StatelessWidget {
       required double height,
       required VoidCallback onTap,
     }) {
-      return PositionedScaled(
-        top: top,
-        left: left,
-        width: width,
-        height: height,
+      return Positioned(
+        top: sh(top),
+        left: sw(left),
         child: GestureDetector(
           onTap: onTap,
           behavior: HitTestBehavior.opaque,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            width: sw(width),
+            height: sh(height),
+            padding: EdgeInsets.symmetric(horizontal: sw(12)),
             decoration: BoxDecoration(
-              color: const Color(0xFFF2F2F2), // bg color f2f2f2
-              borderRadius: BorderRadius.circular(12),
+              color: const Color(0xFFF2F2F2),
+              borderRadius: BorderRadius.circular(sw(12)),
             ),
             child: Stack(
               children: [
-                // leading icon (placed left inside the tile)
+                // Icon
                 Positioned(
-                  top: (height - 30) / 2, // approximate centering for provided 30px icon height
-                  left: 8,
+                  left: sw(8),
+                  top: 0,
+                  bottom: 0,
                   child: SizedBox(
-                    width: 40,
-                    height: 30,
-                    child: leadingIcon,
+                    width: sw(40),
+                    height: sh(40),
+                    child: Center(child: leadingIcon),
                   ),
                 ),
-                // title (text)
+
+                // Title
                 Positioned(
-                  top: (height / 2) - 10,
-                  left: 102 - left, // the design spec says text at 314 from left with container left 20 -> 314-20=294? We approximate using left param to place at requested absolute left by adjusting.
-                  child: Text(
-                    title,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  left: sw(66),
+                  top: 0,
+                  bottom: 0,
+                  child: Center(
+                    child: Text(
+                      title,
+                      style: FTextTheme.lightTextTheme.bodyLarge!.copyWith(
+                        fontSize:
+                        FTextTheme.lightTextTheme.bodyLarge!.fontSize! *
+                            screenWidth /
+                            baseWidth,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                 ),
-                // radio at far right
+
+                // Radio Button
                 Positioned(
-                  top: (height / 2) - 10,
-                  right: 12,
-                  child: Obx(() {
-                    final selected = c.selectedRole.value == keyName;
-                    return Icon(
-                      selected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
-                      size: 22,
-                      color: selected ? Colors.black : Colors.black54,
-                    );
-                  }),
+                  right: sw(12),
+                  top: 0,
+                  bottom: 0,
+                  child: Center(
+                    child: Obx(() {
+                      final selected = c.selectedDriverType.value == keyName;
+                      return Icon(
+                        selected
+                            ? Icons.radio_button_checked
+                            : Icons.radio_button_unchecked,
+                        size: sw(22),
+                        color: selected ? Colors.black : Colors.black54,
+                      );
+                    }),
+                  ),
                 ),
               ],
             ),
@@ -81,30 +110,37 @@ class SelectDriverTypeScreen extends StatelessWidget {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // row with back arrow and centered title (row from top 48 from left 29)
-          PositionedScaled(
-            top: 48,
-            left: 29,
-            right: 29,
+          // ---- Top Bar ----
+          Positioned(
+            top: sh(48),
+            left: sw(29),
+            right: sw(29),
             child: SizedBox(
-              height: 60,
+              height: sh(60),
               child: Stack(
                 children: [
                   Positioned(
                     left: 0,
-                    top: 12,
+                    top: sh(12),
                     child: IconButton(
-                      icon: const Icon(Icons.arrow_back),
+                      icon: Icon(Icons.arrow_back, color: FColors.black,),
+                      iconSize: sw(28),
                       onPressed: () => Get.back(),
                     ),
                   ),
                   Align(
                     alignment: Alignment.center,
                     child: Padding(
-                      padding: const EdgeInsets.only(top: 12.0),
+                      padding: EdgeInsets.only(top: sh(15.0)),
                       child: Text(
                         "Choose Your Role",
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                        style: FTextTheme.lightTextTheme.titleLarge!.copyWith(
+                          fontWeight: FontWeight.w700,
+                          fontSize:
+                          FTextTheme.lightTextTheme.titleLarge!.fontSize! *
+                              screenWidth /
+                              baseWidth,
+                        ),
                       ),
                     ),
                   ),
@@ -113,39 +149,56 @@ class SelectDriverTypeScreen extends StatelessWidget {
             ),
           ),
 
-          // centered text block width 358 from top 114 and left 41 (text center aligned)
-          PositionedScaled(
-            top: 114,
-            left: 41,
-            width: 358,
+          // ---- Description ----
+          Positioned(
+            top: sh(114),
+            left: sw(41),
             child: SizedBox(
+              width: sw(358),
               child: Text(
                 "Select the role that best fits your current task. This choice will determine the types of jobs you'll be offered.",
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 14, height: 1.4, color: Colors.black87),
+                style: FTextTheme.lightTextTheme.bodyLarge!.copyWith(
+                  color: Colors.black87,
+                  fontSize:
+                  FTextTheme.lightTextTheme.bodyLarge!.fontSize! *
+                      screenWidth /
+                      baseWidth,
+                ),
               ),
             ),
           ),
 
-          // Role selection label below (width 262 from top 237 left 89)
-          PositionedScaled(
-            top: 237,
-            left: 89,
-            width: 262,
-            child: const Center(
-              child: Text(
-                "Role Selection",
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+          // ---- Role Selection Label ----
+          Positioned(
+            top: sh(237),
+            left: sw(89),
+            child: SizedBox(
+              width: sw(262),
+              child: Center(
+                child: Text(
+                  "Role Selection",
+                  textAlign: TextAlign.center,
+                  style: FTextTheme.lightTextTheme.titleMedium!.copyWith(
+                    fontWeight: FontWeight.w700,
+                    fontSize:
+                    FTextTheme.lightTextTheme.titleMedium!.fontSize! *
+                        screenWidth /
+                        baseWidth,
+                  ),
+                ),
               ),
             ),
           ),
 
-          // First radio field (driver)
-          // container from top 295 left 20 width 402 height 58
+          // ---- Driver Tile ----
           _radioTile(
             keyName: 'driver',
-            leadingIcon: const Icon(Icons.directions_car, size: 28),
+            leadingIcon: SvgPicture.asset(
+              'assets/images/driver.svg',
+              width: sw(40),
+              height: sh(40),
+            ),
             title: "Driver",
             top: 295,
             left: 20,
@@ -153,29 +206,32 @@ class SelectDriverTypeScreen extends StatelessWidget {
             height: 58,
             onTap: () {
               c.selectRole('driver');
-              // navigate to vehicle selection screen after a tiny delay so radio shows
               Future.microtask(() {
-                Get.to(() => const SelectVehicleTypeScreen(), arguments: {'role': 'driver'});
+                Get.to(() => const SelectVehicleTypeScreen(),
+                    arguments: {'role': 'driver'});
               });
             },
           ),
 
-          // Second radio field (courier) — positioned under the first
+          // ---- Courier Tile ----
           _radioTile(
             keyName: 'courier',
-            leadingIcon: const Icon(Icons.local_shipping, size: 28),
+            leadingIcon: SvgPicture.asset(
+              'assets/images/courier.svg',
+              width: sw(40),
+              height: sh(40),
+            ),
             title: "Courier",
-            top: 371, // roughly 295 + 58 + some gap -> matches visual stack
+            top: 385,
             left: 20,
             width: 402,
             height: 58,
             onTap: () {
               c.selectRole('courier');
-              // show message then proceed
-              Get.snackbar("Notice", "Courier screens are under designing");
-              // Future.microtask(() {
-              //   Get.to(() => const SelectVehicleTypeScreen(), arguments: {'role': 'courier'});
-              // });
+              Future.microtask(() {
+                Get.to(() => const SelectVehicleTypeScreen(),
+                    arguments: {'role': 'courier'});
+              });
             },
           ),
         ],

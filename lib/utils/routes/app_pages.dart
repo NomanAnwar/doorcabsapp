@@ -1,4 +1,5 @@
 import 'package:doorcab/feautures/profile/driver/screens/referral_screen.dart';
+import 'package:doorcab/feautures/profile/driver/screens/vehicle_images_screen.dart';
 import 'package:doorcab/feautures/rides/driver/screens/ride_request_list_screen.dart';
 import 'package:get/get.dart';
 
@@ -17,11 +18,11 @@ import '../../feautures/rides/driver/screens/go_to_pickup_screen.dart';
 import '../../feautures/rides/driver/screens/ride_request_detail_screen.dart';
 import '../../feautures/rides/passenger/screens/available_bids_screen.dart';
 import '../../feautures/rides/passenger/screens/available_drivers_screen.dart';
-import '../../feautures/rides/passenger/screens/chat_screen.dart';
+import '../../feautures/rides/ride_common/screens/chat_screen.dart';
 import '../../feautures/rides/passenger/screens/drivers_waiting_screen.dart';
 import '../../feautures/rides/passenger/screens/dropoff_screen.dart';
 import '../../feautures/rides/passenger/screens/map_selection_screen.dart';
-import '../../feautures/rides/passenger/screens/rate_driver_screen.dart';
+import '../../feautures/rides/ride_common/screens/rating_screen.dart';
 import '../../feautures/rides/passenger/screens/ride_booking_screen.dart';
 import '../../feautures/rides/passenger/screens/ride_detail_screen.dart';
 import '../../feautures/rides/passenger/screens/ride_history_screen.dart';
@@ -46,6 +47,8 @@ class AppPages {
     GetPage(name: '/otp', page: () => const OtpScreen()),
     GetPage(name: '/home', page: () => const HomeScreen()),
     GetPage(name: '/profile', page: () => ProfileScreen()),
+    GetPage(name: "/chat", page: () => ChatScreen(),),
+    GetPage(name: "/rate", page: () => RatingScreen()),
 
 
     // Passenger Side Routes
@@ -58,9 +61,7 @@ class AppPages {
     GetPage(name: '/available-drivers', page: () => AvailableDriversScreen()),
     GetPage(name: '/available-bids', page: () => AvailableBidsScreen()),
     GetPage(name: "/drivers-waiting", page: () => DriversWaitingScreen(),),
-    GetPage(name: "/chat-with_driver", page: () => ChatScreen(),),
     GetPage(name: "/ride-in-progress", page: () => RideInProgressScreen()),
-    GetPage(name: "/rate-driver", page: () => RateDriverScreen()),
     GetPage(name: "/ride-history", page: () => RideHistoryScreen()),
     GetPage(name: "/ride-detail", page: () => RideDetailScreen()),
 
@@ -73,6 +74,7 @@ class AppPages {
     GetPage(name: '/upload-cnic', page: () => UploadCnicScreen()),
     GetPage(name: '/upload-selfie', page: () => UploadSelfieScreen()),
     GetPage(name: '/upload-vehicle-info', page: () => UploadVehicleInfoScreen(),binding: VehicleBinding(),),
+    GetPage(name: '/vehicle-images', page: () => VehicleImagesScreen(),),
     GetPage(name: '/upload-registration', page: () => UploadRegistrationScreen()),
     GetPage(name: '/upload-license', page: () => UploadLicenseScreen()),
     GetPage(name: '/referral', page: () => ReferralScreen()),

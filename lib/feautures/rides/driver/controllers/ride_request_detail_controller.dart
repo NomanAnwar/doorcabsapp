@@ -8,12 +8,13 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
+import '../../../../common/widgets/snakbar/snackbar.dart';
 import '../../../../utils/http/http_client.dart';
 import '../../../shared/controllers/base_controller.dart';
 import '../../../shared/services/enhanced_pusher_manager.dart';
 import '../../../shared/services/storage_service.dart';
 
-class RideRequestDetailController extends BaseController { // ✅ CHANGED: Extend BaseController
+class RideRequestDetailController extends BaseController {
   final Rx<LatLng?> currentPosition = Rx<LatLng?>(null);
   final Rx<Polyline?> routePolyline = Rx<Polyline?>(null);
   final markers = <Marker>{}.obs;
@@ -30,12 +31,14 @@ class RideRequestDetailController extends BaseController { // ✅ CHANGED: Exten
   final RxString estimatedDropoffTime = "".obs;
   final RxString distance = "".obs;
 
+  // ✅ FIXED: Added originalFare to store the initial offer amount
+  final RxInt originalFare = 0.obs;
   final RxInt fare = 0.obs;
   final RxBool isAccepting = false.obs;
 
-  /// Countdown for Accept button
-  final RxInt offerSecondsLeft = 60.obs;
-  Timer? _offerTimer;
+  /// NEW: Track bid submission state
+  final RxBool isBidSubmitted = false.obs;
+  final RxString bidStatus = "".obs; // "submitted", "accepted", "rejected", "ignored"
 
   /// Custom offer input
   final TextEditingController offerController = TextEditingController();
@@ -53,7 +56,13 @@ class RideRequestDetailController extends BaseController { // ✅ CHANGED: Exten
   void onInit() {
     super.onInit();
 
-    // ✅ Receive data from previous screen
+    // Add a safety check to ensure we have a valid request
+    if (Get.arguments?['request'] == null) {
+      print("❌ No request provided to RideRequestDetailController");
+      Get.back();
+      return;
+    }
+
     request = Get.arguments['request'] as RequestModel;
 
     // ✅ DEBUG: Print all request data to see what's available
@@ -68,13 +77,17 @@ class RideRequestDetailController extends BaseController { // ✅ CHANGED: Exten
     final additionalData = Get.arguments;
     print('   All arguments keys: ${additionalData.keys}');
 
+    // ✅ FIXED: Store original fare and set both fares
+    final originalAmount = request.offerAmount.toInt();
+    originalFare.value = originalAmount;
+    fare.value = originalAmount; // Start with original amount
+
     // ✅ Bind request fields
     passengerName.value = request.passengerName;
     passengerRating.value = request.rating;
     pickupAddress.value = request.pickupAddress.address;
     dropoffAddress.value = request.dropoffAddress[0].address;
     distance.value = "${request.distanceKm.toStringAsFixed(2)} km";
-    fare.value = request.offerAmount.toInt();
 
     estimatedPickupTime.value = "${request.etaMinutes} min";
     estimatedDropoffTime.value = "${request.etaMinutes + 15} min"; // Example only
@@ -82,7 +95,7 @@ class RideRequestDetailController extends BaseController { // ✅ CHANGED: Exten
     // ✅ Setup map route (real implementation)
     _setMapData();
 
-    _startOfferCountdown();
+    // REMOVED: _startOfferCountdown();
   }
 
   /// NEW: fetch route & markers from Google Directions API (handles stops/waypoints)
@@ -385,28 +398,170 @@ class RideRequestDetailController extends BaseController { // ✅ CHANGED: Exten
     }
   }
 
-  // Timer logic remains unchanged (only returned value when timed out)
-  void _startOfferCountdown() {
-    _offerTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (offerSecondsLeft.value > 0) {
-        offerSecondsLeft.value--;
-      } else {
-        timer.cancel();
-        // Notify caller about timeout so list screen can remove request & timer if desired
-        Get.back(result: 'timed_out');
-      }
-    });
+  // REMOVED: _startOfferCountdown() method
+
+
+  void _handleBidResponse(Map<String, dynamic> data, String eventType) {
+    print("🎯 Bid $eventType received: $data");
+
+    // Hide loading
+    isLoading.value = false;
+    isBidSubmitted.value = false;
+
+    switch (eventType) {
+      case "bid-accepted":
+        bidStatus.value = "accepted";
+        showSuccess(data['message'] ?? "Your bid was accepted!");
+        // Navigate to pickup screen after a short delay
+        Future.delayed(Duration(seconds: 2), () {
+          Get.offNamed('/go-to-pickup', arguments: {"rideData": data});
+        });
+        break;
+
+      case "bid-rejected":
+        bidStatus.value = "rejected";
+        // FSnackbar.show(
+        //     title: "Bid Rejected 1",
+        //     message: data['message'] ?? "Your bid was rejected by the passenger",
+        //     isError: true
+        // );
+        // Stay on screen but allow new bid or close
+        break;
+
+      case "bid-ignored":
+        bidStatus.value = "ignored";
+        // FSnackbar.show(
+        //     title: "Bid Ignored",
+        //     message: "Passenger ignored your bid",
+        //     isError: true
+        // );
+        // Navigate back to list screen after a short delay
+        Future.delayed(Duration(seconds: 1), () {
+          Get.back(result: 'ignored');
+        });
+        break;
+    }
   }
 
-  void onAcceptRequest() {
-    isAccepting.value = true;
-    showSuccess("You accepted this ride request!");
-  }
+  // ✅ FIXED: Now accepts the current fare value (from chip or text field)
+  // Future<void> acceptRide(String rideId, double fareOffered) async {
+  //   try {
+  //     // ✅ VALIDATION: Check if fare is at least original amount
+  //     if (fareOffered < originalFare.value) {
+  //       showError("Offer amount must be at least PKR ${originalFare.value}");
+  //       return;
+  //     }
+  //
+  //     isLoading.value = true;
+  //
+  //     await executeWithRetry(() async {
+  //       // ✅ Ensure auth token is set
+  //       final token = StorageService.getAuthToken();
+  //       if (token == null) {
+  //         throw Exception("User not authenticated. Please login again.");
+  //       }
+  //       FHttpHelper.setAuthToken(token, useBearer: true);
+  //
+  //       print("🚀 Submitting bid - Ride ID: $rideId, Fare: $fareOffered");
+  //       final response = await FHttpHelper.post('ride/submit-bids', {
+  //         "rideId": rideId,
+  //         "fareOffered": fareOffered,
+  //       });
+  //
+  //       print("🚀 Ride bid response: $response");
+  //
+  //       if (response['message'] == "Bid submitted") {
+  //         final bid = response['bid'];
+  //         String? driverId;
+  //         if (bid != null) {
+  //           final driverRaw = bid['driverId'] ?? bid['driver'] ?? response['driverId'];
+  //           if (driverRaw is Map && driverRaw.containsKey('_id')) {
+  //             driverId = driverRaw['_id']?.toString();
+  //           } else if (driverRaw is String) {
+  //             driverId = driverRaw;
+  //           }
+  //         }
+  //         final submittedRideId = bid?['rideId']?.toString() ?? response['rideId']?.toString();
+  //
+  //         final subs = <Future>[];
+  //
+  //         if (driverId != null) {
+  //           subs.add(_pusherManager.subscribeOnce(
+  //             "driver-$driverId",
+  //             events: {
+  //               "bid-accepted": (data) {
+  //                 print("🎉 (detail) Bid accepted event for driver-$driverId: $data");
+  //                 showSuccess(data['message'] ?? "Your bid was accepted!");
+  //               },
+  //               "bid-ignored": (eventData) {
+  //                 FSnackbar.show(title: "bid ignored", message: eventData.toString());
+  //                 // _handleBidAccepted(eventData);
+  //               },
+  //               "bid-rejected": (eventData) {
+  //                 FSnackbar.show(title: "bid rejected", message: eventData.toString());
+  //                 // _handleBidAccepted(eventData);
+  //               },
+  //             },
+  //           ));
+  //         } else {
+  //           print("⚠️ driverId not found in submit-bids response");
+  //         }
+  //
+  //         if (submittedRideId != null) {
+  //           subs.add(_pusherManager.subscribeOnce(
+  //             "ride-$submittedRideId",
+  //             events: {
+  //               "driver-location": (data) {
+  //                 print("📍 (detail) driver-location: $data");
+  //                 try {
+  //                   final lat = (data['lat'] != null) ? double.tryParse(data['lat'].toString()) : null;
+  //                   final lng = (data['lng'] != null) ? double.tryParse(data['lng'].toString()) : null;
+  //                   if (lat != null && lng != null) {
+  //                     currentPosition.value = LatLng(lat, lng);
+  //                   }
+  //                 } catch (e) {
+  //                   print("❌ Error parsing driver-location in detail controller: $e");
+  //                 }
+  //               },
+  //             },
+  //           ));
+  //         } else {
+  //           print("⚠️ rideId not found in API response");
+  //         }
+  //
+  //         if (subs.isNotEmpty) {
+  //           await Future.wait(subs);
+  //         }
+  //
+  //         // Notify list screen the request was accepted
+  //         Get.back(result: 'accepted');
+  //       } else {
+  //         throw Exception(response['message'] ?? 'Failed to submit bid');
+  //       }
+  //
+  //       showSuccess("Your bid of PKR $fareOffered was submitted successfully!");
+  //     }, maxRetries: 2);
+  //   } catch (e) {
+  //     print("❌ Failed to submit bid: $e");
+  //     showError("Failed to submit ride bid. Please try again.");
+  //   } finally {
+  //     isLoading.value = false;
+  //   }
+  // }
 
-  // ACCEPT RIDE: unchanged except I preserved everything and added prints
+  // ✅ UPDATED: Now stays on screen and waits for events
   Future<void> acceptRide(String rideId, double fareOffered) async {
     try {
+      // ✅ VALIDATION: Check if fare is at least original amount
+      if (fareOffered < originalFare.value) {
+        showError("Offer amount must be at least PKR ${originalFare.value}");
+        return;
+      }
+
+      // Set loading and bid submission state
       isLoading.value = true;
+      isBidSubmitted.value = true;
+      bidStatus.value = "submitted";
 
       await executeWithRetry(() async {
         // ✅ Ensure auth token is set
@@ -416,7 +571,7 @@ class RideRequestDetailController extends BaseController { // ✅ CHANGED: Exten
         }
         FHttpHelper.setAuthToken(token, useBearer: true);
 
-        print("rideId :" + rideId.toString());
+        print("🚀 Submitting bid - Ride ID: $rideId, Fare: $fareOffered");
         final response = await FHttpHelper.post('ride/submit-bids', {
           "rideId": rideId,
           "fareOffered": fareOffered,
@@ -440,13 +595,13 @@ class RideRequestDetailController extends BaseController { // ✅ CHANGED: Exten
           final subs = <Future>[];
 
           if (driverId != null) {
+            // Subscribe to driver channel for bid responses
             subs.add(_pusherManager.subscribeOnce(
               "driver-$driverId",
               events: {
-                "bid-accepted": (data) {
-                  print("🎉 (detail) Bid accepted event for driver-$driverId: $data");
-                  showSuccess(data['message'] ?? "Your bid was accepted!");
-                },
+                "bid-accepted": (data) => _handleBidResponse(data, "bid-accepted"),
+                "bid-rejected": (data) => _handleBidResponse(data, "bid-rejected"),
+                "bid-ignored": (data) => _handleBidResponse(data, "bid-ignored"),
               },
             ));
           } else {
@@ -479,20 +634,21 @@ class RideRequestDetailController extends BaseController { // ✅ CHANGED: Exten
             await Future.wait(subs);
           }
 
-          // Notify list screen the request was accepted
-          Get.back(result: 'accepted');
+          showSuccess("Your bid of PKR $fareOffered was submitted successfully! Waiting for response...");
+
+          // REMOVED: Get.back(result: 'accepted'); - Now we stay on screen
+
         } else {
           throw Exception(response['message'] ?? 'Failed to submit bid');
         }
-
-        showSuccess("Your bid was submitted successfully!");
       }, maxRetries: 2);
     } catch (e) {
       print("❌ Failed to submit bid: $e");
       showError("Failed to submit ride bid. Please try again.");
-    } finally {
       isLoading.value = false;
+      isBidSubmitted.value = false;
     }
+    // Note: We don't set isLoading to false here because we're waiting for events
   }
 
   void onSubmitOffer() {
@@ -501,13 +657,25 @@ class RideRequestDetailController extends BaseController { // ✅ CHANGED: Exten
       showError("Enter a valid fare");
       return;
     }
+
+    // ✅ VALIDATION: Check if entered amount is at least original fare
+    if (entered < originalFare.value) {
+      showError("Offer amount must be at least PKR ${originalFare.value}");
+      return;
+    }
+
     fare.value = entered;
-    Get.back();
+    // Get.back();
+  }
+
+  // NEW: Method to manually close the screen
+  void closeScreen() {
+    Get.back(result: isBidSubmitted.value ? 'submitted' : 'cancelled');
   }
 
   @override
   void onClose() {
-    _offerTimer?.cancel();
+    // REMOVED: _offerTimer?.cancel();
     offerController.dispose();
     mapController = null;
     super.onClose();

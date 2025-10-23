@@ -10,6 +10,8 @@ class ProfileCompletionScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final args = Get.arguments as Map<String, dynamic>? ?? {};
+    final vehicleType = args['vehicle'] ?? 'car';
     final controller = Get.put(ProfileCompletionController());
 
     final screenWidth = MediaQuery.of(context).size.width;
@@ -40,7 +42,7 @@ class ProfileCompletionScreen extends StatelessWidget {
               if (completed == true) {
                 controller.completeStep(stepKey);
                 FSnackbar.show(
-                  title: "Step Completed",
+                  title: "Steps Completed",
                   message: "$title completed successfully.",
                   isError: false,
                 );
@@ -68,7 +70,7 @@ class ProfileCompletionScreen extends StatelessWidget {
                 Icon(
                   StorageService.getDriverStep(stepKey) ? Icons.radio_button_checked : Icons.arrow_forward_ios,
                   size: sw(18),
-                  color: StorageService.getDriverStep(stepKey) ? FColors.textGreen : FColors.black,
+                  color: StorageService.getDriverStep(stepKey) ? FColors.secondaryColor : FColors.black,
                 ),
               ],
             ),
@@ -83,187 +85,139 @@ class ProfileCompletionScreen extends StatelessWidget {
         child: SizedBox(
           width: screenWidth,
           height: screenHeight,
-          child: Obx(
-                () => Stack(
-              children: [
-                /// Back + Title
-                Positioned(
-                  top: sh(48),
-                  left: sw(29),
-                  right: sw(29),
-                  child: SizedBox(
-                    height: sh(60),
-                    child: Stack(
-                      children: [
-                        Positioned(
-                          left: 0,
-                          top: sh(12),
-                          child: IconButton(
-                            icon: Icon(Icons.arrow_back, size: sw(24)),
-                            onPressed: () => Get.back(),
-                          ),
+          child:
+          // Obx(
+                // () =>
+          // replace your big Obx => Stack section with this:
+          Stack(
+            children: [
+              /// Back + Title
+              Positioned(
+                top: sh(48),
+                left: sw(29),
+                right: sw(29),
+                child: SizedBox(
+                  height: sh(60),
+                  child: Stack(
+                    children: [
+                      Positioned(
+                        left: 0,
+                        top: sh(12),
+                        child: IconButton(
+                          icon: Icon(Icons.arrow_back, size: sw(24)),
+                          onPressed: () => Get.back(),
                         ),
-                        Align(
-                          alignment: Alignment.center,
-                          child: Padding(
-                            padding: EdgeInsets.only(top: sh(12.0)),
-                            child: Text(
-                              "Complete Your Profile",
-                              style: TextStyle(
-                                fontSize: sw(18),
-                                fontWeight: FontWeight.w700,
-                              ),
+                      ),
+                      Align(
+                        alignment: Alignment.center,
+                        child: Padding(
+                          padding: EdgeInsets.only(top: sh(12.0)),
+                          child: Text(
+                            "Complete Your Profile",
+                            style: TextStyle(
+                              fontSize: sw(18),
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
+              ),
 
-                /// Step tiles positioned like Vehicle screen
-                _stepTile(
-                  title: "Basic Info",
-                  route: "/profile",
-                  stepKey: "basic",
-                  top: 123,
-                  left: 20,
-                  width: 402,
-                  height: 58,
-                ),
-                _stepTile(
-                  title: "CNIC",
-                  route: "/upload-cnic",
-                  stepKey: "cnic",
-                  top: 189,
-                  left: 20,
-                  width: 402,
-                  height: 58,
-                ),
-                _stepTile(
-                  title: "Selfie With Driver Licence",
-                  route: "/upload-selfie",
-                  stepKey: "selfie",
-                  top: 255,
-                  left: 20,
-                  width: 402,
-                  height: 58,
-                ),
-                _stepTile(
-                  title: "Driver Licence",
-                  route: "/upload-license",
-                  stepKey: "licence",
-                  top: 321,
-                  left: 20,
-                  width: 402,
-                  height: 58,
-                ),
-                _stepTile(
-                  title: "Vehicle Info",
-                  route: "/upload-vehicle-info",
-                  stepKey: "vehicle",
-                  top: 387,
-                  left: 20,
-                  width: 402,
-                  height: 58,
-                ),
-                _stepTile(
-                  title: "Referral Code",
-                  route: "/referral",
-                  stepKey: "referral",
-                  top: 453,
-                  left: 20,
-                  width: 402,
-                  height: 58,
-                ),
+              // All static tiles
+              _stepTile(title: "Basic Info", route: "/profile", stepKey: "basic", top: 123, left: 20, width: 402, height: 58),
+              _stepTile(title: "CNIC", route: "/upload-cnic", stepKey: "cnic", top: 189, left: 20, width: 402, height: 58),
+              _stepTile(title: "Selfie With Driver Licence", route: "/upload-selfie", stepKey: "selfie", top: 255, left: 20, width: 402, height: 58),
+              _stepTile(title: "Driver Licence", route: "/upload-license", stepKey: "licence", top: 321, left: 20, width: 402, height: 58),
+              _stepTile(title: "Vehicle Info", route: "/upload-vehicle-info", stepKey: "vehicle", top: 387, left: 20, width: 402, height: 58),
+              _stepTile(title: "Referral Code", route: "/referral", stepKey: "referral", top: 453, left: 20, width: 402, height: 58),
 
-                /// Privacy Policy
-                Positioned(
-                  top: sh(520),
-                  left: sw(20),
-                  right: sw(20),
-                  child: Container(
-                    height: sh(58),
-                    padding: EdgeInsets.symmetric(horizontal: sw(12)),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF2F2F2),
-                      borderRadius: BorderRadius.circular(sw(12)),
-                    ),
-                    child: Row(
-                      children: [
-                        SizedBox(
-                          width: sw(24),
-                          height: sh(24),
-                          child: Checkbox(
-                            value: controller.acceptedPolicy.value,
-                            activeColor: FColors.secondaryColor,
-                            onChanged: (val) {
-                              controller.acceptedPolicy.value = val ?? false;
-                              StorageService.setDriverStep("policy", val ?? false);
-                            },
-                          ),
-                        ),
-                        SizedBox(width: sw(8)),
-                        Text(
-                          "Privacy Policy",
-                          style: TextStyle(
-                            fontSize: sw(16),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
+              /// Privacy Policy (reactive)
+              Positioned(
+                top: sh(520),
+                left: sw(20),
+                right: sw(20),
+                child: Obx(() => Container(
+                  height: sh(58),
+                  padding: EdgeInsets.symmetric(horizontal: sw(12)),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF2F2F2),
+                    borderRadius: BorderRadius.circular(sw(12)),
                   ),
-                ),
-
-                /// Done Button
-                Positioned(
-                  bottom: sh(40),
-                  left: sw(20),
-                  right: sw(20),
-                  child: SizedBox(
-                    height: sh(58),
-                    child: ElevatedButton(
-                      onPressed:
-                      controller.allStepsCompleted
-                          ? () {
-                        StorageService.setDriverStep("policy", true);
-                        StorageService.setProfileCompleted(true);
-
-                        StorageService.printDriverSteps();
-
-                        FSnackbar.show(
-                          title: "All Done",
-                          message: "Profile completed successfully!",
-                        );
-
-                        Get.offAllNamed('/go-online');
-                        // Get.offAllNamed('/ride-request-list');
-                      }
-                          : null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                        controller.allStepsCompleted
-                            ? FColors.secondaryColor
-                            : Colors.grey,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(sw(14)),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: sw(24),
+                        height: sh(24),
+                        child: Checkbox(
+                          value: controller.acceptedPolicy.value,
+                          activeColor: FColors.secondaryColor,
+                          onChanged: (val) {
+                            controller.acceptedPolicy.value = val ?? false;
+                            StorageService.setDriverStep("policy", val ?? false);
+                          },
                         ),
                       ),
-                      child: Text(
-                        "Done",
+                      SizedBox(width: sw(8)),
+                      Text(
+                        "Privacy Policy",
                         style: TextStyle(
-                          color: Colors.white,
-                          fontSize: sw(18),
+                          fontSize: sw(16),
                           fontWeight: FontWeight.w600,
                         ),
                       ),
+                    ],
+                  ),
+                )),
+              ),
+
+              /// Done Button (reactive)
+              Positioned(
+                bottom: sh(40),
+                left: sw(20),
+                right: sw(20),
+                child: Obx(() => SizedBox(
+                  height: sh(58),
+                  child: ElevatedButton(
+                    onPressed: controller.allStepsCompleted
+                        ? () {
+                      StorageService.setDriverStep("policy", true);
+                      StorageService.setProfileCompleted(true);
+                      StorageService.printDriverSteps();
+
+                      FSnackbar.show(
+                        title: "All Done",
+                        message: "Profile completed successfully!",
+                      );
+
+                      Get.offAllNamed('/go-online');
+                    }
+                        : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: controller.allStepsCompleted
+                          ? FColors.secondaryColor
+                          : Colors.grey,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(sw(14)),
+                      ),
+                    ),
+                    child: Text(
+                      "Done",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: sw(18),
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          ),
+                )),
+              ),
+            ],
+          )
+
+          // ),
         ),
       ),
     );

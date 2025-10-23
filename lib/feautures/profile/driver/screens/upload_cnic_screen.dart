@@ -1,4 +1,3 @@
-// lib/features/profile_completion/screens/upload_cnic_screen.dart
 import 'dart:io';
 import 'package:doorcab/feautures/profile/driver/screens/reuseable_widgets/custome_dashed_border_container.dart';
 import 'package:flutter/material.dart';

@@ -1,7 +1,8 @@
-// lib/features/rides/screens/select_vehicle_type_screen.dart
+import 'package:doorcab/utils/constants/colors.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
-import '../../../../common/widgets/positioned/positioned_scaled.dart';
+import '../../../../utils/theme/custom_theme/text_theme.dart';
 import '../controllers/select_vehicle_type_controller.dart';
 
 class SelectVehicleTypeScreen extends StatelessWidget {
@@ -13,9 +14,20 @@ class SelectVehicleTypeScreen extends StatelessWidget {
     final role = args['role'] ?? 'driver';
     final c = Get.put(SelectVehicleTypeController());
 
+    /// ---- Responsive setup (same as OtpScreen) ----
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    const baseWidth = 440.0;
+    const baseHeight = 956.0;
+
+    double sw(double w) => w * screenWidth / baseWidth;
+    double sh(double h) => h * screenHeight / baseHeight;
+
+    /// ---- Vehicle tile builder ----
     Widget _vehicleTile({
       required String keyName,
-      required IconData icon,
+      required String svgAssetPath,
       required String label,
       required double top,
       required double left,
@@ -23,46 +35,76 @@ class SelectVehicleTypeScreen extends StatelessWidget {
       required double height,
       required VoidCallback onTap,
     }) {
-      return PositionedScaled(
-        top: top,
-        left: left,
-        width: width,
-        height: height,
+      return Positioned(
+        top: sh(top),
+        left: sw(left),
         child: GestureDetector(
           onTap: onTap,
           behavior: HitTestBehavior.opaque,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            width: sw(width),
+            height: sh(height),
+            padding: EdgeInsets.symmetric(horizontal: sw(12)),
             decoration: BoxDecoration(
               color: const Color(0xFFF2F2F2),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(sw(12)),
             ),
             child: Stack(
               children: [
+                // SVG icon
                 Positioned(
-                  top: (height - 30) / 2,
-                  left: 8,
+                  left: sw(8),
+                  top: 0,
+                  bottom: 0,
                   child: SizedBox(
-                    width: 40,
-                    height: 30,
-                    child: Icon(icon, size: 26),
+                    width: sw(40),
+                    height: sh(40),
+                    child: Center(
+                      child: SvgPicture.asset(
+                        svgAssetPath,
+                        width: sw(26),
+                        height: sh(26),
+                      ),
+                    ),
                   ),
                 ),
+
+                // Label text
                 Positioned(
-                  top: (height / 2) - 10,
-                  left: 102 - left,
-                  child: Text(
-                    label,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  left: sw(56),
+                  top: 0,
+                  bottom: 0,
+                  child: Center(
+                    child: Text(
+                      label,
+                      style: FTextTheme.lightTextTheme.bodyLarge!.copyWith(
+                        fontSize:
+                        FTextTheme.lightTextTheme.bodyLarge!.fontSize! *
+                            screenWidth /
+                            baseWidth,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                 ),
+
+                // Radio button
                 Positioned(
-                  top: (height / 2) - 10,
-                  right: 12,
-                  child: Obx(() {
-                    final sel = c.selectedVehicle.value == keyName;
-                    return Icon(sel ? Icons.radio_button_checked : Icons.radio_button_unchecked, size: 22, color: sel ? Colors.black : Colors.black54);
-                  }),
+                  right: sw(12),
+                  top: 0,
+                  bottom: 0,
+                  child: Center(
+                    child: Obx(() {
+                      final selected = c.selectedVehicleType.value == keyName;
+                      return Icon(
+                        selected
+                            ? Icons.radio_button_checked
+                            : Icons.radio_button_unchecked,
+                        size: sw(22),
+                        color: selected ? Colors.black : Colors.black54,
+                      );
+                    }),
+                  ),
                 ),
               ],
             ),
@@ -71,31 +113,42 @@ class SelectVehicleTypeScreen extends StatelessWidget {
       );
     }
 
+    /// ---- Main UI ----
     return Scaffold(
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // row with back and title
-          PositionedScaled(
-            top: 48,
-            left: 29,
-            right: 29,
+          /// ---- Top AppBar ----
+          Positioned(
+            top: sh(48),
+            left: sw(29),
+            right: sw(29),
             child: SizedBox(
-              height: 60,
+              height: sh(60),
               child: Stack(
                 children: [
                   Positioned(
                     left: 0,
-                    top: 12,
-                    child: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Get.back()),
+                    top: sh(12),
+                    child: IconButton(
+                      icon: Icon(Icons.arrow_back, color: FColors.black,),
+                      iconSize: sw(28),
+                      onPressed: () => Get.back(),
+                    ),
                   ),
                   Align(
                     alignment: Alignment.center,
                     child: Padding(
-                      padding: const EdgeInsets.only(top: 12.0),
+                      padding: EdgeInsets.only(top: sh(12.0)),
                       child: Text(
                         "Vehicle",
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                        style: FTextTheme.lightTextTheme.titleLarge!.copyWith(
+                          fontWeight: FontWeight.w700,
+                          fontSize:
+                          FTextTheme.lightTextTheme.titleLarge!.fontSize! *
+                              screenWidth /
+                              baseWidth,
+                        ),
                       ),
                     ),
                   ),
@@ -104,38 +157,42 @@ class SelectVehicleTypeScreen extends StatelessWidget {
             ),
           ),
 
-          // "Select your vehicle" at top 123 left 24
-          PositionedScaled(
-            top: 123,
-            left: 24,
-            child: const Text(
+          /// ---- "Select your vehicle" text ----
+          Positioned(
+            top: sh(123),
+            left: sw(24),
+            child: Text(
               "Select your vehicle",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              style: FTextTheme.lightTextTheme.bodyLarge!.copyWith(
+                fontSize:
+                FTextTheme.lightTextTheme.bodyLarge!.fontSize! *
+                    screenWidth /
+                    baseWidth,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
 
-          // Car tile (first)
+          /// ---- Car tile ----
           _vehicleTile(
             keyName: 'car',
-            icon: Icons.directions_car,
+            svgAssetPath: 'assets/images/vehicle_car.svg',
             label: 'Car',
-            top: 170, // some space below the heading
+            top: 170,
             left: 20,
             width: 402,
             height: 58,
             onTap: () {
               c.selectVehicle('car');
-              // navigate to car registration screen -> placeholder
-              // Get.snackbar("Selected", "Car selected");
-              // Replace Get.back with actual route for car registration
-              Get.toNamed('/profile-completion');
+              Get.toNamed('/profile-completion',
+                  arguments: {'vehicle': 'car', 'role': role});
             },
           ),
 
-          // Bike tile
+          /// ---- Bike tile ----
           _vehicleTile(
             keyName: 'bike',
-            icon: Icons.pedal_bike,
+            svgAssetPath: 'assets/images/vehicle_bike.svg',
             label: 'Bike',
             top: 246,
             left: 20,
@@ -143,15 +200,15 @@ class SelectVehicleTypeScreen extends StatelessWidget {
             height: 58,
             onTap: () {
               c.selectVehicle('bike');
-              Get.snackbar("Selected", "Bike selected");
-              // Get.toNamed('/bike-registration', arguments: {'role': role});
+              Get.toNamed('/profile-completion',
+                  arguments: {'vehicle': 'bike', 'role': role});
             },
           ),
 
-          // Rikshaw tile
+          /// ---- Rickshaw tile ----
           _vehicleTile(
             keyName: 'rickshaw',
-            icon: Icons.electric_rickshaw,
+            svgAssetPath: 'assets/images/vehicle_auto_rickshaw.svg',
             label: 'Rickshaw',
             top: 322,
             left: 20,
@@ -159,8 +216,8 @@ class SelectVehicleTypeScreen extends StatelessWidget {
             height: 58,
             onTap: () {
               c.selectVehicle('rickshaw');
-              Get.snackbar("Selected", "Rickshaw selected");
-              // Get.toNamed('/rikshaw-registration', arguments: {'role': role});
+              Get.toNamed('/profile-completion',
+                  arguments: {'vehicle': 'rickshaw', 'role': role});
             },
           ),
         ],

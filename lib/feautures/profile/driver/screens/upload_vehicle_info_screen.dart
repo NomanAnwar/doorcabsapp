@@ -1,11 +1,10 @@
-// lib/features/profile_completion/screens/upload_vehicle_info_screen.dart
 import 'dart:io';
 import 'package:doorcab/feautures/shared/services/storage_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../../utils/constants/colors.dart';
 import '../../../../utils/constants/image_strings.dart';
 import '../../../../utils/theme/custom_theme/text_theme.dart';
-import '../../../../utils/constants/colors.dart';
 import '../controllers/upload_vehicle_controller.dart';
 
 class UploadVehicleInfoScreen extends StatelessWidget {
@@ -14,15 +13,12 @@ class UploadVehicleInfoScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = Get.find<UploadVehicleController>();
-    // final c = Get.put(UploadVehicleController());
-
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
 
-    /// Reference device size (iPhone 16 Pro Max)
+    /// Reference base size (iPhone 16 Pro Max)
     const baseWidth = 440.0;
     const baseHeight = 956.0;
-
     double sw(double w) => w * screenWidth / baseWidth;
     double sh(double h) => h * screenHeight / baseHeight;
 
@@ -31,82 +27,126 @@ class UploadVehicleInfoScreen extends StatelessWidget {
       body: Obx(() {
         return Stack(
           children: [
+            /// Main UI
             SingleChildScrollView(
               child: SizedBox(
-                width: screenWidth,
+                width: double.infinity,
                 height: screenHeight,
                 child: Stack(
                   children: [
+                    /// Back button
                     Positioned(
                       top: sh(60),
                       left: sw(29),
                       child: IconButton(
-                        icon: Icon(Icons.arrow_back, size: sw(24)),
+                        icon: Icon(Icons.arrow_back, size: sw(28)),
                         onPressed: () => Get.back(),
                       ),
                     ),
+
+                    /// Title
                     Positioned(
-                      top: sh(60),
+                      top: sh(70),
                       left: 0,
                       right: 0,
                       child: Center(
                         child: Text(
                           "Vehicle Info",
-                          style: TextStyle(
-                            fontSize: sw(18),
-                            fontWeight: FontWeight.bold,
+                          style: FTextTheme.lightTextTheme.headlineSmall
+                              ?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            fontSize:
+                            FTextTheme.lightTextTheme.headlineSmall!.fontSize! *
+                                screenWidth /
+                                baseWidth,
                           ),
                         ),
                       ),
                     ),
+
+                    /// Subtitle
                     Positioned(
-                      top: sh(101),
-                      left: sw(25),
-                      child: SizedBox(
-                        width: sw(362),
-                        child: Text(
-                          "Please provide detailed information about your vehicle.",
-                          style: TextStyle(fontSize: sw(14)),
+                      top: sh(115),
+                      left: sw(20),
+                      right: sw(20),
+                      child: Text(
+                        "Please provide detailed information about your vehicle.",
+                        textAlign: TextAlign.center,
+                        style: FTextTheme.lightTextTheme.bodyLarge?.copyWith(
+                          fontSize:
+                          FTextTheme.lightTextTheme.bodyLarge!.fontSize! *
+                              screenWidth /
+                              baseWidth,
+                          color: FColors.chipBg,
                         ),
                       ),
                     ),
+
+                    /// Vehicle Photo Label
                     Positioned(
-                      top: sh(152),
-                      left: sw(29),
+                      top: sh(170),
+                      left: sw(30),
                       child: Text(
                         "Vehicle Photo",
-                        style: TextStyle(fontSize: sw(16)),
+                        style: FTextTheme.lightTextTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: FColors.black,
+                          fontSize:
+                          FTextTheme.lightTextTheme.titleLarge!.fontSize! *
+                              screenWidth /
+                              baseWidth,
+                        ),
                       ),
                     ),
+
+                    /// Vehicle Photo Preview
                     Obx(() {
                       final f = c.vehImage.value;
                       return Positioned(
-                        top: sh(188),
-                        left: sw(65),
+                        top: sh(205),
+                        left: (screenWidth / 2) - sw(155),
                         child: GestureDetector(
-                          onTap: () => c.pickVehImage(),
+                          // onTap: () => Get.toNamed('/vehicle-images'),
+                          onTap: () async {
+                            // final result = await Get.toNamed('/vehicle-images');
+                            // if (result != null && result is Map<String, String?>) {
+                            //   c.setVehicleImages(result);
+                            // }
+
+                            final allDone = c.vehicleImages.values.every((v) => v != null);
+
+                            final result = await Get.toNamed(
+                              '/vehicle-images',
+                              arguments: {'startPage': allDone ? 6 : 0},
+                            );
+
+                            if (result != null && result is Map<String, String?>) {
+                              c.setVehicleImages(result);
+                            }
+                          },
+
                           child: Container(
-                            width: sw(309),
-                            height: sh(209),
-                            decoration: f == null
-                                ? BoxDecoration(
-                              borderRadius: BorderRadius.circular(sw(8)),
-                              color: Colors.grey.shade200,
-                            )
-                                : null,
-                            child: f == null
-                                ? Image.asset(
-                              FImages.car_placeholder,
-                              width: sw(309),
-                              height: sh(209),
-                              fit: BoxFit.contain,
-                            )
-                                : ClipRRect(
-                              borderRadius: BorderRadius.circular(sw(8)),
-                              child: Image.file(
+                            width: sw(310),
+                            height: sh(210),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(sw(12)),
+                              color: f == null
+                                  ? Colors.grey.shade200
+                                  : Colors.transparent,
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(sw(12)),
+                              child: f == null
+                                  ? Image.asset(
+                                FImages.car_placeholder,
+                                width: sw(310),
+                                height: sh(210),
+                                fit: BoxFit.cover,
+                              )
+                                  : Image.file(
                                 File(f.path),
-                                width: sw(309),
-                                height: sh(209),
+                                width: sw(310),
+                                height: sh(210),
                                 fit: BoxFit.cover,
                               ),
                             ),
@@ -114,14 +154,35 @@ class UploadVehicleInfoScreen extends StatelessWidget {
                         ),
                       );
                     }),
+
+                    /// Add Photo Button
                     Positioned(
-                      top: sh(414),
-                      left: sw(172),
+                      top: sh(430),
+                      left: (screenWidth / 2) - sw(75),
                       child: SizedBox(
-                        width: sw(148),
-                        height: sh(34),
+                        width: sw(150),
+                        height: sh(42),
                         child: ElevatedButton(
-                          onPressed: () => c.pickVehImage(),
+                          // onPressed: () => Get.toNamed('/vehicle-images'),
+                          onPressed: () async {
+                            // final result = await Get.toNamed('/vehicle-images');
+                            // if (result != null && result is Map<String, String?>) {
+                            //   c.setVehicleImages(result);
+                            // }
+
+                            final allDone = c.vehicleImages.values.every((v) => v != null);
+
+                            final result = await Get.toNamed(
+                              '/vehicle-images',
+                              arguments: {'startPage': allDone ? 6 : 0},
+                            );
+
+                            if (result != null && result is Map<String, String?>) {
+                              c.setVehicleImages(result);
+                            }
+
+                          },
+
                           style: ElevatedButton.styleFrom(
                             backgroundColor: FColors.secondaryColor,
                             shape: RoundedRectangleBorder(
@@ -130,41 +191,55 @@ class UploadVehicleInfoScreen extends StatelessWidget {
                           ),
                           child: Text(
                             "Add a Photo",
-                            style: FTextTheme.darkTextTheme.labelSmall
-                                ?.copyWith(fontSize: sw(14)),
+                            style: FTextTheme.darkTextTheme.labelLarge?.copyWith(
+                              fontSize: FTextTheme
+                                  .darkTextTheme.labelLarge!.fontSize! *
+                                  screenWidth /
+                                  baseWidth,
+                            ),
                           ),
                         ),
                       ),
                     ),
 
-                    // Vehicle details label
+                    /// Vehicle Details Label
                     Positioned(
-                      top: sh(462),
-                      left: sw(22),
+                      top: sh(480),
+                      left: sw(30),
                       child: Text(
                         "Vehicle Details",
-                        style: TextStyle(fontSize: sw(16)),
+                        style: FTextTheme.lightTextTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: FColors.black,
+                          fontSize:
+                          FTextTheme.lightTextTheme.titleMedium!.fontSize! *
+                              screenWidth /
+                              baseWidth,
+                        ),
                       ),
                     ),
 
-                    // Brand dropdown
+                    /// Brand Dropdown
                     Positioned(
-                      top: sh(493),
-                      left: sw(22),
+                      top: sh(520),
+                      left: sw(30),
                       child: Obx(
                             () => SizedBox(
-                          width: sw(393),
+                          width: sw(380),
                           height: sh(52),
                           child: DropdownButtonFormField<String>(
-                            value:
-                            c.brand.value.isEmpty ? null : c.brand.value,
+                            value: c.brand.value.isEmpty ? null : c.brand.value,
                             items: c.brands
                                 .map(
                                   (b) => DropdownMenuItem(
                                 value: b,
                                 child: Text(
                                   b,
-                                  style: TextStyle(fontSize: sw(16)),
+                                  style:
+                                  FTextTheme.lightTextTheme.bodyLarge!
+                                      .copyWith(
+                                    fontSize: sw(16),
+                                  ),
                                 ),
                               ),
                             )
@@ -190,31 +265,30 @@ class UploadVehicleInfoScreen extends StatelessWidget {
                       ),
                     ),
 
-                    // Model dropdown
+                    /// Model Dropdown
                     Positioned(
-                      top: sh(563),
-                      left: sw(22),
+                      top: sh(590),
+                      left: sw(30),
                       child: Obx(
                             () => SizedBox(
-                          width: sw(393),
+                          width: sw(380),
                           height: sh(52),
                           child: DropdownButtonFormField<String>(
-                            value:
-                            c.model.value.isEmpty ? null : c.model.value,
+                            value: c.model.value.isEmpty ? null : c.model.value,
                             items: c.models
                                 .map(
                                   (m) => DropdownMenuItem(
                                 value: m,
                                 child: Text(
                                   m,
-                                  style: TextStyle(fontSize: sw(16)),
+                                  style:
+                                  FTextTheme.lightTextTheme.bodyLarge!
+                                      .copyWith(fontSize: sw(16)),
                                 ),
                               ),
                             )
                                 .toList(),
-                            onChanged: (v) {
-                              c.model.value = v ?? '';
-                            },
+                            onChanged: (v) => c.model.value = v ?? '',
                             decoration: InputDecoration(
                               filled: true,
                               fillColor: const Color(0xFFF2F2F2),
@@ -232,13 +306,13 @@ class UploadVehicleInfoScreen extends StatelessWidget {
                       ),
                     ),
 
-                    // Colour dropdown
+                    /// Colour Dropdown
                     Positioned(
-                      top: sh(633),
-                      left: sw(22),
+                      top: sh(660),
+                      left: sw(30),
                       child: Obx(
                             () => SizedBox(
-                          width: sw(393),
+                          width: sw(380),
                           height: sh(52),
                           child: DropdownButtonFormField<String>(
                             value:
@@ -249,14 +323,14 @@ class UploadVehicleInfoScreen extends StatelessWidget {
                                 value: col,
                                 child: Text(
                                   col,
-                                  style: TextStyle(fontSize: sw(16)),
+                                  style:
+                                  FTextTheme.lightTextTheme.bodyLarge!
+                                      .copyWith(fontSize: sw(16)),
                                 ),
                               ),
                             )
                                 .toList(),
-                            onChanged: (v) {
-                              c.colour.value = v ?? '';
-                            },
+                            onChanged: (v) => c.colour.value = v ?? '',
                             decoration: InputDecoration(
                               filled: true,
                               fillColor: const Color(0xFFF2F2F2),
@@ -274,23 +348,25 @@ class UploadVehicleInfoScreen extends StatelessWidget {
                       ),
                     ),
 
-                    // Plate no
+                    /// Plate Number
                     Positioned(
-                      top: sh(703),
-                      left: sw(22),
+                      top: sh(730),
+                      left: sw(30),
                       child: SizedBox(
-                        width: sw(393),
+                        width: sw(380),
                         height: sh(52),
                         child: TextField(
                           onChanged: (v) => c.plateNo.value = v,
                           decoration: InputDecoration(
                             filled: true,
-                            fillColor: const Color(0xFFE3E3E3),
+                            fillColor: const Color(0xFFF2F2F2),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(sw(14)),
                               borderSide: BorderSide.none,
                             ),
-                            hintText: "Registration plate",
+                            hintText: "Registration Plate",
+                            hintStyle: FTextTheme.lightTextTheme.bodyLarge!
+                                .copyWith(color: FColors.chipBg, fontSize: sw(16)),
                             contentPadding: EdgeInsets.symmetric(
                               horizontal: sw(12),
                               vertical: sh(14),
@@ -300,63 +376,55 @@ class UploadVehicleInfoScreen extends StatelessWidget {
                       ),
                     ),
 
-                    // Registration certificate field
+                    /// Registration Certificate Field
                     Positioned(
-                      top: sh(773),
-                      left: sw(22),
+                      top: sh(800),
+                      left: sw(30),
                       child: GestureDetector(
                         onTap: () {
-                          Get.toNamed('/upload-registration')?.then((_) {
-                            // reload profile if needed
-                          });
+                          Get.toNamed('/upload-registration');
                         },
-                        child: SizedBox(
-                          width: sw(393),
+                        child: Container(
+                          width: sw(380),
                           height: sh(52),
-                          child: Container(
-                            padding: EdgeInsets.symmetric(horizontal: sw(12)),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFE3E3E3),
-                              borderRadius: BorderRadius.circular(sw(14)),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  "Registration Certificate",
-                                  style: TextStyle(fontSize: sw(16)),
-                                ),
-                                Icon(
-                                  StorageService.getDriverStep("registration")
-                                      ? Icons.check_circle
-                                      : Icons.arrow_forward_ios,
-                                  color: StorageService.getDriverStep(
-                                      "registration")
-                                      ? FColors.textGreen
-                                      : FColors.black,
-                                  size: StorageService.getDriverStep(
-                                      "registration")
-                                      ? sw(18)
-                                      : sw(15),
-                                ),
-                              ],
-                            ),
+                          padding: EdgeInsets.symmetric(horizontal: sw(12)),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF2F2F2),
+                            borderRadius: BorderRadius.circular(sw(14)),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                "Registration Certificate",
+                                style: FTextTheme.lightTextTheme.bodyLarge!
+                                    .copyWith(fontSize: sw(16)),
+                              ),
+                              Icon(
+                                StorageService.getDriverStep("registration")
+                                    ? Icons.check_circle
+                                    : Icons.arrow_forward_ios,
+                                color: StorageService.getDriverStep("registration")
+                                    ? FColors.textGreen
+                                    : FColors.black,
+                                size: sw(18),
+                              ),
+                            ],
                           ),
                         ),
                       ),
                     ),
 
-                    // Submit button
+                    /// Submit Button
                     Positioned(
-                      top: sh(876),
+                      top: sh(880),
                       left: sw(42),
                       child: SizedBox(
                         width: sw(358),
-                        height: sh(48),
+                        height: sh(50),
                         child: ElevatedButton(
-                          onPressed: c.isLoading.value
-                              ? null
-                              : c.submitVehicleInfo,
+                          onPressed:
+                          c.isLoading.value ? null : c.submitVehicleInfo,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: FColors.secondaryColor,
                             shape: RoundedRectangleBorder(
@@ -365,9 +433,12 @@ class UploadVehicleInfoScreen extends StatelessWidget {
                           ),
                           child: Text(
                             "Submit",
-                            style: TextStyle(
+                            style: FTextTheme.darkTextTheme.bodyLarge?.copyWith(
                               color: Colors.white,
-                              fontSize: sw(16),
+                              fontSize: FTextTheme
+                                  .darkTextTheme.bodyLarge!.fontSize! *
+                                  screenWidth /
+                                  baseWidth,
                             ),
                           ),
                         ),
@@ -378,16 +449,14 @@ class UploadVehicleInfoScreen extends StatelessWidget {
               ),
             ),
 
-            // Fullscreen loader overlay
+            /// Loader Overlay
             if (c.isLoading.value)
               Container(
                 width: screenWidth,
                 height: screenHeight,
                 color: Colors.black.withOpacity(0.4),
                 child: const Center(
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                  ),
+                  child: CircularProgressIndicator(color: Colors.white),
                 ),
               ),
           ],

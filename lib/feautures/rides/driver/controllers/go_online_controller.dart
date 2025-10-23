@@ -1,3 +1,4 @@
+import 'package:doorcab/common/widgets/snakbar/snackbar.dart';
 import 'package:doorcab/feautures/shared/services/enhanced_pusher_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -6,10 +7,10 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/services.dart';
 import 'package:doorcab/feautures/shared/services/storage_service.dart';
-import '../../../../main.dart'; // ✅ Import main to access global instances
+import '../../../../main.dart';
+import '../../../../utils/http/http_client.dart';
 import '../../../shared/controllers/base_controller.dart';
 import '../models/request_model.dart';
-
 
 class GoOnlineController extends BaseController {
   var isOnline = false.obs;
@@ -17,15 +18,21 @@ class GoOnlineController extends BaseController {
   var isLoadingLocation = true.obs;
   GoogleMapController? mapController;
 
-  // ✅ FIXED: Use global instances from main.dart
   final EnhancedPusherManager _pusherManager = EnhancedPusherManager();
   final Set<String> _subscribedChannels = {};
   bool _hasReceivedFirstRequest = false;
 
-  // Custom marker
   BitmapDescriptor? customMarker;
-
   final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
+
+
+  var flagPosition = Rx<LatLng?>(null);
+  var isFlagSet = false.obs;
+  var markers = <Marker>{}.obs;
+  var flagMarkerId = const MarkerId('flag_marker');
+  CameraPosition? _currentCameraPosition; // Track camera position
+  var isMapRotated = false.obs;
+  var currentBearing = 0.0.obs;
 
   @override
   void onInit() {
@@ -33,15 +40,12 @@ class GoOnlineController extends BaseController {
     _loadCustomMarker().then((_) {
       getCurrentLocation();
     });
-
-    // Restore online status
     _restoreOnlineStatus();
   }
 
   @override
   void onClose() {
-    // Unsubscribe from channels when controller is closed
-    _unsubscribeFromChannels();
+    // _unsubscribeFromChannels();
     super.onClose();
   }
 
@@ -54,17 +58,14 @@ class GoOnlineController extends BaseController {
     }
   }
 
-  // Load custom marker icon from assets
   Future<void> _loadCustomMarker() async {
     try {
       await executeWithRetry(() async {
         print('🎯 Loading custom marker...');
-
         final Uint8List markerIcon = await _loadAndResizeImage(
           'assets/images/position_marker2.png',
           120,
         );
-
         customMarker = BitmapDescriptor.fromBytes(markerIcon);
         print('✅ Custom marker loaded successfully');
       });
@@ -74,7 +75,6 @@ class GoOnlineController extends BaseController {
     }
   }
 
-  // ✅ FIXED: Properly return Uint8List
   Future<Uint8List> _loadAndResizeImage(String assetPath, int targetSize) async {
     final ByteData data = await rootBundle.load(assetPath);
     final ui.Codec codec = await ui.instantiateImageCodec(
@@ -87,17 +87,13 @@ class GoOnlineController extends BaseController {
     if (byteData == null) {
       throw Exception('Failed to convert image to bytes');
     }
-
     return byteData.buffer.asUint8List();
   }
 
-  // Get current location
   Future<void> getCurrentLocation() async {
     try {
       isLoadingLocation(true);
-
       await executeWithRetry(() async {
-        // Check permission
         bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
         if (!serviceEnabled) {
           throw Exception('Location services are disabled.');
@@ -115,13 +111,10 @@ class GoOnlineController extends BaseController {
           throw Exception('Location permissions are permanently denied.');
         }
 
-        // Get current position
         Position position = await Geolocator.getCurrentPosition(
           desiredAccuracy: LocationAccuracy.high,
         );
-
         currentPosition.value = LatLng(position.latitude, position.longitude);
-
         print('📍 Current location: ${position.latitude}, ${position.longitude}');
       });
     } catch (e) {
@@ -133,7 +126,6 @@ class GoOnlineController extends BaseController {
     }
   }
 
-  // Move camera to current location
   void moveToCurrentLocation() {
     if (currentPosition.value != null && mapController != null) {
       mapController!.animateCamera(
@@ -150,24 +142,102 @@ class GoOnlineController extends BaseController {
     }
   }
 
-  void toggleOnline() async {
-    final newStatus = !isOnline.value;
-    isOnline.value = newStatus;
-
-    // Save online status
-    await StorageService.setDriverOnlineStatus(newStatus);
-
-    if (newStatus) {
-      // Going online - subscribe to channels
-      await _subscribeToChannels();
-      showSuccess('You are now online and receiving ride requests');
+  // ADD THIS METHOD FOR MOVE ICON
+  Future<void> centerMapLocation() async {
+    if (currentPosition.value != null && mapController != null) {
+      mapController!.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(
+            target: currentPosition.value!,
+            zoom: 15.0,
+          ),
+        ),
+      );
+      print('🎯 Map centered to current location');
     } else {
-      // Going offline - unsubscribe from channels
-      await _unsubscribeFromChannels();
-      _hasReceivedFirstRequest = false; // Reset flag
-      showSuccess('You are now offline');
+      print('⚠️ Cannot center map: location or controller not available');
+      // Try to get location first if not available
+      await getCurrentLocation();
+      if (currentPosition.value != null && mapController != null) {
+        mapController!.animateCamera(
+          CameraUpdate.newCameraPosition(
+            CameraPosition(
+              target: currentPosition.value!,
+              zoom: 15.0,
+            ),
+          ),
+        );
+      }
     }
   }
+
+  // void toggleOnline() async {
+  //
+  //   final body = {
+  //     "is_online": !isOnline.value,
+  //   };
+  //
+  //   final token = StorageService.getAuthToken();
+  //   if (token == null) {
+  //     print("Error" + "User token not found. Please login again.");
+  //     return; // ✅ prevent crash
+  //   }
+  //
+  //   FHttpHelper.setAuthToken(token, useBearer: true);
+  //
+  //   final response  = await FHttpHelper.post("driver/online", body);
+  //
+  //
+  //   print("driver online response : "+ response['is_online'].toString());
+  //   final newStatus = !isOnline.value;
+  //   isOnline.value = newStatus;
+  //   await StorageService.setDriverOnlineStatus(newStatus);
+  //
+  //   if (newStatus && response['is_online']) {
+  //     await _subscribeToChannels();
+  //     FSnackbar.show(title: "Online",message: 'You are now online and receiving ride requests');
+  //   } else {
+  //     // await _unsubscribeFromChannels();
+  //     _hasReceivedFirstRequest = false;
+  //     FSnackbar.show(title: 'You are now offline', message: "", isError: true);
+  //   }
+  // }
+
+
+  Future<void> toggleOnline() async {
+    final newStatus = !isOnline.value;
+    final body = {"is_online": newStatus};
+
+    final token = StorageService.getAuthToken();
+    if (token == null) {
+      FSnackbar.show(title: "Error", message: "User token not found. Please login again.", isError: true);
+      return;
+    }
+
+    FHttpHelper.setAuthToken(token, useBearer: true);
+
+    try {
+      final response = await FHttpHelper.post("driver/online", body);
+      print("Driver online API response: $response");
+
+      final serverStatus = response['is_online'] ?? false;
+
+      isOnline.value = serverStatus;
+      await StorageService.setDriverOnlineStatus(serverStatus);
+
+      if (serverStatus) {
+        await _subscribeToChannels();
+        FSnackbar.show(title: "Online", message: response['message'] ?? "You are now online");
+      } else {
+        _hasReceivedFirstRequest = false;
+        FSnackbar.show(title: "Offline", message: response['message'] ?? "You are now offline", isError: true);
+      }
+    } catch (e, s) {
+      print("❌ toggleOnline error: $e\n$s");
+      FSnackbar.show(title: "Error", message: "Failed to toggle online status", isError: true);
+    }
+  }
+
 
   Future<void> _subscribeToChannels() async {
     final driverId = StorageService.getSignUpResponse()!.userId;
@@ -180,12 +250,14 @@ class GoOnlineController extends BaseController {
             privateChannel,
             events: {
               "ride-request": (data) {
+                FSnackbar.show(title: "Ride Request", message: "New Ride Request is here.");
                 _handleNewRideRequest(data);
               },
             },
           );
           _subscribedChannels.add(privateChannel);
           print("✅ GoOnlineController subscribed to: $privateChannel");
+          FSnackbar.show(title: 'Request request', message: '$privateChannel');
         }
       });
     } catch (e) {
@@ -215,29 +287,28 @@ class GoOnlineController extends BaseController {
       final request = RequestModel.fromJson(data);
 
       if (isOnline.value) {
-        // Driver is online - navigate to RideRequestListScreen with the request
         if (!_hasReceivedFirstRequest) {
           _hasReceivedFirstRequest = true;
           print("✅ First ride request - navigating to RideRequestListScreen");
 
           // Navigate to RideRequestListScreen with the request
-          Get.offNamed('/ride-request-list', arguments: {
+          Get.toNamed('/ride-request-list', arguments: {
             'initialRequest': request,
             'isFromGoOnline': true
           });
         }
       } else {
-        // Driver is offline - show snackbar
         print("ℹ️ Ride request received but driver is offline");
-        Get.snackbar(
-          'Ride Request Nearby',
-          'Ride requests are coming near you! Go online to accept rides.',
-          duration: const Duration(seconds: 5),
-          snackPosition: SnackPosition.TOP,
-          backgroundColor: Colors.orange,
-          colorText: Colors.white,
-          margin: const EdgeInsets.all(10),
-        );
+        // Get.snackbar(
+        //   'Ride Request Nearby',
+        //   'Ride requests are coming near you! Go online to accept rides.',
+        //   duration: const Duration(seconds: 2),
+        //   snackPosition: SnackPosition.TOP,
+        //   backgroundColor: Colors.orange,
+        //   colorText: Colors.white,
+        //   margin: const EdgeInsets.all(10),
+        // );
+        FSnackbar.show(title: 'Ride Request', message: 'Ride requests are coming near you! Go online to accept rides.');
       }
     } catch (e, s) {
       print("❌ Error handling ride request in GoOnlineController: $e");
@@ -247,7 +318,6 @@ class GoOnlineController extends BaseController {
 
   void onMapCreated(GoogleMapController controller) {
     mapController = controller;
-
     if (currentPosition.value != null) {
       Future.delayed(const Duration(milliseconds: 500), () {
         moveToCurrentLocation();
@@ -261,8 +331,212 @@ class GoOnlineController extends BaseController {
     }
   }
 
-  // Method to manually navigate to ride request list (if needed)
+  // COMPASS FUNCTIONALITY METHODS
+  void toggleCompass() {
+    if (isMapRotated.value) {
+      // Reset to North-up
+      resetMapToNorth();
+    } else {
+      // Show compass and current orientation
+      showCompass();
+    }
+  }
+
+  void resetMapToNorth() {
+    if (mapController != null) {
+      mapController!.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(
+            target: _currentCameraPosition?.target ?? currentPosition.value!,
+            zoom: _currentCameraPosition?.zoom ?? 15.0,
+            bearing: 0.0, // Reset to North
+            tilt: 0.0,    // Reset to flat view
+          ),
+        ),
+      );
+      isMapRotated.value = false;
+      currentBearing.value = 0.0;
+      print('🧭 Map reset to North');
+    }
+  }
+
+  void showCompass() {
+    // This will show the built-in compass when map is rotated
+    // The compass appears automatically when bearing != 0
+    if (mapController != null) {
+      mapController!.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(
+            target: _currentCameraPosition?.target ?? currentPosition.value!,
+            zoom: _currentCameraPosition?.zoom ?? 15.0,
+            bearing: currentBearing.value,
+            tilt: 45.0, // Slight tilt for 3D effect
+          ),
+        ),
+      );
+      print('🧭 Compass mode activated');
+    }
+  }
+
+// Update camera movement to track rotation
+  void onCameraMove(CameraPosition position) {
+    _currentCameraPosition = position;
+    currentBearing.value = position.bearing;
+    isMapRotated.value = position.bearing != 0.0;
+  }
+
   void navigateToRideRequestList() {
     Get.toNamed('/ride-request-list');
+  }
+
+  // ADD FLAG FUNCTIONALITY METHODS
+
+  void onMapTap(LatLng position) {
+    if (isFlagSet.value) {
+      // Update existing flag position
+      updateFlagPosition(position);
+    } else {
+      // Optionally: Set flag on first tap if not set
+      // setFlagPosition(position);
+    }
+  }
+
+  void toggleFlag() {
+    if (isFlagSet.value) {
+      // Remove flag
+      removeFlag();
+      showSuccess('Flag removed');
+    } else {
+      // Add flag at current map center or user's location
+      addFlagAtCenter();
+    }
+  }
+
+  Future<void> addFlagAtCenter() async {
+    if (_currentCameraPosition != null) {
+      // Use the last known camera position
+      final currentCenter = _currentCameraPosition!.target;
+      setFlagPosition(currentCenter);
+      showSuccess('Flag set at current map center');
+    } else if (currentPosition.value != null) {
+      // Use current location if camera position not available
+      setFlagPosition(currentPosition.value!);
+      showSuccess('Flag set at your current location');
+    } else {
+      showError('Unable to set flag - no location available');
+      // Try to get location
+      await getCurrentLocation();
+      if (currentPosition.value != null) {
+        setFlagPosition(currentPosition.value!);
+        showSuccess('Flag set at your current location');
+      }
+    }
+  }
+
+  void setFlagPosition(LatLng position) {
+    flagPosition.value = position;
+    isFlagSet.value = true;
+
+    // Create flag marker
+    final flagMarker = Marker(
+      markerId: flagMarkerId,
+      position: position,
+      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+      infoWindow: const InfoWindow(title: 'Destination', snippet: 'Tap to remove'),
+      onTap: () {
+        // Show options when flag is tapped
+        showFlagOptionsDialog();
+      },
+    );
+
+    markers.add(flagMarker);
+    print('🚩 Flag set at: ${position.latitude}, ${position.longitude}');
+  }
+
+  void updateFlagPosition(LatLng newPosition) {
+    flagPosition.value = newPosition;
+
+    // Update existing marker
+    markers.removeWhere((marker) => marker.markerId == flagMarkerId);
+
+    final updatedMarker = Marker(
+      markerId: flagMarkerId,
+      position: newPosition,
+      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+      infoWindow: const InfoWindow(title: 'Destination', snippet: 'Tap to remove'),
+      onTap: () {
+        showFlagOptionsDialog();
+      },
+    );
+
+    markers.add(updatedMarker);
+    print('🚩 Flag moved to: ${newPosition.latitude}, ${newPosition.longitude}');
+  }
+
+  void removeFlag() {
+    flagPosition.value = null;
+    isFlagSet.value = false;
+    markers.removeWhere((marker) => marker.markerId == flagMarkerId);
+    print('🚩 Flag removed');
+  }
+
+  // Method to show options when flag is tapped
+  void showFlagOptionsDialog() {
+    Get.dialog(
+      AlertDialog(
+        title: const Text('Flag Options'),
+        content: const Text('What would you like to do with this flag?'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Get.back();
+              removeFlag();
+              showSuccess('Flag removed');
+            },
+            child: const Text('Remove Flag'),
+          ),
+          TextButton(
+            onPressed: () {
+              Get.back();
+              moveToFlag();
+            },
+            child: const Text('Center Map'),
+          ),
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Method to move map to flag position
+  void moveToFlag() {
+    if (flagPosition.value != null && mapController != null) {
+      mapController!.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(
+            target: flagPosition.value!,
+            zoom: 15.0,
+          ),
+        ),
+      );
+      print('🎯 Moving to flag position');
+      showSuccess('Map centered on flag');
+    } else {
+      showError('No flag set to move to');
+    }
+  }
+
+  // Method to get directions to flag
+  void getDirectionsToFlag() {
+    if (flagPosition.value != null && currentPosition.value != null) {
+      print('📍 Getting directions from current location to flag');
+      // You can integrate with Google Directions API here
+      showSuccess('Directions to flag position requested');
+    } else {
+      showError('Please set a flag first');
+    }
   }
 }

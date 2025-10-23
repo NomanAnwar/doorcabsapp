@@ -8,13 +8,16 @@ import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../../utils/http/http_client.dart';
 import '../../../shared/controllers/base_controller.dart';
+import '../../../shared/services/storage_service.dart';
 import '../screens/available_bids_screen.dart';
 
-class AvailableDriversController extends BaseController { // ✅ CHANGED: Extend BaseController
+class AvailableDriversController extends BaseController {
   final currentPosition = Rxn<LatLng>();
   final viewingDrivers = 0.obs;
   final driverAvatars = <String>[].obs;
   final driverMarkers = <String, Marker>{}.obs;
+
+  final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
 
   final fareController = TextEditingController();
   final remainingSeconds = 60.obs;
@@ -26,8 +29,18 @@ class AvailableDriversController extends BaseController { // ✅ CHANGED: Extend
 
   /// Custom marker icon for drivers
   late BitmapDescriptor customDriverIcon;
+  late BitmapDescriptor customPickupIcon;
 
   int initialMinimumFare = 0;
+
+  // ✅ ADDED: New observables for button states and loading
+  final isRaisingFare = false.obs;
+  final maxFareLimit = 0.obs;
+
+  // ✅ FIXED: Use observable variables instead of getters
+  final isDecrementDisabled = false.obs;
+  final isIncrementDisabled = false.obs;
+  final isRaiseFareDisabled = false.obs;
 
   @override
   void onInit() async {
@@ -41,17 +54,39 @@ class AvailableDriversController extends BaseController { // ✅ CHANGED: Extend
     rideArgs = Map<String, dynamic>.from(args ?? {});
 
     if (args != null) {
-
       if (args['fare'] != null) {
         final fare = args['fare'].toString();
-        fareController.text = fare;
-        initialMinimumFare = int.tryParse(fare) ?? 0;
-        print('💰 Initial fare from args: $fare');
+
+        // ✅ FIXED: Handle double fare values like "190.0"
+        try {
+          // Parse as double first to handle "190.0" case
+          final doubleFare = double.tryParse(fare);
+          if (doubleFare != null) {
+            initialMinimumFare = doubleFare.round(); // Convert to int
+            fareController.text = initialMinimumFare.toString(); // Set as integer string
+            // ✅ ADDED: Set max fare limit to double the initial fare
+            maxFareLimit.value = initialMinimumFare * 2;
+            print('💰 Initial fare from args: $fare -> parsed as: $initialMinimumFare, Max fare limit: ${maxFareLimit.value}');
+          } else {
+            // Fallback to integer parsing
+            initialMinimumFare = int.tryParse(fare) ?? 0;
+            fareController.text = initialMinimumFare.toString();
+            maxFareLimit.value = initialMinimumFare * 2;
+            print('💰 Initial fare from args: $fare -> parsed as: $initialMinimumFare, Max fare limit: ${maxFareLimit.value}');
+          }
+        } catch (e) {
+          // Final fallback
+          initialMinimumFare = 0;
+          fareController.text = "0";
+          maxFareLimit.value = 0;
+          print('❌ Error parsing fare, using default: 0');
+        }
       } else {
-        // Fallback if no fare in args
-        fareController.text = "000";
-        initialMinimumFare = 000;
-        print('⚠️ No fare in args, using default: 250');
+        // ✅ FIXED: Use proper number instead of "000"
+        initialMinimumFare = 0;
+        fareController.text = "0";
+        maxFareLimit.value = 0;
+        print('⚠️ No fare in args, using default: 0');
       }
 
       // Pickup position
@@ -76,7 +111,20 @@ class AvailableDriversController extends BaseController { // ✅ CHANGED: Extend
       }
     }
 
+    // ✅ ADDED: Listen to fare controller changes to update button states
+    fareController.addListener(_updateButtonStates);
+    _updateButtonStates(); // Initial update
+
     startCountdown();
+  }
+
+  // ✅ ADDED: Method to update button states
+  void _updateButtonStates() {
+    final currentFare = _parseFareText(fareController.text);
+
+    isDecrementDisabled.value = currentFare <= initialMinimumFare;
+    isIncrementDisabled.value = currentFare >= maxFareLimit.value;
+    isRaiseFareDisabled.value = currentFare <= initialMinimumFare || isRaisingFare.value;
   }
 
   void onMapCreated(GoogleMapController controller) {}
@@ -85,26 +133,29 @@ class AvailableDriversController extends BaseController { // ✅ CHANGED: Extend
   Future<void> _loadCustomMarkerWithRetry() async {
     try {
       await executeWithRetry(() async {
-        final ByteData data = await rootBundle.load('assets/images/car.png');
-        final Uint8List bytes = data.buffer.asUint8List();
+        // ---- DRIVER ICON ----
+        final ByteData driverData = await rootBundle.load('assets/images/car.png');
+        final Uint8List driverBytes = driverData.buffer.asUint8List();
+        final Codec driverCodec = await instantiateImageCodec(driverBytes, targetWidth: 100);
+        final FrameInfo driverFrame = await driverCodec.getNextFrame();
+        final ByteData? driverResized = await driverFrame.image.toByteData(format: ImageByteFormat.png);
+        customDriverIcon = BitmapDescriptor.fromBytes(driverResized!.buffer.asUint8List());
 
-        // Resize the image to desired dimensions
-        final Codec codec = await instantiateImageCodec(bytes, targetWidth: 100);
-        final FrameInfo frame = await codec.getNextFrame();
-        final ByteData? resizedByteData = await frame.image.toByteData(
-          format: ImageByteFormat.png,
-        );
+        // ---- PICKUP ICON ----
+        final ByteData pickupData = await rootBundle.load('assets/images/place.png');
+        final Uint8List pickupBytes = pickupData.buffer.asUint8List();
+        final Codec pickupCodec = await instantiateImageCodec(pickupBytes, targetWidth: 90);
+        final FrameInfo pickupFrame = await pickupCodec.getNextFrame();
+        final ByteData? pickupResized = await pickupFrame.image.toByteData(format: ImageByteFormat.png);
+        customPickupIcon = BitmapDescriptor.fromBytes(pickupResized!.buffer.asUint8List());
 
-        final Uint8List resizedBytes = resizedByteData!.buffer.asUint8List();
-
-        customDriverIcon = BitmapDescriptor.fromBytes(resizedBytes);
-
-        print('✅ Custom driver marker loaded with size 80px');
+        print('✅ Custom markers loaded successfully');
       }, maxRetries: 2);
     } catch (e) {
-      print('❌ Error loading custom marker: $e');
-      // Fallback to default marker
+      print('❌ Error loading custom markers: $e');
+      // Fallbacks
       customDriverIcon = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue);
+      customPickupIcon = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed);
     }
   }
 
@@ -132,7 +183,7 @@ class AvailableDriversController extends BaseController { // ✅ CHANGED: Extend
           driverMarkers["pickup"] = Marker(
             markerId: const MarkerId("pickup"),
             position: pickupCoords,
-            icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+            icon: customPickupIcon,
             infoWindow: const InfoWindow(title: "Pickup Location"),
           );
 
@@ -188,44 +239,91 @@ class AvailableDriversController extends BaseController { // ✅ CHANGED: Extend
     });
   }
 
-  // ✅ UPDATED: Prevent decreasing below initial fare
+  // ✅ FIXED: Proper fare adjustment with button state updates
   void adjustFare(int delta) {
-    final currentFare = int.tryParse(fareController.text) ?? initialMinimumFare;
+    final currentFare = _parseFareText(fareController.text);
     int newFare = currentFare + delta;
 
-    // Prevent going below initial minimum fare
-    if (newFare < initialMinimumFare) {
-      showError('Cannot decrease below PKR $initialMinimumFare');
-      return; // Don't update the fare
+    // These checks should now be redundant due to button disabling, but keep for safety
+    if (delta < 0 && newFare < initialMinimumFare) {
+      return;
     }
-
-    // Optional: Set upper limit if needed
-    final maxFare = 10000; // You can adjust this
-    if (newFare > maxFare) {
-      showError('Cannot increase above PKR $maxFare');
-      return; // Don't update the fare
+    if (delta > 0 && newFare > maxFareLimit.value) {
+      return;
     }
 
     fareController.text = newFare.toString();
+    _updateButtonStates(); // ✅ Update button states after fare change
 
-    // Show feedback for successful adjustment
     if (delta > 0) {
-      print('➕ Fare increased to: PKR $newFare');
+      print('➕ Fare increased from PKR $currentFare to: PKR $newFare');
     } else {
-      print('➖ Fare decreased to: PKR $newFare');
+      print('➖ Fare decreased from PKR $currentFare to: PKR $newFare');
     }
   }
 
-  void raiseFare() {
-    showSuccess("Your new fare is PKR ${fareController.text}");
+  // ✅ ADDED: Robust fare text parsing helper
+  int _parseFareText(String fareText) {
+    if (fareText.isEmpty) return initialMinimumFare;
+
+    // First try to parse as double (handles "190.0" case)
+    final doubleFare = double.tryParse(fareText);
+    if (doubleFare != null) {
+      return doubleFare.round();
+    }
+
+    // Then try to parse as integer
+    return int.tryParse(fareText) ?? initialMinimumFare;
+  }
+
+  // ✅ UPDATED: Raise fare with loading state and button disabling
+  Future<void> raiseFare() async {
+    final currentFare = _parseFareText(fareController.text);
+
+    // Check if button should be disabled (redundant but safe)
+    if (currentFare <= initialMinimumFare) {
+      return;
+    }
+
+    isRaisingFare.value = true;
+    _updateButtonStates(); // ✅ Update button states when raising starts
+
+    try {
+      final args = Get.arguments;
+      final token = StorageService.getAuthToken();
+
+      if (token == null) {
+        throw Exception("User token not found. Please login again.");
+      }
+
+      FHttpHelper.setAuthToken(token, useBearer: true);
+
+      final raiseFareBody = {
+        "rideId": args['rideId'],
+        "newFare": currentFare,
+      };
+
+      final response = await FHttpHelper.post('ride/raise-fare', raiseFareBody);
+      debugPrint("  Raise Fare API Response : $response");
+
+      showSuccess("Your new fare is PKR ${fareController.text}");
+    } catch (e) {
+      showError("Failed to raise fare: ${e.toString()}");
+    } finally {
+      isRaisingFare.value = false;
+      _updateButtonStates(); // ✅ Update button states when raising ends
+    }
   }
 
   void _goToBids(Map<String, dynamic> parentArgs) {
     if (bids.isEmpty) return;
 
+    // ✅ FIXED: Use the same parsing logic for navigation
+    final fareValue = _parseFareText(fareController.text);
+
     Get.off(() => const AvailableBidsScreen(), arguments: {
       ...parentArgs, // pass everything received from RideRequestController
-      'fare': int.tryParse(fareController.text) ?? 250,
+      'fare': fareValue,
       'bids': bids, // updated bids
     });
   }
@@ -233,12 +331,11 @@ class AvailableDriversController extends BaseController { // ✅ CHANGED: Extend
   @override
   void onClose() {
     _timer?.cancel();
+    fareController.removeListener(_updateButtonStates); // ✅ Remove listener
     fareController.dispose();
     super.onClose();
   }
 }
-
-
 
 // import 'dart:async';
 // import 'dart:typed_data' show ByteData;

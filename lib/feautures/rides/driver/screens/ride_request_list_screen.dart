@@ -2,7 +2,9 @@ import 'package:doorcab/feautures/rides/driver/screens/reuseable_widgets/drawer.
 import 'package:doorcab/feautures/rides/driver/screens/reuseable_widgets/request_card.dart';
 import 'package:doorcab/utils/constants/colors.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
+import '../../../../utils/theme/custom_theme/text_theme.dart';
 import '../controllers/ride_request_list_controller.dart';
 
 class RideRequestListScreen extends StatelessWidget {
@@ -19,20 +21,6 @@ class RideRequestListScreen extends StatelessWidget {
     double sw(double w) => w * screenWidth / baseWidth;
     double sh(double h) => h * screenHeight / baseHeight;
 
-    Widget _bottomItem(IconData icon, String label, bool selected) {
-      return Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: sw(24), color: selected ? Colors.blue : Colors.grey),
-          SizedBox(height: sh(6)),
-          Text(
-            label,
-            style: TextStyle(fontSize: sw(12), color: selected ? Colors.blue : Colors.grey),
-          ),
-        ],
-      );
-    }
-
     return Scaffold(
       drawer: const DriverDrawer(),
       backgroundColor: Colors.white,
@@ -42,7 +30,7 @@ class RideRequestListScreen extends StatelessWidget {
           height: screenHeight,
           child: Stack(
             children: [
-              // Menu icon - fixed version
+              // Drawer icon
               Positioned(
                 top: sh(37.1),
                 left: sw(33.85),
@@ -50,7 +38,7 @@ class RideRequestListScreen extends StatelessWidget {
                   builder: (ctx) => GestureDetector(
                     onTap: () => Scaffold.of(ctx).openDrawer(),
                     child: Container(
-                      width: sw(45), // Add tap area
+                      width: sw(45),
                       height: sh(45),
                       color: Colors.transparent,
                       child: Image.asset(
@@ -64,7 +52,7 @@ class RideRequestListScreen extends StatelessWidget {
                 ),
               ),
 
-              // Dashboard title - centered
+              // Title
               Positioned(
                 top: sh(37.1),
                 left: sw(25),
@@ -72,28 +60,30 @@ class RideRequestListScreen extends StatelessWidget {
                 child: Text(
                   'Driver Dashboard',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: sw(18), fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                      fontSize: sw(18), fontWeight: FontWeight.bold),
                 ),
               ),
 
-              // Settings icon
+              // Settings
               Positioned(
                 top: sh(37.1),
                 left: sw(389),
                 child: Icon(Icons.settings, size: sw(24)),
               ),
 
-              // Online text
+              // Online status
               Positioned(
                 top: sh(100),
                 left: sw(33),
                 child: Text(
                   'Online',
-                  style: TextStyle(fontSize: sw(16), fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                      fontSize: sw(16), fontWeight: FontWeight.w600),
                 ),
               ),
 
-              // Toggle button
+              // Toggle
               Positioned(
                 top: sh(80),
                 left: sw(362),
@@ -110,18 +100,19 @@ class RideRequestListScreen extends StatelessWidget {
                 )),
               ),
 
-              // Requests list - only this part scrolls
+              // Requests list
               Positioned(
                 top: sh(157),
                 left: sw(10),
                 right: sw(10),
-                bottom: sh(90),
+                bottom: sh(64), // Adjusted for custom bottom nav bar
                 child: Obx(() {
                   if (c.requests.isEmpty) {
                     return Center(
                       child: Text(
                         'No requests at the moment',
-                        style: TextStyle(fontSize: sw(16)),
+                        style: FTextTheme.lightTextTheme.titleSmall!
+                            .copyWith(fontWeight: FontWeight.w500),
                       ),
                     );
                   }
@@ -130,12 +121,10 @@ class RideRequestListScreen extends StatelessWidget {
                     itemCount: c.requests.length,
                     itemBuilder: (context, index) {
                       final r = c.requests[index];
-                      final rem = c.remainingSeconds[r.id] ?? c.offerCountdownSeconds;
                       return Container(
                         margin: EdgeInsets.only(bottom: sh(10)),
                         child: RequestCard(
                           request: r,
-                          remainingSeconds: rem,
                           onTapCard: () => c.acceptRequest(r),
                           onOfferPressed: () => c.acceptRequest(r),
                           sw: sw,
@@ -147,28 +136,110 @@ class RideRequestListScreen extends StatelessWidget {
                 }),
               ),
 
-              // Bottom navigation
+              /// Custom Bottom Navigation Bar - Same as GoOnlineScreen
               Positioned(
+                bottom: 0,
                 left: 0,
                 right: 0,
-                bottom: 40,
-                height: sh(90),
                 child: Container(
-                  color: Colors.white,
-                  padding: EdgeInsets.symmetric(horizontal: sw(12), vertical: sh(8)),
+                  width: screenWidth,
+                  height: sh(64),
+                  padding: EdgeInsets.symmetric(horizontal: sw(31)),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: sw(10),
+                        offset: const Offset(0, -2),
+                      ),
+                    ],
+                  ),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _bottomItem(Icons.list, 'Requests List', true),
-                      _bottomItem(Icons.schedule, 'Schedule Ride', false),
-                      _bottomItem(Icons.bar_chart, 'Performance', false),
-                      _bottomItem(Icons.account_balance_wallet, 'Wallet', false),
+                      _buildBottomNavItem(
+                        icon: "assets/images/bottom_car.svg",
+                        label: "Requests List",
+                        isActive: true,
+                        sw: sw,
+                        sh: sh,
+                      ),
+                      _buildBottomNavItem(
+                        icon: "assets/images/bottom_sh.svg",
+                        label: "Schedule Ride",
+                        isActive: false,
+                        sw: sw,
+                        sh: sh,
+                      ),
+                      _buildBottomNavItem(
+                        icon: "assets/images/bottom_perf.svg",
+                        label: "Performance",
+                        isActive: false,
+                        sw: sw,
+                        sh: sh,
+                      ),
+                      _buildBottomNavItem(
+                        icon: "assets/images/bottom_wallet.svg",
+                        label: "Wallet",
+                        isActive: false,
+                        sw: sw,
+                        sh: sh,
+                      ),
                     ],
                   ),
                 ),
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  /// Bottom Navigation Item Widget - Same as GoOnlineScreen
+  Widget _buildBottomNavItem({
+    required String icon,
+    required String label,
+    required bool isActive,
+    required double Function(double) sw,
+    required double Function(double) sh,
+  }) {
+    return GestureDetector(
+      onTap: () {
+        // Add navigation logic here
+        if (label == "Requests List") {
+          // Already on this screen
+        } else if (label == "Schedule Ride") {
+          // Get.to(() => ScheduleRideScreen());
+        } else if (label == "Performance") {
+          // Get.to(() => PerformanceScreen());
+        } else if (label == "Wallet") {
+          // Get.to(() => WalletScreen());
+        }
+      },
+      child: Container(
+        width: sw(71),
+        height: sh(45),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SvgPicture.asset(
+              icon,
+              width: sw(24),
+              height: sh(24),
+              color: isActive ? const Color(0xFF003566) : Colors.grey,
+            ),
+            SizedBox(height: sh(4)),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: sw(10),
+                fontWeight: FontWeight.w500,
+                color: isActive ? const Color(0xFF003566) : Colors.grey,
+              ),
+            ),
+          ],
         ),
       ),
     );

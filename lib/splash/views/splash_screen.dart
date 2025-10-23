@@ -41,11 +41,14 @@ class SplashScreen extends StatelessWidget {
           /// Tag Line
           Positioned(
             top: sh(396),
-            left: sw(76),
-            child: Text(
-              FTextStrings.splahTagLine,
-              style: FTextTheme.lightTextTheme.bodyMedium?.copyWith(
-                fontSize: sw(16), // scale font size proportionally
+            left: sw(15),
+            right: 15,
+            child: Center(
+              child: Text(
+                FTextStrings.splahTagLine,
+                style: FTextTheme.lightTextTheme.bodyMedium?.copyWith(
+                  fontSize: sw(16), // scale font size proportionally
+                ),
               ),
             ),
           ),

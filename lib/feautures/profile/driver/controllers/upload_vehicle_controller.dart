@@ -64,8 +64,24 @@ class UploadVehicleController extends GetxController {
     vehImage.value = File(x.path);
   }
 
+  final Map<String, String?> vehicleImages = {
+    "front_side": null,
+    "back_side": null,
+    "side_one": null,
+    "side_two": null,
+    "inside_front": null,
+    "inside_back": null,
+  };
+
+  void setVehicleImages(Map<String, String?> images) {
+    vehicleImages.addAll(images);
+    // Show first image in preview
+    final first = images["front_side"];
+    if (first != null) vehImage.value = File(first);
+  }
+
+
   Future<void> submitVehicleInfo() async {
-    // must ensure registration uploaded — check saved profile for registration_card
     final profile = StorageService.getProfile();
     final reg = profile?['registration_card'];
     if (reg == null) {
@@ -73,20 +89,41 @@ class UploadVehicleController extends GetxController {
       return;
     }
 
-    if (brand.value.trim().isEmpty || model.value.trim().isEmpty || colour.value.trim().isEmpty || plateNo.value.trim().isEmpty || vehImage.value == null) {
-      Get.snackbar("Error", "Please complete vehicle details and add a photo");
+    if (brand.value.trim().isEmpty ||
+        model.value.trim().isEmpty ||
+        colour.value.trim().isEmpty ||
+        plateNo.value.trim().isEmpty ||
+        vehicleImages.values.any((v) => v == null)) {
+      Get.snackbar("Error", "Please complete vehicle details and all 6 photos");
       return;
     }
 
     try {
       isLoading.value = true;
+
+      final Map<String, dynamic> vehicleImagesBase64 = {};
+      // for (var entry in vehicleImages.entries) {
+      //   vehicleImagesBase64[entry.key] =
+      //   await ImageToDataUri.fileToDataUri(File(entry.value!));
+      // }
+
+      await Future.wait(vehicleImages.entries.map((entry) async {
+        final file = File(entry.value!);
+
+        // optionally compress image before encoding
+        final dataUri = await ImageToDataUri.fileToDataUri(file,);
+        vehicleImagesBase64[entry.key] = dataUri;
+      }));
+
       final body = {
         "brand": brand.value,
         "model": model.value,
         "colour": colour.value,
         "plate_no": plateNo.value,
-        "vehical_image": await ImageToDataUri.fileToDataUri(vehImage.value!),
-        "registration_card": reg, // send reg info saved earlier (or server may expect an id/url)
+        "registration_certificate": true,
+        "preferred_vehicle": StorageService.getVehicleType(),
+        "preferred_rideType": StorageService.getDriverType(),
+        "vehicle_images": vehicleImagesBase64,
       };
 
       final token = StorageService.getAuthToken();
@@ -96,11 +133,8 @@ class UploadVehicleController extends GetxController {
       }
 
       FHttpHelper.setAuthToken(token, useBearer: true);
-
-
       final response = await FHttpHelper.post("driver/upload-vehicleInfo", body);
 
-      // save updated vehicle into profile (if returned)
       if (response["vehicle"] != null) {
         final profileMap = StorageService.getProfile() ?? {};
         profileMap['vehicle'] = Map<String, dynamic>.from(response["vehicle"]);
@@ -116,4 +150,58 @@ class UploadVehicleController extends GetxController {
       isLoading.value = false;
     }
   }
+
+
+// Future<void> submitVehicleInfo() async {
+  //   // must ensure registration uploaded — check saved profile for registration_card
+  //   final profile = StorageService.getProfile();
+  //   final reg = profile?['registration_card'];
+  //   if (reg == null) {
+  //     Get.snackbar("Error", "Please upload registration certificate first");
+  //     return;
+  //   }
+  //
+  //   if (brand.value.trim().isEmpty || model.value.trim().isEmpty || colour.value.trim().isEmpty || plateNo.value.trim().isEmpty || vehImage.value == null) {
+  //     Get.snackbar("Error", "Please complete vehicle details and add a photo");
+  //     return;
+  //   }
+  //
+  //   try {
+  //     isLoading.value = true;
+  //     final body = {
+  //       "brand": brand.value,
+  //       "model": model.value,
+  //       "colour": colour.value,
+  //       "plate_no": plateNo.value,
+  //       "vehical_image": await ImageToDataUri.fileToDataUri(vehImage.value!),
+  //       "registration_card": reg, // send reg info saved earlier (or server may expect an id/url)
+  //     };
+  //
+  //     final token = StorageService.getAuthToken();
+  //     if (token == null) {
+  //       Get.snackbar("Error", "User token not found. Please login again.");
+  //       return;
+  //     }
+  //
+  //     FHttpHelper.setAuthToken(token, useBearer: true);
+  //
+  //
+  //     final response = await FHttpHelper.post("driver/upload-vehicleInfo", body);
+  //
+  //     // save updated vehicle into profile (if returned)
+  //     if (response["vehicle"] != null) {
+  //       final profileMap = StorageService.getProfile() ?? {};
+  //       profileMap['vehicle'] = Map<String, dynamic>.from(response["vehicle"]);
+  //       StorageService.saveProfile(profileMap);
+  //     }
+  //
+  //     StorageService.setDriverStep("vehicle", true);
+  //     Get.snackbar("Success", response["message"] ?? "Vehicle info updated");
+  //     Get.offAllNamed('/profile-completion');
+  //   } catch (e) {
+  //     Get.snackbar("Error", e.toString());
+  //   } finally {
+  //     isLoading.value = false;
+  //   }
+  // }
 }

@@ -11,26 +11,15 @@ class FSnackbar {
     bool isError = false,
   }) {
     Get.snackbar(
-      "", "",
-      titleText: Text(
-        title,
-        style: FTextTheme.lightTextTheme.titleLarge!.copyWith(
-          color: FColors.white,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      messageText: Text(
-        message,
-        style: FTextTheme.lightTextTheme.bodyLarge!.copyWith(
-          color: isError ? FColors.white : FColors.secondaryColor,
-        ),
-      ),
-      backgroundColor: isError
-          ? FColors.error
-          : FColors.primaryColor,
+      title, // Use title directly as first parameter
+      message, // Use message directly as second parameter
+      duration: const Duration(seconds: 2),
       snackPosition: SnackPosition.TOP,
+      backgroundColor: isError ? FColors.textError : FColors.secondaryColor,
+      colorText: Colors.white,
+      // This sets text color for both title and message
+      margin: const EdgeInsets.all(10),
       borderRadius: 16,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       icon: Icon(
         isError ? Icons.error_outline : Icons.check_circle_outline,
@@ -38,7 +27,6 @@ class FSnackbar {
         size: 28,
       ),
       shouldIconPulse: false,
-      duration: const Duration(seconds: 3),
       overlayBlur: 0.5,
       forwardAnimationCurve: Curves.easeOutBack,
     );

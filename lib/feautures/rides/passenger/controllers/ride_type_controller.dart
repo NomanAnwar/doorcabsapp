@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import '../../../../utils/http/http_client.dart';
@@ -31,7 +32,11 @@ class RideTypeController extends BaseController { // ✅ CHANGED: Extend BaseCon
   void onInit() {
     super.onInit();
     loadAllData();
+
   }
+
+
+
 
   /// ✅ UPDATED: Use BaseController's executeWithRetry
   Future<void> loadAllData() async {
@@ -49,6 +54,9 @@ class RideTypeController extends BaseController { // ✅ CHANGED: Extend BaseCon
 
         areAllDataLoaded(true);
 
+        // ✅ ADD THIS: Pre-cache images after services are loaded
+        precacheServiceImages();
+
         if (kDebugMode) {
           print('[RideTypeController] All data loaded successfully');
           print('[RideTypeController] Services: ${services.length}');
@@ -64,6 +72,73 @@ class RideTypeController extends BaseController { // ✅ CHANGED: Extend BaseCon
     } finally {
       isLoading.value = false;
     }
+  }
+
+  void precacheServiceImages() {
+    try {
+      // Wait for the next frame to ensure context is available
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        for (var service in services) {
+          final icon = service.categoryIcon ?? '';
+
+          if (icon.isNotEmpty) {
+            if (_looksLikeBase64(icon)) {
+              // Skip base64 images as they're handled differently
+              continue;
+            } else {
+              // Pre-cache network images
+              try {
+                precacheImage(NetworkImage(icon), Get.context!);
+                if (kDebugMode) {
+                  print('[RideTypeController] Pre-cached network image: $icon');
+                }
+              } catch (e) {
+                if (kDebugMode) {
+                  print('[RideTypeController] Failed to pre-cache network image: $e');
+                }
+              }
+            }
+          }
+
+          // Always pre-cache the default asset image for this category
+          final defaultAssetPath = _getDefaultAssetPath(service.categoryName);
+          try {
+            precacheImage(AssetImage(defaultAssetPath), Get.context!);
+            if (kDebugMode) {
+              print('[RideTypeController] Pre-cached asset image: $defaultAssetPath');
+            }
+          } catch (e) {
+            if (kDebugMode) {
+              print('[RideTypeController] Failed to pre-cache asset image: $e');
+            }
+          }
+        }
+      });
+    } catch (e) {
+      if (kDebugMode) {
+        print('[RideTypeController] Error in precacheServiceImages: $e');
+      }
+    }
+  }
+
+  /// Helper method to check if string looks like base64
+  bool _looksLikeBase64(String s) {
+    if (s.isEmpty) return false;
+    if (s.startsWith('data:image')) return true;
+    final sanitized = s.replaceAll(RegExp(r'\s+'), '');
+    return RegExp(r'^[A-Za-z0-9+/=]+$').hasMatch(sanitized);
+  }
+
+  /// Helper method to get default asset path for category
+  String _getDefaultAssetPath(String categoryName) {
+    final name = categoryName.toLowerCase();
+    if (name.contains('courier')) return "assets/images/courier.png";
+    if (name.contains('freight')) return "assets/images/frieght.png";
+    if (name.contains('city to city')) return "assets/images/city.png";
+    if (name.contains('instant ride')) return "assets/images/instant.png";
+    if (name.contains('delivery')) return "assets/images/delievrybike.png";
+    if (name.contains('schedule ride')) return "assets/images/scity.png";
+    return "assets/images/courier.png";
   }
 
   /// ✅ EXISTING: Your original methods (unchanged)

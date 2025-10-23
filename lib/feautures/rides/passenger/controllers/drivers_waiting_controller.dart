@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:ui' as ui;
+import 'package:doorcab/common/widgets/snakbar/snackbar.dart';
 import 'package:doorcab/utils/constants/colors.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
@@ -11,6 +12,7 @@ import 'package:http/http.dart' as http;
 import '../../../../utils/http/http_client.dart';
 import '../../../shared/controllers/base_controller.dart';
 import '../../../shared/services/enhanced_pusher_manager.dart';
+import '../../../shared/services/storage_service.dart';
 import '../models/driver_ride_info.dart';
 
 class DriversWaitingController extends BaseController { // ✅ CHANGED: Extend BaseController
@@ -18,6 +20,8 @@ class DriversWaitingController extends BaseController { // ✅ CHANGED: Extend B
   final driverMarkers = <String, Marker>{}.obs;
   final polylines = <Polyline>{}.obs;
   final fareController = TextEditingController();
+
+  final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
 
   GoogleMapController? _mapController;
   Timer? _waitingTimer;
@@ -47,11 +51,17 @@ class DriversWaitingController extends BaseController { // ✅ CHANGED: Extend B
   // ✅ ADDED: Enhanced Pusher Manager
   final EnhancedPusherManager _pusherManager = EnhancedPusherManager();
 
+  late final Map<String, dynamic> rideArgs;
+
   @override
   void onInit() async {
     super.onInit();
 
     final args = Get.arguments as Map<String, dynamic>? ?? {};
+
+    rideArgs = Map<String, dynamic>.from(Get.arguments ?? {});
+    print("📌 Ride args in Drivers Waiting Controller: ${rideArgs['rideType']}");
+
     if (args.isNotEmpty) {
       print("📦 Args received: $args");
 
@@ -189,10 +199,14 @@ class DriversWaitingController extends BaseController { // ✅ CHANGED: Extend B
 
         "ride-ended": (data) {
           print("🏁 Ride ended: $data");
-          rideStarted.value = false;
-          polylines.clear();
+          // rideStarted.value = false;
+          // polylines.clear();
           showSuccess('Ride completed successfully');
-          Get.offAllNamed('/ride-type');
+          // Get.offAllNamed('/ride-type');
+          Get.offAllNamed('/rate', arguments: {
+            'userId': driverId, // The user ID to rate
+            'rideId': rideId, // The ride ID
+          });
         },
 
         "ride-cancelled": (data) {
@@ -203,6 +217,14 @@ class DriversWaitingController extends BaseController { // ✅ CHANGED: Extend B
 
         "new-message": (data) {
           print("💬 New message received: $data");
+          if(StorageService.getSignUpResponse()!.userId == data['receiverId'])
+          FSnackbar.show(title: "New Message", message: data['text'].toString());
+          // FSnackbar.show(
+          //   title: "All Done",
+          //   message: data.toString(),
+          //   isError: false
+          // );
+
         },
       },
     );
@@ -268,11 +290,11 @@ class DriversWaitingController extends BaseController { // ✅ CHANGED: Extend B
       await executeWithRetry(() async {
         _driverIcon = await _bitmapFromAsset(
           'assets/images/car.png',
-          width: 80,
+          width: 100,
         );
         _pickupIcon = await _bitmapFromAsset(
           'assets/images/position_marker2.png',
-          width: 80,
+          width: 100,
         );
         _stopIcon = await _bitmapFromAsset('assets/images/place.png', width: 60);
         _dropIcon = await _bitmapFromAsset(
@@ -557,7 +579,7 @@ class DriversWaitingController extends BaseController { // ✅ CHANGED: Extend B
                         );
                         print('✅ ride-cancelled response: $res');
                         Navigator.of(ctx).pop();
-                        showSuccess('Ride cancelled successfully');
+                        // showSuccess('Ride cancelled successfully');
                         Get.offAllNamed('/ride-type');
                       } catch (e) {
                         print('❌ ride-cancelled error: $e');

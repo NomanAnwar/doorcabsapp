@@ -84,8 +84,12 @@ class DropOffScreen extends StatelessWidget {
                         ),
                         child: Row(
                           children: [
-                            Image.asset("assets/images/place.png", width: sw(22),),
+                            Image.asset(
+                              "assets/images/place.png",
+                              width: sw(22),
+                            ),
                             SizedBox(width: sw(12)),
+
                             Expanded(
                               child: TextField(
                                 controller: c.pickupCtrl,
@@ -107,7 +111,7 @@ class DropOffScreen extends StatelessWidget {
                                       .lightTextTheme
                                       .titleMedium!
                                       .copyWith(
-                                    color: FColors.chipBg,
+                                        color: FColors.chipBg,
                                         fontWeight: FontWeight.w500,
                                         fontSize:
                                             FTextTheme
@@ -123,7 +127,14 @@ class DropOffScreen extends StatelessWidget {
                                     vertical: sh(12),
                                   ),
                                 ),
-                                onTap: () => c.toggleField(ActiveField.pickup),
+                                onTap: () {
+                                  c.toggleField(ActiveField.pickup);
+                                  // Select all text when tapped
+                                  c.pickupCtrl.selection = TextSelection(
+                                    baseOffset: 0,
+                                    extentOffset: c.pickupCtrl.text.length,
+                                  );
+                                },
                               ),
                             ),
                           ],
@@ -147,16 +158,13 @@ class DropOffScreen extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 SizedBox(width: sw(4)),
-                                Icon(Icons.near_me_sharp, color: FColors.black, size: sw(20),),
-                                // Container(
-                                // width: sw(16),
-                                // height: sw(16),
-                                // decoration: const BoxDecoration(
-                                //   color: FColors.secondaryColor,
-                                //   shape: BoxShape.circle,
-                                // ),
-                                // ),
+                                Icon(
+                                  Icons.near_me_sharp,
+                                  color: FColors.black,
+                                  size: sw(20),
+                                ),
                                 SizedBox(width: sw(12)),
+
                                 Expanded(
                                   child: TextField(
                                     controller: c.dropCtrl,
@@ -196,9 +204,14 @@ class DropOffScreen extends StatelessWidget {
                                         vertical: sh(12),
                                       ),
                                     ),
-                                    onTap:
-                                        () =>
-                                            c.toggleField(ActiveField.dropoff),
+                                    onTap: () {
+                                      c.toggleField(ActiveField.dropoff);
+                                      // Select all text when tapped
+                                      c.dropCtrl.selection = TextSelection(
+                                        baseOffset: 0,
+                                        extentOffset: c.dropCtrl.text.length,
+                                      );
+                                    },
                                   ),
                                 ),
                               ],
@@ -210,13 +223,14 @@ class DropOffScreen extends StatelessWidget {
                             right: sw(8),
                             top: sh(10),
                             child: SizedBox(
-                              width: sw(98),
+                              width: sw(105),
                               height: sh(30),
                               child: TextButton.icon(
                                 style: TextButton.styleFrom(
                                   backgroundColor: const Color(0xFFFFC107),
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: sw(3),
+                                  padding: EdgeInsets.only(
+                                    left: sw(3),
+                                    right: sw(2),
                                   ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(sw(10)),
@@ -227,14 +241,14 @@ class DropOffScreen extends StatelessWidget {
                                   "ADD STOPS",
                                   style: FTextTheme.lightTextTheme.labelSmall!
                                       .copyWith(
-                                    fontSize:
-                                    FTextTheme
-                                        .lightTextTheme
-                                        .labelSmall!
-                                        .fontSize! *
-                                        screenWidth /
-                                        baseWidth,
-                                  ),
+                                        fontSize:
+                                            (FTextTheme
+                                                .lightTextTheme
+                                                .labelSmall!
+                                                .fontSize!) *
+                                            screenWidth /
+                                            baseWidth,
+                                      ),
                                 ),
                                 icon: SvgPicture.asset(
                                   "assets/images/add_stop_plus.svg",
@@ -242,11 +256,6 @@ class DropOffScreen extends StatelessWidget {
                                   height: sw(15),
                                   color: Colors.black,
                                 ),
-                                // Icon(
-                                //   Icons.add,
-                                //   size: sw(16),
-                                //   color: Colors.black,
-                                // ),
                                 iconAlignment: IconAlignment.end,
                               ),
                             ),
@@ -261,7 +270,6 @@ class DropOffScreen extends StatelessWidget {
                         child: Row(
                           children: [
                             SizedBox(width: sw(19)),
-                            // Icon(Icons.near_me_outlined, size: sw(20)),
                             SvgPicture.asset(
                               "assets/images/choose_on_map.svg",
                               width: sw(24),
@@ -273,14 +281,14 @@ class DropOffScreen extends StatelessWidget {
                               "Choose on Map",
                               style: FTextTheme.lightTextTheme.bodyLarge!
                                   .copyWith(
-                                fontSize:
-                                FTextTheme
-                                    .lightTextTheme
-                                    .bodyLarge!
-                                    .fontSize! *
-                                    screenWidth /
-                                    baseWidth,
-                              ),
+                                    fontSize:
+                                        FTextTheme
+                                            .lightTextTheme
+                                            .bodyLarge!
+                                            .fontSize! *
+                                        screenWidth /
+                                        baseWidth,
+                                  ),
                             ),
                           ],
                         ),
@@ -295,7 +303,8 @@ class DropOffScreen extends StatelessWidget {
                             child: CircularProgressIndicator(),
                           ),
                         ),
-                      if (c.suggestions.isNotEmpty) ...[
+                      if (c.suggestions.isNotEmpty &&
+                          c.showSuggestions.value) ...[
                         SizedBox(height: sh(10)),
                         ListView.separated(
                           shrinkWrap: true,
@@ -313,14 +322,14 @@ class DropOffScreen extends StatelessWidget {
                                   c.suggestions[i].description,
                                   style: FTextTheme.lightTextTheme.bodyLarge!
                                       .copyWith(
-                                    fontSize:
-                                    FTextTheme
-                                        .lightTextTheme
-                                        .bodyLarge!
-                                        .fontSize! *
-                                        screenWidth /
-                                        baseWidth,
-                                  ),
+                                        fontSize:
+                                            FTextTheme
+                                                .lightTextTheme
+                                                .bodyLarge!
+                                                .fontSize! *
+                                            screenWidth /
+                                            baseWidth,
+                                      ),
                                 ),
                                 onTap:
                                     () => c.selectSuggestion(c.suggestions[i]),
@@ -340,8 +349,7 @@ class DropOffScreen extends StatelessWidget {
                                 top: sh(4),
                               ),
                               child: InkWell(
-                                onTap: () => c.setFieldValue(c.recent[i]),
-                                //  update field when clicked
+                                onTap: () => c.selectRecent(c.recent[i]),
                                 child: Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -369,32 +377,36 @@ class DropOffScreen extends StatelessWidget {
                                         children: [
                                           Text(
                                             c.recent[i].description,
-                                            style: FTextTheme.lightTextTheme.bodyLarge!
+                                            style: FTextTheme
+                                                .lightTextTheme
+                                                .bodyLarge!
                                                 .copyWith(
-                                              fontSize:
-                                              FTextTheme
-                                                  .lightTextTheme
-                                                  .bodyLarge!
-                                                  .fontSize! *
-                                                  screenWidth /
-                                                  baseWidth,
-                                            ),
+                                                  fontSize:
+                                                      FTextTheme
+                                                          .lightTextTheme
+                                                          .bodyLarge!
+                                                          .fontSize! *
+                                                      screenWidth /
+                                                      baseWidth,
+                                                ),
                                           ),
                                           SizedBox(height: sh(2)),
                                           Text(
                                             "${c.recent[i].city ?? ''}, ${c.recent[i].province ?? ''}, ${c.recent[i].country ?? ''}",
-                                            style: FTextTheme.lightTextTheme.labelSmall!
+                                            style: FTextTheme
+                                                .lightTextTheme
+                                                .labelSmall!
                                                 .copyWith(
-                                              fontWeight: FontWeight.w400,
-                                              color: FColors.chipBg,
-                                              fontSize:
-                                              FTextTheme
-                                                  .lightTextTheme
-                                                  .labelSmall!
-                                                  .fontSize! *
-                                                  screenWidth /
-                                                  baseWidth,
-                                            ),
+                                                  fontWeight: FontWeight.w400,
+                                                  color: FColors.chipBg,
+                                                  fontSize:
+                                                      FTextTheme
+                                                          .lightTextTheme
+                                                          .labelSmall!
+                                                          .fontSize! *
+                                                      screenWidth /
+                                                      baseWidth,
+                                                ),
                                           ),
                                         ],
                                       ),
@@ -402,18 +414,20 @@ class DropOffScreen extends StatelessWidget {
                                     SizedBox(width: sw(2)),
                                     Text(
                                       c.recent[i].eta ?? '',
-                                      style: FTextTheme.lightTextTheme.labelSmall!
+                                      style: FTextTheme
+                                          .lightTextTheme
+                                          .labelSmall!
                                           .copyWith(
-                                        fontWeight: FontWeight.w400,
-                                        color: FColors.chipBg,
-                                        fontSize:
-                                        FTextTheme
-                                            .lightTextTheme
-                                            .labelSmall!
-                                            .fontSize! *
-                                            screenWidth /
-                                            baseWidth,
-                                      ),
+                                            fontWeight: FontWeight.w400,
+                                            color: FColors.chipBg,
+                                            fontSize:
+                                                FTextTheme
+                                                    .lightTextTheme
+                                                    .labelSmall!
+                                                    .fontSize! *
+                                                screenWidth /
+                                                baseWidth,
+                                          ),
                                     ),
                                     SizedBox(width: sw(8)),
                                     Transform(
@@ -445,7 +459,7 @@ class DropOffScreen extends StatelessWidget {
               ),
             ),
 
-            /// Confirm button fixed at bottom
+            /// Confirm button fixed at bottom (for manual confirmation)
             Positioned(
               left: sw(45),
               right: sw(45),
@@ -465,8 +479,8 @@ class DropOffScreen extends StatelessWidget {
                     FTextStrings.done,
                     style: FTextTheme.darkTextTheme.titleSmall!.copyWith(
                       fontWeight: FontWeight.w500,
-                      fontSize: FTextTheme.lightTextTheme
-                          .titleSmall!.fontSize! *
+                      fontSize:
+                          FTextTheme.lightTextTheme.titleSmall!.fontSize! *
                           screenWidth /
                           baseWidth,
                     ),

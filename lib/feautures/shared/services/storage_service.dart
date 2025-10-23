@@ -1,3 +1,4 @@
+// lib/shared/services/storage_service.dart
 import 'package:get_storage/get_storage.dart';
 import '../../start/models/sign_up_response.dart';
 import '../models/place_suggestion.dart';
@@ -25,6 +26,11 @@ class StorageService {
   // ✅ ADDED: Driver Online Status
   static const _kDriverOnlineStatus = 'driver_online_status';
 
+  static const _kAutoAcceptStatus = 'auto_accept_status';
+
+  // Chat storage keys
+  static const _kChatMessages = 'chat_messages_';
+
   static Future<void> init() async {
     await GetStorage.init();
   }
@@ -36,6 +42,14 @@ class StorageService {
   static void saveRole(String role) =>
       _box.write('role', role); // 🔥 always save lowercase
   static String? getRole() => _box.read('role');
+
+  static void saveDriverType(String selectedDriverType) =>
+      _box.write('selectedDriverType', selectedDriverType); // 🔥 always save lowercase
+  static String? getDriverType() => _box.read('selectedDriverType');
+
+  static void saveVehicleType(String selectedVehicleType) =>
+      _box.write('selectedVehicleType', selectedVehicleType); // 🔥 always save lowercase
+  static String? getVehicleType() => _box.read('selectedVehicleType');
 
   /// ================= RECENT PLACES =================
   static List<PlaceSuggestion> getRecent() {
@@ -178,9 +192,57 @@ class StorageService {
     return _box.read<bool>(_kDriverOnlineStatus) ?? false;
   }
 
+  static Future<void> setAutoAcceptStatus(bool isAllow) async {
+    await _box.write(_kAutoAcceptStatus, isAllow);
+    print('💾 Driver online status saved: $isAllow');
+  }
+
+  /// ✅ ADDED: Get driver's online/offline status
+  static bool getAutoAcceptStatus() {
+    return _box.read<bool>(_kAutoAcceptStatus) ?? false;
+  }
+
+
   /// ✅ ADDED: Clear driver online status (useful on logout)
   static Future<void> clearDriverOnlineStatus() async {
     await _box.remove(_kDriverOnlineStatus);
     print('💾 Driver online status cleared');
+  }
+
+  /// ================= CHAT STORAGE =================
+  /// Save chat messages for a specific ride
+  static Future<void> saveChatMessages(String rideId, List<Map<String, dynamic>> messages) async {
+    final key = '$_kChatMessages$rideId';
+    await _box.write(key, messages);
+    print('💾 Saved ${messages.length} chat messages for ride: $rideId');
+  }
+
+  /// Get chat messages for a specific ride
+  static List<Map<String, dynamic>> getChatMessages(String rideId) {
+    final key = '$_kChatMessages$rideId';
+    final messages = _box.read<List>(key) ?? [];
+    return messages.map((e) => Map<String, dynamic>.from(e)).toList();
+  }
+
+  /// Clear chat messages for a specific ride (when ride ends)
+  static Future<void> clearChatMessages(String rideId) async {
+    final key = '$_kChatMessages$rideId';
+    await _box.remove(key);
+    print('💾 Cleared chat messages for ride: $rideId');
+  }
+
+  /// Add a single message to chat storage
+  static Future<void> addChatMessage(String rideId, Map<String, dynamic> message) async {
+    final messages = getChatMessages(rideId);
+
+    // Check for duplicates using _id
+    if (messages.any((msg) => msg['_id'] == message['_id'])) {
+      print('💾 Message already exists in local storage, skipping: ${message['_id']}');
+      return;
+    }
+
+    messages.add(message);
+    await saveChatMessages(rideId, messages);
+    print('💾 Added new message to local storage: ${message['_id']}');
   }
 }

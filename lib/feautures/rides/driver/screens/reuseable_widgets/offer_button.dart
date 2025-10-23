@@ -1,5 +1,6 @@
-import 'package:flutter/cupertino.dart';
+import 'package:doorcab/utils/constants/colors.dart';
 import 'package:flutter/material.dart';
+import '../../../../../utils/theme/custom_theme/text_theme.dart';
 
 class OfferCountdownButton extends StatelessWidget {
   final int remainingSeconds;
@@ -17,54 +18,49 @@ class OfferCountdownButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final progress = (totalSeconds == 0)
-        ? 0.0
-        : (remainingSeconds / totalSeconds).clamp(0.0, 1.0);
-    final baseColor = const Color(0xFFF8DC25);
-    final activeColor = const Color(0xFFFFC300);
-    final color = Color.lerp(activeColor, baseColor, progress) ?? baseColor;
+    final double progress =
+    ((totalSeconds - remainingSeconds) / totalSeconds).clamp(0.0, 1.0);
 
-    return SizedBox(
-      width: sw(140),
-      height: sw(37),
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: color,
-          foregroundColor: Colors.black,
-          padding: EdgeInsets.symmetric(horizontal: sw(8), vertical: sw(4)),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(sw(10))),
-        ),
-        onPressed: onPressed,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // if (remainingSeconds > 0)
-            //   SizedBox(
-            //     width: sw(14),
-            //     height: sw(14),
-            //     child: CircularProgressIndicator(
-            //       value: progress,
-            //       strokeWidth: sw(2.2),
-            //       color: Colors.black,
-            //     ),
-            //   )
-            // else
-            //   SizedBox(width: sw(14), height: sw(14)),
-            // SizedBox(width: sw(8)),
-            Text(
-              "Offer Your Fare",
-              style: TextStyle(fontWeight: FontWeight.w600, fontSize: sw(12)),
-            ),
-            // SizedBox(width: sw(6)),
-            // if (remainingSeconds > 0)
-            //   Text(
-            //     '$remainingSeconds s',
-            //     style: TextStyle(fontWeight: FontWeight.w600, fontSize: sw(12)),
-            //   )
-          ],
+    const Color blue = FColors.secondaryColor;
+    const Color yellow = FColors.primaryColor;
+    final bool isEnding = remainingSeconds <= 60;
+    final Color progressColor =
+    isEnding ? yellow : Color.lerp(blue, yellow, progress) ?? blue;
+
+    return GestureDetector(
+      onTap: onPressed,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(sw(10)),
+        child: SizedBox(
+          width: sw(160),
+          height: sw(37),
+          child: Stack(
+            fit: StackFit.expand, // safer
+            children: [
+              Container(color: blue),
+              FractionallySizedBox(
+                alignment: Alignment.centerLeft,
+                widthFactor: progress,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 400),
+                  curve: Curves.easeInOut,
+                  color: progressColor,
+                ),
+              ),
+              Center(
+                child: Text(
+                  "Offer Your Fare",
+                  style: FTextTheme.lightTextTheme.titleSmall?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
+
   }
 }

@@ -31,7 +31,7 @@ class MapSelectionController extends BaseController { // ✅ CHANGED: Extend Bas
   // ✅ marker loader (same as RideHomeScreen)
   Future<void> _loadMarkerIcon() async {
     try {
-      await executeWithRetry(() async {
+      // await executeWithRetry(() async {
         final data = await rootBundle.load("assets/images/position_marker.png");
         final codec = await ui.instantiateImageCodec(
           data.buffer.asUint8List(),
@@ -40,7 +40,7 @@ class MapSelectionController extends BaseController { // ✅ CHANGED: Extend Bas
         final fi = await codec.getNextFrame();
         final bytes = await fi.image.toByteData(format: ui.ImageByteFormat.png);
         _markerIcon = BitmapDescriptor.fromBytes(bytes!.buffer.asUint8List());
-      });
+      // });
     } catch (e) {
       print('❌ Error loading marker icon: $e');
       _markerIcon = BitmapDescriptor.defaultMarker;
@@ -53,7 +53,7 @@ class MapSelectionController extends BaseController { // ✅ CHANGED: Extend Bas
   // ✅ method to recenter to user's location
   Future<void> recenter() async {
     try {
-      await executeWithRetry(() async {
+      // await executeWithRetry(() async {
         final pos = await Geolocator.getCurrentPosition(
           desiredAccuracy: LocationAccuracy.high,
         );
@@ -64,7 +64,7 @@ class MapSelectionController extends BaseController { // ✅ CHANGED: Extend Bas
           final ctrl = await mapCtrl.future;
           ctrl.animateCamera(CameraUpdate.newLatLngZoom(userLatLng, 15));
         }
-      });
+      // });
     } catch (e) {
       print("Error recentering: $e");
       showError('Failed to get current location');
@@ -75,7 +75,7 @@ class MapSelectionController extends BaseController { // ✅ CHANGED: Extend Bas
     try {
       isLoadingLocation(true);
 
-      await executeWithRetry(() async {
+      // await executeWithRetry(() async {
         LocationPermission permission = await Geolocator.checkPermission();
         if (permission == LocationPermission.denied ||
             permission == LocationPermission.deniedForever) {
@@ -112,7 +112,7 @@ class MapSelectionController extends BaseController { // ✅ CHANGED: Extend Bas
               .join(', ');
           address.value = name.isEmpty ? "Selected location" : name;
         }
-      });
+      // });
     } catch (e) {
       print("Error getting user location: $e");
       showError('Failed to get your location');
@@ -132,7 +132,7 @@ class MapSelectionController extends BaseController { // ✅ CHANGED: Extend Bas
 
   Future<void> onCameraIdle() async {
     try {
-      await executeWithRetry(() async {
+      // await executeWithRetry(() async {
         final placemarks = await geo.placemarkFromCoordinates(
           center.value.latitude,
           center.value.longitude,
@@ -146,7 +146,7 @@ class MapSelectionController extends BaseController { // ✅ CHANGED: Extend Bas
         } else {
           address.value = "Selected location";
         }
-      });
+      // });
     } catch (_) {
       address.value = "Selected location";
     }

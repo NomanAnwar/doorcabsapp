@@ -37,7 +37,7 @@ class AvailableBidsScreen extends StatelessWidget {
                 top: sh(43),
                 left: sw(23),
                 child: IconButton(
-                  icon: Icon(Icons.arrow_back, size: sw(24)),
+                  icon: Icon(Icons.arrow_back, size: sw(28)),
                   onPressed: Get.back,
                 ),
               ),
@@ -84,8 +84,13 @@ class AvailableBidsScreen extends StatelessWidget {
                         width: sw(203),
                         child: Obx(() => Text(
                           "${c.viewingDrivers.value} drivers are viewing your request",
-                          style: FTextTheme.lightTextTheme.bodyMedium?.copyWith(
-                            fontSize: sw(14),
+                          style: FTextTheme.lightTextTheme.labelSmall!
+                              .copyWith(
+                            fontWeight: FontWeight.w500,
+                            fontSize: FTextTheme.lightTextTheme
+                                .labelSmall!.fontSize! *
+                                screenWidth /
+                                baseWidth,
                           ),
                           overflow: TextOverflow.ellipsis,
                         )),
@@ -130,7 +135,14 @@ class AvailableBidsScreen extends StatelessWidget {
                                 left: sw(15),
                                 child: Text(
                                   "Accept an offer from a driver",
-                                  style: TextStyle(fontSize: sw(16)),
+                                  style: FTextTheme.lightTextTheme.titleSmall!
+                                      .copyWith(
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: FTextTheme.lightTextTheme
+                                        .titleSmall!.fontSize! *
+                                        screenWidth /
+                                        baseWidth,
+                                  ),
                                 ),
                               ),
 
@@ -181,22 +193,25 @@ class AvailableBidsScreen extends StatelessWidget {
                                         ),
                                       ),
                                       Container(
-                                        width: sw(281),
+                                        width: sw(300),
                                         height: sh(42),
                                         child: Text(
                                           "Auto Accept the nearest driver for PKR 250",
                                           maxLines: 2,
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: sw(14),
+                                          style: FTextTheme.darkTextTheme.titleSmall!
+                                              .copyWith(
+                                            fontWeight: FontWeight.w500,
+                                            fontSize: FTextTheme.darkTextTheme
+                                                .titleSmall!.fontSize! *
+                                                screenWidth /
+                                                baseWidth,
                                           ),
                                         ),
                                       ),
                                       Padding(
                                         padding: EdgeInsets.only(right: sw(14)),
                                         child: Obx(() => Transform.scale(
-                                          scale: 0.7,
+                                          scale: 0.9,
                                           child: Switch(
                                             padding: EdgeInsets.zero,
                                             activeColor: FColors.secondaryColor,
@@ -222,7 +237,14 @@ class AvailableBidsScreen extends StatelessWidget {
                                   onPressed: c.cancelRequest,
                                   backgroundColor: FColors.chipBg,
                                   designBorderRadius: sw(12),
-                                  textStyle: TextStyle(fontSize: sw(16)),
+                                  textStyle: FTextTheme.darkTextTheme.titleSmall!
+                                    .copyWith(
+                                fontWeight: FontWeight.w500,
+                                  fontSize: FTextTheme.darkTextTheme
+                                      .titleSmall!.fontSize! *
+                                      screenWidth /
+                                      baseWidth,
+                                ),
                                 ),
                               ),
                             ],
@@ -291,28 +313,32 @@ class AvailableBidsScreen extends StatelessWidget {
           Positioned(
             top: sh(95),
             left: sw(23),
-            child: Icon(Icons.star, color: Colors.amber, size: sw(14)),
-          ),
-          Positioned(
-            top: sh(95),
-            left: sw(42),
-            child: Text(
-              (bid['driver']['avgRating'] == null || bid['driver']['avgRating'].toString().isEmpty)
-                  ? '0'
-                  : bid['driver']['avgRating'].toString(),
-              style: TextStyle(fontSize: sw(12), fontWeight: FontWeight.bold),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Icon(Icons.star, color: Colors.amber, size: sw(14)),
+                SizedBox(width: sw(5)),
+                Text(
+                  (bid['driver']['avgRating'] == null || bid['driver']['avgRating'].toString().isEmpty)
+                      ? '0'
+                      : bid['driver']['avgRating'].toString(),
+                  style: FTextTheme.lightTextTheme.bodyLarge!.copyWith(
+                    fontSize: 10,
+                  ),
+                ),
+                SizedBox(width: sw(4)),
+                Text(
+                  (bid['driver']?['total_ratings'] == null || bid['driver']['total_ratings'].toString().isEmpty)
+                      ? '(0)'
+                      : "(${bid['driver']['total_ratings']})",
+                  style: FTextTheme.lightTextTheme.bodyLarge!.copyWith(
+                    fontSize: 8,
+                  ),
+                ),
+              ],
             ),
           ),
-          Positioned(
-            top: sh(95),
-            left: sw(62),
-            child: Text(
-              (bid['driver']?['total_ratings'] == null || bid['driver']['total_ratings'].toString().isEmpty)
-                  ? '(0)'
-                  : "(${bid['driver']['total_ratings']})",
-              style: TextStyle(fontSize: sw(12), color: Colors.grey),
-            ),
-          ),
+
 
           /// Driver category
           Positioned(
@@ -320,7 +346,9 @@ class AvailableBidsScreen extends StatelessWidget {
             left: sw(23),
             child: Text(
               bid['driver']['category'],
-              style: TextStyle(fontSize: sw(12), color: Colors.grey),
+              style: FTextTheme.lightTextTheme.bodyLarge!.copyWith(
+                  fontSize: 10,
+              ),
             ),
           ),
 
@@ -329,11 +357,8 @@ class AvailableBidsScreen extends StatelessWidget {
             top: sh(23),
             left: sw(104),
             child: Text(
-              "${bid['driver']?['name']?['firstName'] ?? ''} ${bid['driver']?['name']?['lastName'] ?? ''}",
-              style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: sw(16)
-              ),
+              ("${bid['driver']?['name']?['firstName'] ?? ''} ${bid['driver']?['name']?['lastName'] ?? ''}").toUpperCase(),
+              style: FTextTheme.lightTextTheme.bodyLarge,
             ),
           ),
 
@@ -343,43 +368,60 @@ class AvailableBidsScreen extends StatelessWidget {
             left: sw(104),
             child: Text(
               "${bid['driver']?['vehicleType'] ?? ''}, ${bid['driver']?['vehicle'] ?? ''}",
-              style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: sw(14)
+              style: FTextTheme.lightTextTheme.bodyLarge!.copyWith(
+                fontSize: 10
               ),
             ),
           ),
 
           /// Fare
           Positioned(
-            top: sh(115),
+            top: sh(95),
             left: sw(110),
-            child: Text(
-              "PKR ${bid['fareOffered']}",
-              style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: sw(16)
-              ),
+            child: Row(
+              children: [
+                Text(
+                  "PKR ",
+                  style: FTextTheme.lightTextTheme.titleSmall!.copyWith(
+                  ),
+                ),
+                Text(
+                  "${bid['fareOffered']}",
+                  style: FTextTheme.lightTextTheme.displaySmall!.copyWith(
+                    fontWeight: FontWeight.w600
+                  ),
+                ),
+              ],
             ),
           ),
 
           /// ETA + distance
           Positioned(
             top: sh(12),
-            right: sw(70),
-            child: Text(
-              "${bid['eta'] ?? ''}",
-              style: TextStyle(fontSize: sw(14)),
-            ),
-          ),
-          Positioned(
-            top: sh(12),
             right: sw(25),
-            child: Text(
-              "${bid['distance'] ?? ''}",
-              style: TextStyle(fontSize: sw(14)),
+            child: Row(
+              mainAxisSize: MainAxisSize.min, // ✅ keeps Row only as wide as needed
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  "${bid['eta'] ?? ''}",
+                  style: FTextTheme.lightTextTheme.bodyLarge!.copyWith(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                SizedBox(width: sw(8)), // ✅ spacing between ETA and distance
+                Text(
+                  "${bid['distance'] ?? ''}",
+                  style: FTextTheme.lightTextTheme.bodyLarge!.copyWith(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
             ),
           ),
+
 
           /// Accept button with progress
           Positioned(
@@ -440,7 +482,6 @@ class AvailableBidsScreen extends StatelessWidget {
                           "Accept",
                           style: FTextTheme.lightTextTheme.titleMedium?.copyWith(
                             color: Colors.white,
-                            fontSize: sw(14),
                           ),
                         ),
                       ),
@@ -468,7 +509,6 @@ class AvailableBidsScreen extends StatelessWidget {
               child: Text(
                 "Reject",
                 style: FTextTheme.darkTextTheme.titleMedium?.copyWith(
-                  fontSize: sw(14),
                 ),
               ),
             ),

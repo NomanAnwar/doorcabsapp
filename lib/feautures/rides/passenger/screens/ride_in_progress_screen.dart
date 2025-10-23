@@ -119,7 +119,7 @@ class RideInProgressScreen extends StatelessWidget {
                             child: IconButton(
                               padding: EdgeInsets.zero,
                               icon: const Icon(Icons.message, size: 22, color: Colors.blue),
-                              onPressed: () => Get.toNamed('/chat-with_driver', arguments: driver?.toMap() ?? {}),
+                              onPressed: () => Get.toNamed('/chat', arguments: driver?.toMap() ?? {}),
                             ),
                           )
                         ],

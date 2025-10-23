@@ -1,3 +1,4 @@
+import 'package:doorcab/common/widgets/snakbar/snackbar.dart';
 
 import 'pusher_channels.dart';
 
@@ -15,36 +16,34 @@ class EnhancedPusherManager {
       await _pusher.initialize();
       _isInitialized = true;
       print('✅ EnhancedPusherManager initialized once');
+      // FSnackbar.show(title: 'Manager', message: 'EnhancedPusherManager initialized');
     }
   }
 
-  // ✅ FIXED: Correct parameter name and method signature
+  // ✅ FIXED: Remove the blocking check to allow multiple event listeners
   Future<void> subscribeOnce(String channelName, {
     Map<String, void Function(Map<String, dynamic>)>? events,
   }) async {
     await initializeOnce();
 
-    // Check if already subscribed to these events
-    final channelEvents = _activeSubscriptions[channelName] ?? {};
-    final newEvents = events?.keys.toSet() ?? {};
-
-    if (channelEvents.containsAll(newEvents) && newEvents.isNotEmpty) {
-      print('✅ Already subscribed to these events on $channelName');
-      return;
-    }
-
-    // ✅ FIXED: Pass both channelName AND events to the underlying service
+    // ✅ REMOVED: The blocking check that was preventing multiple controllers from listening
+    // Always subscribe - PusherChannelsService can handle multiple event handlers
     await _pusher.subscribe(channelName, events: events);
 
-    // Track active subscriptions
+    // Track active subscriptions (for logging/debugging only)
+    final channelEvents = _activeSubscriptions[channelName] ?? {};
+    final newEvents = events?.keys.toSet() ?? {};
     _activeSubscriptions[channelName] = {...channelEvents, ...newEvents};
+
     print('✅ Subscribed to $channelName with events: $newEvents');
+    // FSnackbar.show(title: 'Channel', message: 'Subscribed to $channelName with events: $newEvents');
   }
 
   void unsubscribeSafely(String channelName) {
     _pusher.unsubscribe(channelName);
     _activeSubscriptions.remove(channelName);
     print('✅ Unsubscribed from $channelName');
+    // FSnackbar.show(title: 'Channel', message: 'Unsubscribed from $channelName');
   }
 
   // Getters for existing functionality

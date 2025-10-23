@@ -106,7 +106,7 @@ class RideInProgressController extends GetxController {
       },
       "ride-ended": (data) {
         print("🏁 RideInProgress ride-ended: $data");
-        Get.offAllNamed('/rate-driver', arguments: driver.value?.toMap() ?? {});
+        Get.offAllNamed('/rate', arguments: driver.value?.toMap() ?? {});
       },
       "ride-cancelled": (data) {
         print("❌ RideInProgress ride-cancelled: $data");
@@ -200,9 +200,9 @@ class RideInProgressController extends GetxController {
     _autoNavTimer?.cancel();
     _autoNavTimer = Timer(Duration(seconds: delaySeconds), () {
       if (driver.value != null) {
-        Get.offNamed('/rate-driver', arguments: driver.value!.toMap());
+        Get.offNamed('/rate', arguments: driver.value!.toMap());
       } else {
-        Get.offNamed('/rate-driver');
+        Get.offNamed('/rate');
       }
     });
   }

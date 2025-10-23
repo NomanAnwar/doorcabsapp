@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:doorcab/feautures/shared/services/storage_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
+import '../../../../common/widgets/snakbar/snackbar.dart';
 import '../../../shared/controllers/base_controller.dart';
 import '../../../shared/services/enhanced_pusher_manager.dart';
 import '../../../../utils/http/http_client.dart';
@@ -18,6 +20,7 @@ class GoToPickupController extends BaseController { // ✅ CHANGED: Extend BaseC
   final RxList<LatLng> dropoffs = <LatLng>[].obs;
   final Rx<Polyline?> routePolyline = Rx<Polyline?>(null);
   final RxSet<Marker> markers = <Marker>{}.obs;
+  final RxString passengerId = ''.obs;
   final RxString passengerName = ''.obs;
   final RxString pickupAddress = ''.obs;
   final RxString dropoffAddress = ''.obs;
@@ -25,7 +28,10 @@ class GoToPickupController extends BaseController { // ✅ CHANGED: Extend BaseC
   final RxString estimatedDropoffTime = ''.obs;
   final RxString estimatedDistance = ''.obs;
   final RxInt fare = 0.obs;
-  final RxString phone = '03001234567'.obs;
+  final RxString phone = ''.obs;
+  final RxString passengerProfileUrl = ''.obs;
+  final RxString passengerRating = '0'.obs;
+
 
   GoogleMapController? mapController;
   bool _mapReady = false;
@@ -38,6 +44,11 @@ class GoToPickupController extends BaseController { // ✅ CHANGED: Extend BaseC
 
   // Periodic GPS poll
   Timer? _locationTimer;
+
+  final RxBool isStartingRide = false.obs;
+  final RxBool isCompletingRide = false.obs;
+  final RxBool isCancelingRide = false.obs;
+
 
   // Pusher
   final EnhancedPusherManager _pusherManager = EnhancedPusherManager();
@@ -91,8 +102,16 @@ class GoToPickupController extends BaseController { // ✅ CHANGED: Extend BaseC
     rideInfo = RideInfo.fromMap(rideMap);
     _rideId = rideInfo?.rideId;
 
+    passengerId.value = rideInfo!.passengerId;
     passengerName.value = rideInfo?.passengerName ?? passengerName.value;
     pickupAddress.value = rideInfo?.pickupAddress ?? pickupAddress.value;
+
+    phone.value = rideInfo?.phone ?? phone.value;
+
+    passengerProfileUrl.value = rideInfo?.passengerProfileImage ?? '';
+    passengerRating.value = rideInfo?.passengerRating ?? '0';
+
+
 
     if (rideInfo?.pickupLat != null && rideInfo?.pickupLng != null) {
       pickupPosition.value = LatLng(
@@ -130,24 +149,24 @@ class GoToPickupController extends BaseController { // ✅ CHANGED: Extend BaseC
   // ----------------- ICONS -----------------
   Future<void> _loadIcons() async {
     try {
-      await executeWithRetry(() async {
+      // await executeWithRetry(() async {
         _driverIcon = await BitmapDescriptor.fromAssetImage(
           const ImageConfiguration(size: Size(64, 64)),
           'assets/images/position_marker2.png',
         );
-      });
+      // });
     } catch (e) {
       print('❌ failed to load driver icon: $e');
       _driverIcon = null;
     }
 
     try {
-      await executeWithRetry(() async {
+      // await executeWithRetry(() async {
         _pickupIcon = await BitmapDescriptor.fromAssetImage(
           const ImageConfiguration(size: Size(64, 64)),
           'assets/images/place.png',
         );
-      });
+      // });
     } catch (e) {
       print('❌ failed to load pickup icon: $e');
       _pickupIcon = null;
@@ -328,7 +347,8 @@ class GoToPickupController extends BaseController { // ✅ CHANGED: Extend BaseC
   Future<void> callPhone() async {
     final uri = Uri(scheme: 'tel', path: phone.value);
     if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.platformDefault);
+      launchUrl(Uri(scheme: 'tel', path: phone.value));
+      // await launchUrl(uri, mode: LaunchMode.platformDefault);
     } else {
       showError('Your device cannot make calls.');
     }
@@ -359,6 +379,7 @@ class GoToPickupController extends BaseController { // ✅ CHANGED: Extend BaseC
       return;
     }
     try {
+      isStartingRide.value = true;
       await executeWithRetry(() async {
         final response = await FHttpHelper.post('ride/driver-started/$_rideId', {});
 
@@ -377,6 +398,8 @@ class GoToPickupController extends BaseController { // ✅ CHANGED: Extend BaseC
     } catch (e) {
       print('❌ markDriverStarted error: $e');
       showError('Failed to start ride');
+    } finally {
+      isStartingRide.value = false; // ✅ ADDED: Clear loading state
     }
   }
 
@@ -393,6 +416,7 @@ class GoToPickupController extends BaseController { // ✅ CHANGED: Extend BaseC
     };
 
     try {
+      isCompletingRide.value = true;
       await executeWithRetry(() async {
         final response = await FHttpHelper.post('ride/driver-ended/$_rideId', body);
         print("Driver Ended Api Response : $response");
@@ -400,12 +424,18 @@ class GoToPickupController extends BaseController { // ✅ CHANGED: Extend BaseC
         showSuccess('Ride completed successfully');
 
         // ✅ navigate to next screen (replace with your real route later)
-        Get.offAllNamed('/go-online');
+        Get.offAllNamed('/rate', arguments: {
+          'userId': passengerId.value, // The user ID to rate
+          'rideId': _rideId, // The ride ID
+        });
+        // Get.offAllNamed('/go-online');
         // Get.offAllNamed('/ride-request-list');
       });
     } catch (e) {
       print('❌ markDriverEnded error: $e');
       showError('Failed to complete ride');
+    } finally {
+      isCompletingRide.value = false; // ✅ ADDED: Clear loading state
     }
   }
 
@@ -446,7 +476,14 @@ class GoToPickupController extends BaseController { // ✅ CHANGED: Extend BaseC
             },
             "new-message": (data) {
               print(" New message received : $data");
-              showSuccess("New Message: $data");
+              if(StorageService.getSignUpResponse()!.userId == data['receiverId'])
+              FSnackbar.show(title: "New Message", message: data['text'].toString());
+
+              // FSnackbar.show(
+              //     title: "New Message",
+              //     message: data.toString(),
+              //     isError: false
+              // );
             },
             "ride-cancelled": (data) {
               print("❌ Ride cancelled: $data");
@@ -547,6 +584,7 @@ class GoToPickupController extends BaseController { // ✅ CHANGED: Extend BaseC
                     };
 
                     try {
+                      isCancelingRide.value = true;
                       final res = await FHttpHelper.post('ride/ride-cancelled/$_rideId', body);
                       print('✅ ride-cancelled response: $res');
                       Navigator.of(ctx).pop(); // close bottom sheet
@@ -556,6 +594,8 @@ class GoToPickupController extends BaseController { // ✅ CHANGED: Extend BaseC
                     } catch (e) {
                       print('❌ ride-cancelled error: $e');
                       showError('Failed to cancel ride');
+                    } finally {
+                      isCancelingRide.value = false; // ✅ ADDED: Clear loading state
                     }
                   },
                   child: const Text('Cancel Ride'),

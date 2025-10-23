@@ -103,6 +103,7 @@ class DriverRideInfo {
   final String bidId;
   final double fareOffered;
   final String eta;
+  final String estimated_drop_time;
   final String distance;
   final Map<String, dynamic>? pickup;
   final List<Map<String, dynamic>> dropoffs;
@@ -113,6 +114,7 @@ class DriverRideInfo {
     required this.bidId,
     required this.fareOffered,
     required this.eta,
+    required this.estimated_drop_time,
     required this.distance,
     this.pickup,
     this.dropoffs = const [],
@@ -125,6 +127,7 @@ class DriverRideInfo {
       bidId: args['bidId'] ?? '',
       fareOffered: (args['fareOffered'] ?? 0).toDouble(),
       eta: args['eta'] ?? args['estimated_arrival_time'] ?? '',
+      estimated_drop_time: args['estimated_drop_time'] ?? args['estimated_drop_time'] ?? '',
       distance: args['distance']?.toString() ??
           args['estimated_distance']?.toString() ??
           '',

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:doorcab/common/widgets/snakbar/snackbar.dart';
 import 'package:doorcab/feautures/shared/services/storage_service.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
@@ -39,10 +40,11 @@ class DriverLocationService {
   Future<void> start() async {
     if (_isOnline) return; // already running
     _isOnline = true;
-
+    int i = 0;
     // Foreground real-time updates (every 5s)
     _foregroundTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
-      await _sendCurrentLocation();
+      await _sendCurrentLocation(i);
+      i++;
     });
 
     // Background updates (every 15 minutes)
@@ -50,10 +52,11 @@ class DriverLocationService {
       "driverLocationTask",
       "sendDriverLocation",
       frequency: const Duration(minutes: 15),
-      existingWorkPolicy: ExistingPeriodicWorkPolicy.replace, // ✅ FIX
+      existingWorkPolicy: ExistingPeriodicWorkPolicy.replace,
     );
 
     print("▶️ DriverLocationService started (5s foreground, 15m background)");
+    // FSnackbar.show(title: 'Location service', message: 'DriverLocationService started');
   }
 
   /// Stop both foreground + background tracking
@@ -65,6 +68,7 @@ class DriverLocationService {
 
     await Workmanager().cancelByUniqueName("driverLocationTask");
     print("🛑 DriverLocationService stopped");
+    // FSnackbar.show(title: 'Location service', message: 'DriverLocationService stop');
   }
 
   // 🔄 Optional pause/resume control (if you want to stop sending while offline)
@@ -72,17 +76,19 @@ class DriverLocationService {
   void pause() {
     _isPaused = true;
     print("⏸️ DriverLocationService paused (no location sent, still running)");
+    // FSnackbar.show(title: 'Location service', message: 'DriverLocationService pause');
   }
 
   void resume() {
     _isPaused = false;
     print("▶️ DriverLocationService resumed");
+    // FSnackbar.show(title: 'Location service', message: 'DriverLocationService resume');
   }
 
   bool get isRunning => _isOnline;
 
   /// Internal — send current position to server
-  Future<void> _sendCurrentLocation() async {
+  Future<void> _sendCurrentLocation(int i) async {
     try {
       // 🔄 Skip if paused
       // if (_isPaused) return;
@@ -105,9 +111,15 @@ class DriverLocationService {
       FHttpHelper.setAuthToken(token, useBearer: true);
 
       await FHttpHelper.post("driver/redis-drivers", body);
-      print("📍 Location sent: $body");
+      print("📍 Location sent $i: $body");
+      // if(i == 0) {
+      //   FSnackbar.show(title: "Location", message: "Driver Location sent");
+      // }
     } catch (e) {
       print("❌ Failed to send location: $e");
+      // if(i== 0){
+      // FSnackbar.show(title: 'Location service', message: 'Driver Location not sent');
+      // }
     }
   }
 }

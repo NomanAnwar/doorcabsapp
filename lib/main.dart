@@ -9,35 +9,31 @@ import 'feautures/shared/services/driver_location_service.dart';
 import 'feautures/shared/services/pusher_beams.dart';
 import 'feautures/shared/services/enhanced_pusher_manager.dart';
 
+final EnhancedPusherManager _pusherManager = EnhancedPusherManager();
+final PusherBeamsService _pusherBeams = PusherBeamsService();
+final DriverLocationService _driverLocationService = DriverLocationService();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Start showing your custom splash immediately
-  runApp(const MyApp());
+  // Initialize core services
+  // await _initializeCoreServices();
 
-  // Initialize services in background without blocking UI
-  _initializeServicesInBackground();
+  runApp(const MyApp());
 }
 
-// Non-blocking service initialization
-void _initializeServicesInBackground() async {
+Future<void> _initializeCoreServices() async {
   try {
     await Firebase.initializeApp();
-    FHttpHelper.setBaseUrl("http://dc.tricasol.pk");
-
-    final EnhancedPusherManager pusherManager = EnhancedPusherManager();
-    final PusherBeamsService pusherBeams = PusherBeamsService();
-    final DriverLocationService driverLocationService = DriverLocationService();
-
-    // Initialize services without awaiting (they'll run in background)
-    pusherManager.initializeOnce();
-    pusherBeams.initialize();
-    pusherBeams.registerDevice();
+    FHttpHelper.setBaseUrl("https://dc.tricasol.pk");
+    await _pusherManager.initializeOnce();
+    await _pusherBeams.initialize();
+    await _pusherBeams.registerDevice();
 
     // Configure location service if driver
     if (StorageService.getRole() == "Driver" || StorageService.getRole() == "driver") {
-      driverLocationService.configure();
-      driverLocationService.start();
+      await _driverLocationService.configure();
+      await _driverLocationService.start();
     }
   } catch (e) {
     print('⚠️ Service initialization error: $e');
@@ -54,10 +50,11 @@ class MyApp extends StatelessWidget {
       title: 'DoorCabs',
       initialRoute: '/',
       getPages: AppPages.pages,
-      home: const SplashScreen(), // Your custom splash with all existing logic
+      home: const SplashScreen(),
     );
   }
 }
+
 
 // import 'package:doorcab/feautures/shared/services/storage_service.dart';
 // import 'package:doorcab/splash/views/splash_screen.dart';

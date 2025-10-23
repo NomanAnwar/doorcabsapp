@@ -18,10 +18,11 @@ class GettingStartedController extends BaseController {
       final role = StorageService.getRole();
       final language = StorageService.getLanguage();
 
-      String formattedPhone = phoneNumber.value;
+      String formattedPhone = phoneNumber.value.trim();
       if (!formattedPhone.startsWith('+')) {
-        formattedPhone = '+92${formattedPhone.replaceAll(RegExp(r'^0+'), '')}';
+        formattedPhone = '+$formattedPhone';
       }
+
 
       final response = await ApiService.signUp(formattedPhone, role!, language!);
 

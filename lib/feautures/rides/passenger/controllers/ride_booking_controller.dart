@@ -1,3 +1,4 @@
+import 'package:doorcab/common/widgets/snakbar/snackbar.dart';
 import 'package:doorcab/feautures/rides/passenger/controllers/widgets/comments_sheet.dart';
 import 'package:doorcab/feautures/rides/passenger/controllers/widgets/payment_methods_sheet.dart';
 import 'package:doorcab/utils/constants/colors.dart';
@@ -988,7 +989,13 @@ class RideBookingController extends BaseController { // ✅ CHANGED: Extend Base
       rideFare[rideId]!.value = currentFare - 5;
       debugPrint('decrementFare: $rideId -> ${rideFare[rideId]!.value}');
     } else {
-      showError('You cannot set fare lower than PKR $minimumFare');
+      // showError('You cannot set fare lower than PKR $minimumFare');
+      Get.snackbar(
+        'Error',
+        'You cannot set fare lower than PKR $minimumFare',
+        backgroundColor: Colors.orange,
+        colorText: Colors.white,
+      );
     }
   }
 
@@ -1033,13 +1040,11 @@ class RideBookingController extends BaseController { // ✅ CHANGED: Extend Base
 
         final response = await FHttpHelper.post('ride/request', requestBody);
         debugPrint("  Ride Request API Response : $response");
+        // FSnackbar.show(title: 'Request', message: '$response');
 
         if (response['message'] == 'Ride requested successfully.') {
           final rideData = response;
           final rideId = rideData['rideId'];
-
-          await _sendPushNotificationToDrivers(rideData);
-          showSuccess('Ride requested successfully!');
 
           final passengerId = StorageService.getSignUpResponse()!.userId;
           if (passengerId != null) {
@@ -1062,13 +1067,16 @@ class RideBookingController extends BaseController { // ✅ CHANGED: Extend Base
             );
           }
 
+          // await _sendPushNotificationToDrivers(rideData, requestBody['requested_rideFare']);
+          showSuccess('Ride requested successfully!');
+
           Get.toNamed('/available-drivers', arguments: {
             'rideId': rideId,
             'rideData': rideData,
             'pickup': {"lat": pickupCoords?.latitude, "lng": pickupCoords?.longitude, "address": pickupLocation.value},
             'dropoffs': await _getNotification_dropoffs(),
             'rideType': selectedVehicleName,
-            'fare': fareController.text,
+            'fare': requestBody['requested_rideFare'],
             'passengers': selectedPassengers.value,
             'payment': selectedPaymentLabel.value,
             'pickupLat': pickupCoords?.latitude,
@@ -1088,6 +1096,51 @@ class RideBookingController extends BaseController { // ✅ CHANGED: Extend Base
       debugPrint('===== onRequestRide END =====\n');
     }
   }
+
+  // Future<Map<String, dynamic>> _prepareRideRequestBody() async {
+  //   debugPrint('===== _prepareRideRequestBody START =====');
+  //   final dropoffs = await _getStopCoordinates();
+  //   debugPrint('  dropoffs prepared: ${dropoffs.length}');
+  //
+  //   final fareBreakdown = _calculateFareBreakdown();
+  //   debugPrint('  fareBreakdown: $fareBreakdown');
+  //
+  //   double requestedRideFare;
+  //   try {
+  //     requestedRideFare = double.parse(fareController.text.trim());
+  //   } catch (e) {
+  //     debugPrint('  ❌ Error parsing fare: ${fareController.text}');
+  //     requestedRideFare = selectedVehicleFare.toDouble();
+  //     fareController.text = requestedRideFare.toString();
+  //   }
+  //
+  //   if (requestedRideFare <= 0) {
+  //     requestedRideFare = selectedVehicleFare.toDouble();
+  //     fareController.text = requestedRideFare.toString();
+  //   }
+  //
+  //   final requestBody = {
+  //     "pickup_lat": pickupCoords!.latitude,
+  //     "pickup_lng": pickupCoords!.longitude,
+  //     "ride_city": userCity,
+  //     "dropoffs": dropoffs,
+  //     "distance": distanceKm.value,
+  //     "vehicle_type": selectedVehicleName,
+  //     "requested_rideFare": fareBreakdown['total_fare'],
+  //     "fare": fareBreakdown,
+  //     "payment_type": selectedPaymentBackendValue,
+  //     "passengers_no": selectedPassengers.value,
+  //     "request_datetime": selectedDate.value != null && selectedTime.value != null
+  //         ? _formatDateTime(selectedDate.value!, selectedTime.value!)
+  //         : DateTime.now().toIso8601String(),
+  //   };
+  //
+  //   debugPrint('  Full Request Body:');
+  //   _printFormattedJson(requestBody);
+  //   debugPrint('===== _prepareRideRequestBody END =====');
+  //   return requestBody;
+  // }
+
 
   Future<Map<String, dynamic>> _prepareRideRequestBody() async {
     debugPrint('===== _prepareRideRequestBody START =====');
@@ -1111,20 +1164,56 @@ class RideBookingController extends BaseController { // ✅ CHANGED: Extend Base
       fareController.text = requestedRideFare.toString();
     }
 
+    // FIXED: Update dropoffs format to include stop_order
+    final formattedDropoffs = dropoffs.asMap().entries.map((entry) {
+      final index = entry.key;
+      final dropoff = entry.value;
+      return {
+        "lat": dropoff["lat"],
+        "lng": dropoff["lng"],
+        "stop_order": index + 1, // FIXED: Added stop_order field
+        "address": dropoff["address"],
+      };
+    }).toList();
+
+    // FIXED: Prepare fare breakdown in new format
+    final formattedFare = {
+      "baseFare": fareBreakdown['base_fare'] ?? 0, // FIXED: Changed key name
+      "distanceCharges": fareBreakdown['distance_charge'] ?? 0, // FIXED: Changed key name
+      "surgeCharges": (fareBreakdown['total_fare'] ?? 0) -
+          (fareBreakdown['base_fare'] ?? 0) -
+          (fareBreakdown['distance_charge'] ?? 0), // FIXED: Calculate surge charges
+      "discount": 0, // FIXED: Added discount field
+      "waiting_charge_amount": 0, // FIXED: Added waiting charge field
+    };
+
     final requestBody = {
-      "pickup_lat": pickupCoords!.latitude,
-      "pickup_lng": pickupCoords!.longitude,
+      // "pickup_lat": pickupCoords!.latitude,
+      // "pickup_lng": pickupCoords!.longitude,
       "ride_city": userCity,
-      "dropoffs": dropoffs,
+      "dropoffs": dropoffs, // Keep original format
       "distance": distanceKm.value,
       "vehicle_type": selectedVehicleName,
-      "requested_rideFare": requestedRideFare,
-      "fare": fareBreakdown,
+      "requested_rideFare": fareBreakdown['total_fare'],
+      "fare": fareBreakdown, // Keep original format
       "payment_type": selectedPaymentBackendValue,
       "passengers_no": selectedPassengers.value,
       "request_datetime": selectedDate.value != null && selectedTime.value != null
           ? _formatDateTime(selectedDate.value!, selectedTime.value!)
           : DateTime.now().toIso8601String(),
+
+      // FIXED: ADD NEW FIELDS AS REQUIRED
+      "pickup_loc": { // FIXED: Added new pickup_loc object
+        "lat": pickupCoords!.latitude,
+        "lng": pickupCoords!.longitude,
+        "address": pickupLocation.value,
+        "city": userCity,
+      },
+      "dropoffs": formattedDropoffs, // FIXED: Updated dropoffs with stop_order
+      "fare": formattedFare, // FIXED: Updated fare with new structure
+      "passengers_no": selectedPassengers.value.toString(), // FIXED: Convert to string
+      "ride_type": "Instant ride", // FIXED: Added ride_type field
+      "comments": comment.value, // FIXED: Added comments field
     };
 
     debugPrint('  Full Request Body:');
@@ -1133,20 +1222,23 @@ class RideBookingController extends BaseController { // ✅ CHANGED: Extend Base
     return requestBody;
   }
 
+
   void _printFormattedJson(Map<String, dynamic> json) {
     final encoder = JsonEncoder.withIndent('  ');
     final formattedJson = encoder.convert(json);
     debugPrint(formattedJson);
   }
 
-  Future<void> _sendPushNotificationToDrivers(Map<String, dynamic> rideData) async {
+  Future<void> _sendPushNotificationToDrivers(Map<String, dynamic> rideData, double amount) async {
     debugPrint('===== _sendPushNotificationToDrivers START =====');
     try {
+
+
       final notificationBody = {
         "rideId": rideData['rideId'],
         "pickup": {"lat": pickupCoords!.latitude, "lng": pickupCoords!.longitude, "address": pickupLocation.value},
         "dropoffs": await _getNotification_dropoffs(),
-        "amount": double.parse(fareController.text),
+        "amount": amount,
         "vehicle_type": selectedVehicleName,
       };
 
@@ -1199,6 +1291,46 @@ class RideBookingController extends BaseController { // ✅ CHANGED: Extend Base
       return "00";
     }
     return selectedVehicleFare.toString();
+  }
+
+  // Add these methods to your RideBookingController class
+
+// Check if passenger decrement button should be disabled
+  bool isPassengerDecrementDisabled(String rideId) {
+    final ride = rideOptions.firstWhereOrNull((r) => r.id == rideId);
+    if (ride == null) return true;
+    final currentPassengers = ridePassengers[rideId]?.value ?? ride.minPassengers;
+    return currentPassengers <= ride.minPassengers;
+  }
+
+// Check if passenger increment button should be disabled
+  bool isPassengerIncrementDisabled(String rideId) {
+    final ride = rideOptions.firstWhereOrNull((r) => r.id == rideId);
+    if (ride == null) return true;
+    final currentPassengers = ridePassengers[rideId]?.value ?? ride.minPassengers;
+    return currentPassengers >= ride.maxPassengers;
+  }
+
+// Check if fare decrement button should be disabled
+  bool isFareDecrementDisabled(String rideId) {
+    final currentFare = rideFare[rideId]?.value ?? 0;
+    final minimumFare = _minimumFares[rideId] ?? 0;
+    return currentFare <= minimumFare;
+  }
+
+// Check if fare increment button should be disabled
+  bool isFareIncrementDisabled(String rideId) {
+    final currentFare = rideFare[rideId]?.value ?? 0;
+    final minimumFare = _minimumFares[rideId] ?? 0;
+    final maxFare = minimumFare * 2; // Double the calculated fare
+    return currentFare >= maxFare;
+  }
+
+// Check if request ride button should be disabled
+  bool get isRequestRideDisabled {
+    return selectedRideType.value.isEmpty ||
+        isRequestingRide.value ||
+        isCalculatingFare.value;
   }
 
   @override

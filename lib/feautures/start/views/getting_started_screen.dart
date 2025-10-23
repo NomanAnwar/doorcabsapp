@@ -1,3 +1,4 @@
+import 'package:country_picker/country_picker.dart';
 import 'package:doorcab/common/widgets/snakbar/snackbar.dart';
 import 'package:doorcab/utils/constants/text_strings.dart';
 import 'package:flutter/material.dart';
@@ -20,10 +21,25 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
   final controller = Get.put(GettingStartedController());
 
   String? phoneError;
+  Country selectedCountry = Country(
+    phoneCode: '92',
+    countryCode: 'PK',
+    e164Sc: 0,
+    geographic: true,
+    level: 1,
+    name: 'Pakistan',
+    example: '3012345678',
+    displayName: 'Pakistan',
+    displayNameNoCountryCode: 'Pakistan',
+    e164Key: '',
+  );
 
   void _handleVerification(String method) {
     setState(() {
-      phoneError = FValidator.validatePhoneNumber(phoneController.text.trim());
+      phoneError = FValidator.validatePhoneNumber(
+        phoneController.text.trim(),
+        countryCode: selectedCountry.countryCode,
+      );
     });
 
     if (!controller.acceptedPolicy.value) {
@@ -36,12 +52,29 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
     }
 
     if (phoneError != null) {
-      Get.snackbar("Invalid Phone", phoneError!,
-          backgroundColor: Colors.red.shade100, colorText: Colors.black);
+      FSnackbar.show(
+        title: "Error",
+        message: "Enter Valid phone number.",
+        isError: false,
+      );
       return;
     }
 
-    controller.phoneNumber.value = phoneController.text.trim();
+    // controller.phoneNumber.value =
+    // "+${selectedCountry.phoneCode}${phoneController.text.trim()}";
+
+    String rawInput = phoneController.text.trim();
+
+    rawInput = rawInput.replaceAll(RegExp(r'[\s\-\(\)]'), '');
+
+    rawInput = rawInput.replaceFirst(RegExp(r'^\+'), '');
+
+    if (rawInput.startsWith('0')) {
+      rawInput = rawInput.substring(1);
+    }
+
+    controller.phoneNumber.value = "+${selectedCountry.phoneCode}$rawInput";
+
     controller.signUp(method);
   }
 
@@ -62,14 +95,12 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
 
         return Stack(
           children: [
-            /// Main content
             SingleChildScrollView(
               child: SizedBox(
                 height: screenHeight,
                 width: double.infinity,
                 child: Stack(
                   children: [
-                    /// Background container
                     Positioned(
                       top: sh(54),
                       left: sw(13),
@@ -87,7 +118,6 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
                       ),
                     ),
 
-                    /// Logo
                     Positioned(
                       top: sh(114),
                       left: sw(63),
@@ -98,7 +128,6 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
                       ),
                     ),
 
-                    /// First Text
                     Positioned(
                       top: sh(181),
                       left: sw(63),
@@ -114,23 +143,21 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
                       ),
                     ),
 
-                    /// Second Text
                     Positioned(
                       top: sh(220),
                       left: sw(63),
                       child: Text(
                         FTextStrings.wellcomeSubheading,
-                        style: FTextTheme.lightTextTheme.headlineSmall!.copyWith(
-                          fontWeight: FontWeight.w400,
+                        style: FTextTheme.lightTextTheme.headlineSmall!
+                            .copyWith(
+                            fontWeight: FontWeight.w400,
                             fontSize: FTextTheme
                                 .lightTextTheme.titleLarge!.fontSize! *
                                 screenWidth /
-                                baseWidth
-                        ),
+                                baseWidth),
                       ),
                     ),
 
-                    /// City Background
                     Positioned(
                       top: sh(252),
                       left: sw(14),
@@ -143,7 +170,7 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
                       ),
                     ),
 
-                    /// Phone Input
+                    /// 📱 Country Picker + Phone Input
                     Positioned(
                       top: sh(440),
                       left: sw(42),
@@ -157,10 +184,35 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
                         ),
                         child: Row(
                           children: [
-                            Image.asset(FImages.urdu_flag,
-                                width: sw(39), height: sh(26)),
-                            Icon(Icons.arrow_drop_down_rounded,
-                                size: sh(50), color: FColors.black),
+                            GestureDetector(
+                              onTap: () {
+                                showCountryPicker(
+                                  context: context,
+                                  showPhoneCode: true,
+                                  onSelect: (Country country) {
+                                    setState(() => selectedCountry = country);
+                                  },
+                                );
+                              },
+                              child: Row(
+                                children: [
+                                  Text(
+                                    selectedCountry.flagEmoji, // 🇵🇰 etc.
+                                    style: TextStyle(fontSize: sh(26)),
+                                  ),
+                                  // SizedBox(width: sw(6)),
+                                  // Text(
+                                  //   "+${selectedCountry.phoneCode}",
+                                  //   style: TextStyle(
+                                  //       fontSize: sh(16),
+                                  //       fontWeight: FontWeight.w500),
+                                  // ),
+                                  Icon(Icons.arrow_drop_down_rounded,
+                                      size: sh(40), color: FColors.black),
+                                ],
+                              ),
+                            ),
+                            // const SizedBox(width: 8),
                             Expanded(
                               child: TextField(
                                 controller: phoneController,
@@ -170,18 +222,19 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
                                     fontSize: FTextTheme.lightTextTheme
                                         .titleLarge!.fontSize! *
                                         screenWidth /
-                                        baseWidth
-                                ),
+                                        baseWidth),
                                 decoration: InputDecoration(
                                   border: InputBorder.none,
                                   hintText: "Phone Number",
-                                  hintStyle: FTextTheme.lightTextTheme.titleLarge!
+                                  hintStyle:
+                                  FTextTheme.lightTextTheme.titleLarge!
                                       .copyWith(
-                                      fontSize: FTextTheme.lightTextTheme
-                                          .titleLarge!.fontSize! *
+                                      fontSize: FTextTheme
+                                          .lightTextTheme
+                                          .titleLarge!
+                                          .fontSize! *
                                           screenWidth /
-                                          baseWidth
-                                  ),
+                                          baseWidth),
                                 ),
                               ),
                             ),
@@ -190,10 +243,9 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
                       ),
                     ),
 
-                    /// Phone Error (if invalid)
                     if (phoneError != null)
                       Positioned(
-                        top: sh(495),
+                        top: sh(505),
                         left: sw(54),
                         child: Text(
                           phoneError!,
@@ -201,9 +253,8 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
                         ),
                       ),
 
-                    /// Privacy Policy Row
                     Positioned(
-                      top: sh(510),
+                      top: sh(515),
                       left: sw(54),
                       child: Row(
                         children: [
@@ -219,19 +270,20 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
                           ),
                           Text(
                             "Privacy Policy",
-                            style: FTextTheme.lightTextTheme.bodyLarge!.copyWith(
-                                fontSize: FTextTheme
-                                    .lightTextTheme.bodyLarge!.fontSize! *
-                                    screenWidth /
-                                    baseWidth),
+                            style:
+                            FTextTheme.lightTextTheme.bodyLarge!.copyWith(
+                              fontSize: FTextTheme
+                                  .lightTextTheme.bodyLarge!.fontSize! *
+                                  screenWidth /
+                                  baseWidth,
+                            ),
                           ),
                         ],
                       ),
                     ),
 
-                    /// Verification text
                     Positioned(
-                      top: sh(555),
+                      top: sh(560),
                       left: sw(119),
                       child: Center(
                         child: Text(
@@ -246,9 +298,8 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
                       ),
                     ),
 
-                    /// Buttons Row
                     Positioned(
-                      top: sh(590),
+                      top: sh(600),
                       left: sw(14),
                       right: sw(14),
                       child: Row(
@@ -309,47 +360,46 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
                       ),
                     ),
 
-                    /// Login Link
-                    Positioned(
-                      top: sh(650),
-                      left: 0,
-                      right: 0,
-                      child: Center(
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              "Already Have an account ",
-                              style: FTextTheme.lightTextTheme.bodyLarge!
-                                  .copyWith(
-                                  fontSize: FTextTheme.lightTextTheme
-                                      .bodyLarge!.fontSize! *
-                                      screenWidth /
-                                      baseWidth),
-                            ),
-                            GestureDetector(
-                              // onTap: () => Get.toNamed('/login'),
-                              child: Text(
-                                "Log-In",
-                                style: FTextTheme.lightTextTheme.titleSmall!
-                                    .copyWith(
-                                    color: FColors.secondaryColor,
-                                    fontSize: FTextTheme.lightTextTheme
-                                        .titleSmall!.fontSize! *
-                                        screenWidth /
-                                        baseWidth),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                    // Positioned(
+                    //   top: sh(650),
+                    //   left: 0,
+                    //   right: 0,
+                    //   child: Center(
+                    //     child: Row(
+                    //       mainAxisSize: MainAxisSize.min,
+                    //       children: [
+                    //         Text(
+                    //           "Already Have an account ",
+                    //           style: FTextTheme.lightTextTheme.bodyLarge!
+                    //               .copyWith(
+                    //               fontSize: FTextTheme.lightTextTheme
+                    //                   .bodyLarge!.fontSize! *
+                    //                   screenWidth /
+                    //                   baseWidth),
+                    //         ),
+                    //         GestureDetector(
+                    //           onTap: () => Get.toNamed('/login'),
+                    //           child: Text(
+                    //             "Log-In",
+                    //             style: FTextTheme.lightTextTheme.titleSmall!
+                    //                 .copyWith(
+                    //                 color: FColors.secondaryColor,
+                    //                 fontSize: FTextTheme
+                    //                     .lightTextTheme.titleSmall!
+                    //                     .fontSize! *
+                    //                     screenWidth /
+                    //                     baseWidth),
+                    //           ),
+                    //         ),
+                    //       ],
+                    //     ),
+                    //   ),
+                    // ),
                   ],
                 ),
               ),
             ),
 
-            /// Fullscreen Loader Overlay
             if (loading)
               Container(
                 height: screenHeight,
