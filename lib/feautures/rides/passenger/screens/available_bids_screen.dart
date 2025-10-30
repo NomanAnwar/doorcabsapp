@@ -26,237 +26,298 @@ class AvailableBidsScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SingleChildScrollView(
-        child: SizedBox(
-          width: screenWidth,
-          height: screenHeight,
-          child: Stack(
-            children: [
-              /// Back button
-              Positioned(
-                top: sh(43),
-                left: sw(23),
-                child: IconButton(
-                  icon: Icon(Icons.arrow_back, size: sw(28)),
-                  onPressed: Get.back,
-                ),
-              ),
-
-              /// Scrollable bids list
-              Positioned(
-                top: sh(88),
-                left: sw(10),
-                right: sw(10),
-                bottom: sh(332),
-                child: Obx(() => ListView.builder(
-                  padding: EdgeInsets.zero,
-                  itemCount: c.bids.length,
-                  itemBuilder: (_, i) {
-                    final bid = c.bids[i];
-                    return _buildBidItem(bid, c, sw, sh);
-                  },
-                )),
-              ),
-
-              /// Bottom container
-              Positioned(
-                top: sh(624),
-                left: 0,
-                right: 0,
-                child: Container(
-                  height: sh(332),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(sw(14))),
-                    boxShadow: [
-                      BoxShadow(
-                          color: Colors.black26,
-                          blurRadius: sw(6)
-                      )
-                    ],
-                  ),
-                  child: Stack(
-                    children: [
-                      /// "x drivers viewing" text
-                      Positioned(
-                        top: sh(21),
-                        left: sw(15),
-                        width: sw(203),
-                        child: Obx(() => Text(
-                          "${c.viewingDrivers.value} drivers are viewing your request",
-                          style: FTextTheme.lightTextTheme.labelSmall!
-                              .copyWith(
-                            fontWeight: FontWeight.w500,
-                            fontSize: FTextTheme.lightTextTheme
-                                .labelSmall!.fontSize! *
-                                screenWidth /
-                                baseWidth,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        )),
+      body: WillPopScope(
+        // ✅ ADDED: Prevent back navigation without cancellation
+        onWillPop: () async {
+          c.handleBackPress();
+          return false; // Prevent default back behavior
+        },
+        child: Stack(
+          children: [
+            /// Main content
+            SingleChildScrollView(
+              child: SizedBox(
+                width: screenWidth,
+                height: screenHeight,
+                child: Stack(
+                  children: [
+                    /// Back button - ✅ UPDATED: Use cancellation flow
+                    Positioned(
+                      top: sh(43),
+                      left: sw(23),
+                      child: IconButton(
+                        icon: Icon(Icons.arrow_back, size: sw(28)),
+                        onPressed: c.handleBackPress, // ✅ Use cancellation flow
                       ),
+                    ),
 
-                      /// Driver avatars row
-                      Positioned(
-                        top: sh(18),
-                        left: sw(291),
-                        width: sw(108),
-                        height: sh(24),
-                        child: Obx(() => ListView.separated(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: c.driverAvatars.take(6).length,
-                          separatorBuilder: (_, __) => SizedBox(width: sw(0)),
-                          itemBuilder: (_, index) {
-                            final avatar = c.driverAvatars[index];
-                            return CircleAvatar(
-                              radius: sw(12),
-                              backgroundImage: AssetImage(avatar),
-                            );
-                          },
-                        )),
-                      ),
+                    /// Scrollable bids list
+                    Positioned(
+                      top: sh(88),
+                      left: sw(10),
+                      right: sw(10),
+                      bottom: sh(332),
+                      child: Obx(() => ListView.builder(
+                        padding: EdgeInsets.zero,
+                        itemCount: c.bids.length,
+                        itemBuilder: (_, i) {
+                          final bid = c.bids[i];
+                          return _buildBidItem(bid, c, sw, sh);
+                        },
+                      )),
+                    ),
 
-                      /// Grey sub-container
-                      Positioned(
-                        top: sh(54),
-                        left: 0,
-                        right: 0,
-                        child: Container(
-                          height: sh(241),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFE3E3E3),
-                            borderRadius: BorderRadius.circular(sw(14)),
-                          ),
-                          child: Stack(
-                            children: [
-                              /// "Waiting for more bids..." text
-                              Positioned(
-                                top: sh(22),
-                                left: sw(15),
-                                child: Text(
-                                  "Accept an offer from a driver",
-                                  style: FTextTheme.lightTextTheme.titleSmall!
-                                      .copyWith(
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: FTextTheme.lightTextTheme
-                                        .titleSmall!.fontSize! *
-                                        screenWidth /
-                                        baseWidth,
-                                  ),
-                                ),
-                              ),
-
-                              /// Countdown timer
-                              Positioned(
-                                top: sh(25),
-                                right: sw(22),
-                                child: Obx(() => Text(
-                                  "${c.remainingSeconds.value}s",
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: sw(16),
-                                  ),
-                                )),
-                              ),
-
-                              /// Progress bar
-                              Positioned(
-                                top: sh(51),
-                                left: sw(15),
-                                right: sw(15),
-                                child: Obx(() => LinearProgressIndicator(
-                                  value: c.remainingSeconds.value / 60,
-                                  color: FColors.primaryColor,
-                                  backgroundColor: FColors.chipBg,
-                                )),
-                              ),
-
-                              /// Black container (Auto accept)
-                              Positioned(
-                                top: sh(82),
-                                left: 0,
-                                right: 0,
-                                child: Container(
-                                  height: sh(77),
-                                  decoration: BoxDecoration(
-                                    color: FColors.chipBg,
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Padding(
-                                        padding: EdgeInsets.only(left: sw(14)),
-                                        child: SvgPicture.asset(
-                                          'assets/images/forward.svg',
-                                          width: sw(34),
-                                          height: sh(34),
-                                        ),
-                                      ),
-                                      Container(
-                                        width: sw(300),
-                                        height: sh(42),
-                                        child: Text(
-                                          "Auto Accept the nearest driver for PKR 250",
-                                          maxLines: 2,
-                                          style: FTextTheme.darkTextTheme.titleSmall!
-                                              .copyWith(
-                                            fontWeight: FontWeight.w500,
-                                            fontSize: FTextTheme.darkTextTheme
-                                                .titleSmall!.fontSize! *
-                                                screenWidth /
-                                                baseWidth,
-                                          ),
-                                        ),
-                                      ),
-                                      Padding(
-                                        padding: EdgeInsets.only(right: sw(14)),
-                                        child: Obx(() => Transform.scale(
-                                          scale: 0.9,
-                                          child: Switch(
-                                            padding: EdgeInsets.zero,
-                                            activeColor: FColors.secondaryColor,
-                                            inactiveTrackColor: FColors.primaryColor,
-                                            value: c.autoAccept.value,
-                                            onChanged: (v) => c.autoAccept.value = v,
-                                          ),
-                                        )),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-
-                              /// Cancel request button
-                              Positioned(
-                                top: sh(180),
-                                left: sw(41),
-                                width: sw(358),
-                                height: sh(48),
-                                child: FPrimaryButton(
-                                  text: "Cancel Request",
-                                  onPressed: c.cancelRequest,
-                                  backgroundColor: FColors.chipBg,
-                                  designBorderRadius: sw(12),
-                                  textStyle: FTextTheme.darkTextTheme.titleSmall!
+                    /// Bottom container
+                    Positioned(
+                      top: sh(624),
+                      left: 0,
+                      right: 0,
+                      child: Container(
+                        height: sh(332),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.vertical(top: Radius.circular(sw(14))),
+                          boxShadow: [
+                            BoxShadow(
+                                color: Colors.black26,
+                                blurRadius: sw(6)
+                            )
+                          ],
+                        ),
+                        child: Stack(
+                          children: [
+                            /// "x drivers viewing" text
+                            Positioned(
+                              top: sh(21),
+                              left: sw(15),
+                              width: sw(203),
+                              child: Obx(() => Text(
+                                "${c.viewingDrivers.value} drivers are viewing your request",
+                                style: FTextTheme.lightTextTheme.labelSmall!
                                     .copyWith(
-                                fontWeight: FontWeight.w500,
-                                  fontSize: FTextTheme.darkTextTheme
-                                      .titleSmall!.fontSize! *
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: FTextTheme.lightTextTheme
+                                      .labelSmall!.fontSize! *
                                       screenWidth /
                                       baseWidth,
                                 ),
+                                overflow: TextOverflow.ellipsis,
+                              )),
+                            ),
+
+                            /// Driver avatars row - ✅ UPDATED: Use dynamic avatars from events
+                            Positioned(
+                              top: sh(18),
+                              left: sw(291),
+                              width: sw(108),
+                              height: sh(24),
+                              child: Obx(() => ListView.separated(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: c.driverAvatars.take(6).length,
+                                separatorBuilder: (_, __) => SizedBox(width: sw(2)),
+                                itemBuilder: (_, index) {
+                                  final avatar = c.driverAvatars[index];
+                                  return CircleAvatar(
+                                    radius: sw(12),
+                                    backgroundImage: avatar.startsWith('http')
+                                        ? NetworkImage(avatar) as ImageProvider
+                                        : AssetImage(avatar),
+                                  );
+                                },
+                              )),
+                            ),
+
+                            /// Grey sub-container
+                            Positioned(
+                              top: sh(54),
+                              left: 0,
+                              right: 0,
+                              child: Container(
+                                height: sh(241),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFE3E3E3),
+                                  borderRadius: BorderRadius.circular(sw(14)),
+                                ),
+                                child: Stack(
+                                  children: [
+                                    /// "Accept an offer..." text
+                                    Positioned(
+                                      top: sh(22),
+                                      left: sw(15),
+                                      child: Text(
+                                        "Accept an offer from a driver",
+                                        style: FTextTheme.lightTextTheme.titleSmall!
+                                            .copyWith(
+                                          fontWeight: FontWeight.w500,
+                                          fontSize: FTextTheme.lightTextTheme
+                                              .titleSmall!.fontSize! *
+                                              screenWidth /
+                                              baseWidth,
+                                        ),
+                                      ),
+                                    ),
+
+                                    /// Countdown timer
+                                    Positioned(
+                                      top: sh(25),
+                                      right: sw(22),
+                                      child: Obx(() => Text(
+                                        "${c.remainingSeconds.value}s",
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: sw(16),
+                                        ),
+                                      )),
+                                    ),
+
+                                    /// Progress bar
+                                    Positioned(
+                                      top: sh(51),
+                                      left: sw(15),
+                                      right: sw(15),
+                                      child: Obx(() => LinearProgressIndicator(
+                                        value: c.remainingSeconds.value / 60,
+                                        color: FColors.primaryColor,
+                                        backgroundColor: FColors.chipBg,
+                                      )),
+                                    ),
+
+                                    /// Black container (Auto accept) - ✅ UPDATED: Use dynamic fare
+                                    Positioned(
+                                      top: sh(82),
+                                      left: 0,
+                                      right: 0,
+                                      child: Container(
+                                        height: sh(77),
+                                        decoration: BoxDecoration(
+                                          color: FColors.chipBg,
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Padding(
+                                              padding: EdgeInsets.only(left: sw(14)),
+                                              child: SvgPicture.asset(
+                                                'assets/images/forward.svg',
+                                                width: sw(34),
+                                                height: sh(34),
+                                              ),
+                                            ),
+                                            Container(
+                                              width: sw(300),
+                                              height: sh(42),
+                                              child: Obx(() => Text(
+                                                "Auto Accept the nearest driver for PKR ${c.currentFare.value}",
+                                                maxLines: 2,
+                                                style: FTextTheme.darkTextTheme.titleSmall!
+                                                    .copyWith(
+                                                  fontWeight: FontWeight.w500,
+                                                  fontSize: FTextTheme.darkTextTheme
+                                                      .titleSmall!.fontSize! *
+                                                      screenWidth /
+                                                      baseWidth,
+                                                ),
+                                              )),
+                                            ),
+                                            Padding(
+                                              padding: EdgeInsets.only(right: sw(14)),
+                                              child: Obx(() => Transform.scale(
+                                                scale: 0.8,
+                                                child: Switch(
+                                                  padding: EdgeInsets.zero,
+                                                  activeColor: FColors.primaryColor,
+                                                  inactiveTrackColor: FColors.white,
+                                                  value: c.autoAccept.value,
+                                                  onChanged: c.onAutoAcceptToggle,
+                                                ),
+                                              )),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+
+                                    /// Cancel request button - ✅ UPDATED: Use cancellation flow
+                                    Positioned(
+                                      top: sh(180),
+                                      left: sw(41),
+                                      width: sw(358),
+                                      height: sh(48),
+                                      child: FPrimaryButton(
+                                        text: "Cancel Request",
+                                        onPressed: c.handleBackPress, // ✅ Use cancellation flow
+                                        backgroundColor: FColors.chipBg,
+                                        designBorderRadius: sw(12),
+                                        textStyle: FTextTheme.darkTextTheme.titleSmall!
+                                            .copyWith(
+                                          fontWeight: FontWeight.w500,
+                                          fontSize: FTextTheme.darkTextTheme
+                                              .titleSmall!.fontSize! *
+                                              screenWidth /
+                                              baseWidth,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            /// Loading overlay for cancellation
+            Obx(() => c.isCancellingRide.value
+                ? Container(
+              color: Colors.black.withOpacity(0.5),
+              width: double.infinity,
+              height: double.infinity,
+              child: Center(
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: sw(30), vertical: sh(20)),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(sw(16)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: sw(10),
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        width: sw(40),
+                        height: sw(40),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 3,
+                          valueColor: AlwaysStoppedAnimation<Color>(FColors.primaryColor),
+                        ),
+                      ),
+                      SizedBox(height: sh(16)),
+                      Text(
+                        'Cancelling ride...',
+                        style: TextStyle(
+                          fontSize: sw(16),
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black87,
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
-            ],
-          ),
+            )
+                : const SizedBox.shrink()),
+          ],
         ),
       ),
     );
@@ -339,7 +400,6 @@ class AvailableBidsScreen extends StatelessWidget {
             ),
           ),
 
-
           /// Driver category
           Positioned(
             top: sh(115),
@@ -347,7 +407,7 @@ class AvailableBidsScreen extends StatelessWidget {
             child: Text(
               bid['driver']['category'],
               style: FTextTheme.lightTextTheme.bodyLarge!.copyWith(
-                  fontSize: 10,
+                fontSize: 10,
               ),
             ),
           ),
@@ -369,7 +429,7 @@ class AvailableBidsScreen extends StatelessWidget {
             child: Text(
               "${bid['driver']?['vehicleType'] ?? ''}, ${bid['driver']?['vehicle'] ?? ''}",
               style: FTextTheme.lightTextTheme.bodyLarge!.copyWith(
-                fontSize: 10
+                  fontSize: 10
               ),
             ),
           ),
@@ -388,7 +448,7 @@ class AvailableBidsScreen extends StatelessWidget {
                 Text(
                   "${bid['fareOffered']}",
                   style: FTextTheme.lightTextTheme.displaySmall!.copyWith(
-                    fontWeight: FontWeight.w600
+                      fontWeight: FontWeight.w600
                   ),
                 ),
               ],
@@ -421,7 +481,6 @@ class AvailableBidsScreen extends StatelessWidget {
               ],
             ),
           ),
-
 
           /// Accept button with progress
           Positioned(

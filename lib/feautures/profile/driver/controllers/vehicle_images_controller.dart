@@ -95,20 +95,6 @@ class VehicleImagesController extends GetxController {
     }
   }
 
-  // void submitVerification() async {
-  //   isLoading.value = true;
-  //   await Future.delayed(const Duration(seconds: 2));
-  //   isLoading.value = false;
-  //
-  //   Get.snackbar(
-  //     'Success',
-  //     'Vehicle verification completed!',
-  //     snackPosition: SnackPosition.BOTTOM,
-  //     backgroundColor: Colors.green,
-  //     colorText: Colors.white,
-  //   );
-  // }
-
   void submitVerification() async {
     final allPhotosUploaded = capturedImages.take(6).every((image) => image != null);
     if (!allPhotosUploaded) {

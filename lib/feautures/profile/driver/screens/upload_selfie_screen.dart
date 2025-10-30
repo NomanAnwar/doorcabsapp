@@ -85,11 +85,14 @@ class UploadSelfieScreen extends StatelessWidget {
                             )
                                 : null,
                             child: f == null
-                                ? Image.asset(
-                              FImages.selfie_placeholder,
-                              width: sw(358),
-                              height: sh(537),
-                              fit: BoxFit.contain,
+                                ? ClipRRect(
+                              borderRadius: BorderRadius.circular(sw(8)),
+                              child: Image.asset(
+                                FImages.selfie_placeholder,
+                                width: sw(358),
+                                height: sh(537),
+                                fit: BoxFit.cover,
+                              ),
                             )
                                 : ClipRRect(
                               borderRadius: BorderRadius.circular(sw(8)),

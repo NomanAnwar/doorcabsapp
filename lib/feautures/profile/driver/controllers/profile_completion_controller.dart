@@ -13,6 +13,7 @@ class ProfileCompletionController extends GetxController {
   // Privacy policy
   var acceptedPolicy = false.obs;
 
+
   @override
   void onInit() {
     super.onInit();

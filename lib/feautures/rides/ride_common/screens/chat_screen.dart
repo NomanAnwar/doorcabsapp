@@ -117,7 +117,7 @@ class ChatScreen extends StatelessWidget {
 
                       // Name
                       Positioned(
-                        top: sh(20),
+                        top: sh(15),
                         left: sw(113),
                         child: Text(
                           displayData['name'] ?? "User",
@@ -132,7 +132,7 @@ class ChatScreen extends StatelessWidget {
                       // Vehicle Type
                       if (displayData['car'] != null && displayData['car'] != 'Your Vehicle')
                         Positioned(
-                          top: sh(45),
+                          top: sh(35),
                           left: sw(113),
                           child: Text(
                             displayData['car']!,
@@ -145,7 +145,7 @@ class ChatScreen extends StatelessWidget {
                       // Rating Row
                       if (displayData['avgRating'] != null && displayData['avgRating']!.isNotEmpty)
                         Positioned(
-                          top: displayData['car'] != null && displayData['car'] != 'Your Vehicle' ? sh(70) : sh(45),
+                          top: displayData['car'] != null && displayData['car'] != 'Your Vehicle' ? sh(55) : sh(45),
                           left: sw(113),
                           child: Row(
                             children: [
@@ -203,7 +203,7 @@ class ChatScreen extends StatelessWidget {
                       if (displayData['phone'] != null && displayData['phone']!.isNotEmpty)
                         Positioned(
                           top: sh(30),
-                          right: sw(15),
+                          right: sw(25),
                           child: GestureDetector(
                             onTap: () {
                               final phone = displayData['phone']!;
@@ -364,7 +364,7 @@ class ChatScreen extends StatelessWidget {
 
   // Helper methods for dynamic positioning - updated to use sh function
   double _getCategoryTopPosition(Map<String, String?> displayData, double Function(double) sh) {
-    double top = 90;
+    double top = 75;
     if (displayData['avgRating'] == null || displayData['avgRating']!.isEmpty) {
       top -= 25;
     }
@@ -375,15 +375,15 @@ class ChatScreen extends StatelessWidget {
   }
 
   double _getEtaTopPosition(Map<String, String?> displayData, double Function(double) sh) {
-    double top = 110;
+    double top = 90;
     if (displayData['category'] == null || displayData['category']!.isEmpty) {
-      top -= 20;
+      top -= 10;
     }
     if (displayData['avgRating'] == null || displayData['avgRating']!.isEmpty) {
-      top -= 25;
+      top -= 15;
     }
     if (displayData['car'] == null || displayData['car'] == 'Your Vehicle') {
-      top -= 25;
+      top -= 15;
     }
     return sh(top);
   }

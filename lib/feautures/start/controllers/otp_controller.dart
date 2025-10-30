@@ -7,6 +7,7 @@ import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import '../../../utils/http/http_client.dart';
 import '../../shared/services/storage_service.dart';
+import '../models/driver_verification_helper.dart';
 import '../models/sign_up_response.dart';
 import '../../../utils/http/api_retry_helper.dart'; // ✅ ADDED
 
@@ -174,12 +175,11 @@ class OtpController extends GetxController {
     }
   }
 
-  // ✅ UPDATED: Verify OTP with retry
+  // In your OTP Controller, update the verifyOtp method for driver case
   Future<void> verifyOtp(String pin) async {
     otp.value = pin;
 
     if (pin.length != 4) {
-      // Get.snackbar("Error", "Please enter valid 4 digit OTP");
       FSnackbar.show(
         title: "Error",
         message: "Please Enter Valid 4 digit OTP",
@@ -193,7 +193,7 @@ class OtpController extends GetxController {
 
       await ApiRetryHelper.executeWithRetry(
             () async {
-          final role = StorageService.getRole(); // stored role from signup
+          final role = StorageService.getRole();
           final body = {"phone_no": phone, "otp": pin, "role": role};
 
           final response = await FHttpHelper.post("service/verify-otp", body);
@@ -207,64 +207,58 @@ class OtpController extends GetxController {
             await StorageService.saveAuthToken(token);
             FHttpHelper.setAuthToken(token, useBearer: true);
 
-            //  mark as logged-in for your splash flow
+            // mark as logged-in for your splash flow
             await StorageService.saveLoginStatus(true);
+
             if (response["isProfileUpdated"]) {
               if (role == "Driver") {
+                // Set basic driver steps
                 StorageService.setDriverStep("basic", true);
-                if(response["isCnicUploaded"]) {
-                  StorageService.setDriverStep("cnic", true);
-                }
-                if(response["isSelfieUploaded"]) {
-                  StorageService.setDriverStep("selfie", true);
-                }
-                if(response["isLicenseUploaded"]) {
-                  StorageService.setDriverStep("licence", true);
-                }
-                if(response["isVehicleDocsUploaded"]) {
-                  StorageService.setDriverStep("vehicle", true);
-                }
-                if(response["isRegistrationUploaded"]) {
-                  StorageService.setDriverStep("registration", true);
-                }
+                if(response["isCnicUploaded"]) StorageService.setDriverStep("cnic", true);
+                if(response["isSelfieUploaded"]) StorageService.setDriverStep("selfie", true);
+                if(response["isLicenseUploaded"]) StorageService.setDriverStep("licence", true);
+                if(response["isVehicleDocsUploaded"]) StorageService.setDriverStep("vehicle", true);
+                if(response["isRegistrationUploaded"]) StorageService.setDriverStep("registration", true);
 
-                final response0 = await FHttpHelper.get(
+                // Get detailed profile for comprehensive checks
+                final profileResponse = await FHttpHelper.get(
                   "driver/${StorageService.getSignUpResponse()?.userId.toString()}",
                 );
-                print("Get Profile Api Response : " + response0.toString());
-                StorageService.saveProfile(response0["driver"]);
+                print("Get Profile Api Response : " + profileResponse.toString());
+
+                final driverProfile = profileResponse["driver"];
+                StorageService.saveProfile(driverProfile);
+
+                // Configure location service
+                await _driverLocationService.configure();
+                await _driverLocationService.start();
+
+                // Navigate based on comprehensive verification status
+                await _handleDriverNavigation(driverProfile);
+
               } else {
-                final response1 = await FHttpHelper.get(
-                  "passenger/get-profile-info",
-                );
-                print("Get Profile Api Response : " + response1.toString());
+                // Passenger flow remains same
+                final response1 = await FHttpHelper.get("passenger/get-profile-info");
                 StorageService.saveProfile(response1["passenger"]);
+                _handlePassengerNavigation(response1["passenger"]);
               }
-            }
-
-            FSnackbar.show(title: "Success", message:  response["message"] ?? "Phone verified");
-            // go to profile completion step next
-            if (role == "Driver") {
-              await _driverLocationService.configure();
-              await _driverLocationService.start();
-
-              print("Navigating to Select Driver Type Screen...");
-              if (response["isProfileUpdated"] && response["isCnicUploaded"] && response["isLicenseUploaded"] && response["isSelfieUploaded"] && response["isVehicleDocsUploaded"] && response["isRegistrationUploaded"] ){
-                Get.offAllNamed('/go-online');
-              } else {
-                Get.offAllNamed('/select_driver_type');
-              }
-
             } else {
-              print("Navigating to Ride Home Screen...");
-              if (response["isProfileUpdated"]) {
-                Get.offAllNamed('/ride-type');
-                // Get.offAllNamed('/ride-home');
+              // FIRST TIME USER - Profile not updated yet
+              if (role == "Driver") {
+                print("➡️ First time driver → Navigating to Select Driver Type");
+
+                // Configure location service for driver
+                await _driverLocationService.configure();
+                await _driverLocationService.start();
+
+                Get.offAllNamed('/select_driver_type');
               } else {
-                print("Navigating to Profile Screen...");
+                print("➡️ First time passenger → Navigating to Profile Setup");
                 Get.offAllNamed('/profile');
               }
             }
+
+            FSnackbar.show(title: "Success", message: response["message"] ?? "Phone verified");
           } else {
             throw Exception(response["message"] ?? "Invalid OTP");
           }
@@ -273,9 +267,81 @@ class OtpController extends GetxController {
         maxRetries: 2,
       );
     } catch (e) {
-      FSnackbar.show(title: "Error", message:  e.toString());
+      FSnackbar.show(title: "Error", message: e.toString());
     } finally {
-      isLoading.value = false;  // ✅ Hide loader
+      isLoading.value = false;
+    }
+  }
+
+// New method for driver navigation
+  Future<void> _handleDriverNavigation(Map<String, dynamic> driverProfile) async {
+    final verificationStatus = DriverVerificationHelper.getVerificationStatus(driverProfile);
+    final hasUploadedAll = DriverVerificationHelper.hasUploadedAllDocuments(driverProfile);
+    final isFullyVerified = DriverVerificationHelper.isFullyVerified(driverProfile);
+    final hasRejectedDocs = DriverVerificationHelper.hasRejectedDocuments(driverProfile); // ✅ NEW
+    final blockingReason = DriverVerificationHelper.getBlockingReason(driverProfile);
+
+    print("🚗 Driver Verification Status: $verificationStatus");
+    print("📁 All Documents Uploaded: $hasUploadedAll");
+    print("✅ Fully Verified: $isFullyVerified");
+    print("❌ Has Rejected Documents: $hasRejectedDocs"); // ✅ NEW
+    print("🚫 Blocking Reason: $blockingReason");
+
+    if (hasRejectedDocs) {
+      // ✅ NEW: Handle rejected documents - go to profile completion with clear message
+      print("➡️ Navigating to: Profile Completion (documents rejected)");
+      Get.offAllNamed('/profile-completion');
+
+      // Show specific rejection message
+      final rejectedReasons = DriverVerificationHelper.getRejectedReasons(driverProfile);
+      FSnackbar.show(
+        title: "Documents Rejected",
+        message: "${rejectedReasons.join(', ')}. Please re-upload clear documents.",
+        isError: true,
+      );
+    } else if (!hasUploadedAll) {
+      // User hasn't uploaded all documents yet
+      final driverSteps = StorageService.getDriverSteps();
+      final hasStartedSteps = driverSteps.values.any((v) => v == true);
+
+      if (!hasStartedSteps) {
+        print("➡️ Navigating to: Select Driver Type (first time)");
+        Get.offAllNamed('/select_driver_type');
+      } else {
+        print("➡️ Navigating to: Profile Completion (documents incomplete)");
+        Get.offAllNamed('/profile-completion');
+      }
+    } else if (!isFullyVerified) {
+      // Documents uploaded but pending approval
+      print("➡️ Navigating to: Profile Completion (pending approval)");
+      Get.offAllNamed('/profile-completion');
+
+      // Show notification about pending verification
+      FSnackbar.show(
+        title: "Verification Pending",
+        message: "Your documents are under review. $blockingReason",
+        isError: false,
+      );
+    } else {
+      // Fully verified and approved - go online!
+      print("➡️ Navigating to: Go Online (fully verified)");
+      Get.offAllNamed('/go-online');
+
+      FSnackbar.show(
+        title: "Welcome!",
+        message: "You're all set to start driving!",
+        isError: false,
+      );
+    }
+  }
+
+// Update passenger navigation
+  void _handlePassengerNavigation(Map<String, dynamic>? profileData) {
+    final isProfileCompleted = profileData != null && _validateProfile(profileData);
+    if (!isProfileCompleted && StorageService.getProfile() == null) {
+      Get.offAllNamed('/profile');
+    } else {
+      Get.offAllNamed('/ride-type');
     }
   }
 

@@ -25,6 +25,8 @@ class UploadVehicleInfoScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       body: Obx(() {
+        final loading = c.isLoading.value;
+        final dataLoading = c.isDataLoading.value;
         return Stack(
           children: [
             /// Main UI
@@ -56,7 +58,10 @@ class UploadVehicleInfoScreen extends StatelessWidget {
                               ?.copyWith(
                             fontWeight: FontWeight.w600,
                             fontSize:
-                            FTextTheme.lightTextTheme.headlineSmall!.fontSize! *
+                            FTextTheme
+                                .lightTextTheme
+                                .headlineSmall!
+                                .fontSize! *
                                 screenWidth /
                                 baseWidth,
                           ),
@@ -67,8 +72,8 @@ class UploadVehicleInfoScreen extends StatelessWidget {
                     /// Subtitle
                     Positioned(
                       top: sh(115),
-                      left: sw(20),
-                      right: sw(20),
+                      left: sw(10),
+                      right: sw(10),
                       child: Text(
                         "Please provide detailed information about your vehicle.",
                         textAlign: TextAlign.center,
@@ -85,7 +90,7 @@ class UploadVehicleInfoScreen extends StatelessWidget {
                     /// Vehicle Photo Label
                     Positioned(
                       top: sh(170),
-                      left: sw(30),
+                      left: sw(10),
                       child: Text(
                         "Vehicle Photo",
                         style: FTextTheme.lightTextTheme.titleLarge?.copyWith(
@@ -106,37 +111,35 @@ class UploadVehicleInfoScreen extends StatelessWidget {
                         top: sh(205),
                         left: (screenWidth / 2) - sw(155),
                         child: GestureDetector(
-                          // onTap: () => Get.toNamed('/vehicle-images'),
                           onTap: () async {
-                            // final result = await Get.toNamed('/vehicle-images');
-                            // if (result != null && result is Map<String, String?>) {
-                            //   c.setVehicleImages(result);
-                            // }
-
-                            final allDone = c.vehicleImages.values.every((v) => v != null);
+                            final allDone = c.vehicleImages.values.every(
+                                  (v) => v != null,
+                            );
 
                             final result = await Get.toNamed(
                               '/vehicle-images',
                               arguments: {'startPage': allDone ? 6 : 0},
                             );
 
-                            if (result != null && result is Map<String, String?>) {
+                            if (result != null &&
+                                result is Map<String, String?>) {
                               c.setVehicleImages(result);
                             }
                           },
-
                           child: Container(
                             width: sw(310),
                             height: sh(210),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(sw(12)),
-                              color: f == null
+                              color:
+                              f == null
                                   ? Colors.grey.shade200
                                   : Colors.transparent,
                             ),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(sw(12)),
-                              child: f == null
+                              child:
+                              f == null
                                   ? Image.asset(
                                 FImages.car_placeholder,
                                 width: sw(310),
@@ -163,26 +166,21 @@ class UploadVehicleInfoScreen extends StatelessWidget {
                         width: sw(150),
                         height: sh(42),
                         child: ElevatedButton(
-                          // onPressed: () => Get.toNamed('/vehicle-images'),
                           onPressed: () async {
-                            // final result = await Get.toNamed('/vehicle-images');
-                            // if (result != null && result is Map<String, String?>) {
-                            //   c.setVehicleImages(result);
-                            // }
-
-                            final allDone = c.vehicleImages.values.every((v) => v != null);
+                            final allDone = c.vehicleImages.values.every(
+                                  (v) => v != null,
+                            );
 
                             final result = await Get.toNamed(
                               '/vehicle-images',
                               arguments: {'startPage': allDone ? 6 : 0},
                             );
 
-                            if (result != null && result is Map<String, String?>) {
+                            if (result != null &&
+                                result is Map<String, String?>) {
                               c.setVehicleImages(result);
                             }
-
                           },
-
                           style: ElevatedButton.styleFrom(
                             backgroundColor: FColors.secondaryColor,
                             shape: RoundedRectangleBorder(
@@ -191,9 +189,13 @@ class UploadVehicleInfoScreen extends StatelessWidget {
                           ),
                           child: Text(
                             "Add a Photo",
-                            style: FTextTheme.darkTextTheme.labelLarge?.copyWith(
-                              fontSize: FTextTheme
-                                  .darkTextTheme.labelLarge!.fontSize! *
+                            style: FTextTheme.darkTextTheme.labelLarge
+                                ?.copyWith(
+                              fontSize:
+                              FTextTheme
+                                  .darkTextTheme
+                                  .labelLarge!
+                                  .fontSize! *
                                   screenWidth /
                                   baseWidth,
                             ),
@@ -205,7 +207,7 @@ class UploadVehicleInfoScreen extends StatelessWidget {
                     /// Vehicle Details Label
                     Positioned(
                       top: sh(480),
-                      left: sw(30),
+                      left: sw(10),
                       child: Text(
                         "Vehicle Details",
                         style: FTextTheme.lightTextTheme.titleMedium?.copyWith(
@@ -222,30 +224,34 @@ class UploadVehicleInfoScreen extends StatelessWidget {
                     /// Brand Dropdown
                     Positioned(
                       top: sh(520),
-                      left: sw(30),
-                      child: Obx(
-                            () => SizedBox(
-                          width: sw(380),
+                      left: sw(10),
+                      right: sw(10),
+                      child: Obx(() {
+                        return SizedBox(
+                          width: sw(420),
                           height: sh(52),
                           child: DropdownButtonFormField<String>(
                             value: c.brand.value.isEmpty ? null : c.brand.value,
-                            items: c.brands
+                            items:
+                            c.brands
                                 .map(
-                                  (b) => DropdownMenuItem(
+                                  (b) => DropdownMenuItem<String>(
                                 value: b,
                                 child: Text(
                                   b,
-                                  style:
-                                  FTextTheme.lightTextTheme.bodyLarge!
-                                      .copyWith(
-                                    fontSize: sw(16),
-                                  ),
+                                  style: FTextTheme
+                                      .lightTextTheme
+                                      .bodyLarge!
+                                      .copyWith(fontSize: FTextTheme.lightTextTheme.bodyLarge!.fontSize! *
+                                      screenWidth /
+                                      baseWidth,),
                                 ),
                               ),
                             )
                                 .toList(),
                             onChanged: (v) {
                               c.brand.value = v ?? '';
+                              c.model.value = ''; // Clear model when brand changes
                               c.loadModelsForBrand(c.brand.value);
                             },
                             decoration: InputDecoration(
@@ -255,40 +261,62 @@ class UploadVehicleInfoScreen extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(sw(14)),
                                 borderSide: BorderSide.none,
                               ),
+                              hintText: "Select Brand",
+                              hintStyle: FTextTheme.lightTextTheme.bodyLarge!
+                                  .copyWith(
+                                  color: FColors.chipBg,
+                                  fontSize: FTextTheme.lightTextTheme.bodyLarge!.fontSize! *
+                                      screenWidth /
+                                      baseWidth,
+                                  fontWeight: FontWeight.normal
+                              ),
                               contentPadding: EdgeInsets.symmetric(
                                 horizontal: sw(12),
                                 vertical: sh(14),
                               ),
                             ),
                           ),
-                        ),
-                      ),
+                        );
+                      }),
                     ),
 
-                    /// Model Dropdown
+                    /// Model Dropdown - ✅ FIXED
                     Positioned(
                       top: sh(590),
-                      left: sw(30),
-                      child: Obx(
-                            () => SizedBox(
-                          width: sw(380),
+                      left: sw(10),
+                      right: sw(10),
+                      child: Obx(() {
+                        // ✅ FIXED: Always show the model value if it exists
+                        final modelValue = c.model.value.isEmpty ? null : c.model.value;
+
+                        // ✅ FIXED: Show loading if brand is selected but models are empty
+                        final bool isLoadingModels = c.brand.value.isNotEmpty && c.models.isEmpty;
+
+                        return SizedBox(
+                          width: sw(420),
                           height: sh(52),
                           child: DropdownButtonFormField<String>(
-                            value: c.model.value.isEmpty ? null : c.model.value,
-                            items: c.models
+                            value: modelValue, // ✅ Always show the value if it exists
+                            items:
+                            c.models
                                 .map(
-                                  (m) => DropdownMenuItem(
+                                  (m) => DropdownMenuItem<String>(
                                 value: m,
                                 child: Text(
                                   m,
-                                  style:
-                                  FTextTheme.lightTextTheme.bodyLarge!
-                                      .copyWith(fontSize: sw(16)),
+                                  style: FTextTheme
+                                      .lightTextTheme
+                                      .bodyLarge!
+                                      .copyWith(fontSize: FTextTheme.lightTextTheme.bodyLarge!.fontSize! *
+                                      screenWidth /
+                                      baseWidth,),
                                 ),
                               ),
                             )
                                 .toList(),
-                            onChanged: (v) => c.model.value = v ?? '',
+                            onChanged: c.brand.value.isEmpty || isLoadingModels
+                                ? null
+                                : (v) => c.model.value = v ?? '',
                             decoration: InputDecoration(
                               filled: true,
                               fillColor: const Color(0xFFF2F2F2),
@@ -296,36 +324,53 @@ class UploadVehicleInfoScreen extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(sw(14)),
                                 borderSide: BorderSide.none,
                               ),
+                              hintText: c.brand.value.isEmpty
+                                  ? "Select Brand First"
+                                  : isLoadingModels
+                                  ? "Loading models..." // ✅ Better loading state
+                                  : "Select Model",
+                              hintStyle: FTextTheme.lightTextTheme.bodyLarge!
+                                  .copyWith(
+                                color: FColors.chipBg,
+                                fontSize: FTextTheme.lightTextTheme.bodyLarge!.fontSize! *
+                                    screenWidth /
+                                    baseWidth,
+                              ),
                               contentPadding: EdgeInsets.symmetric(
                                 horizontal: sw(12),
                                 vertical: sh(14),
                               ),
                             ),
                           ),
-                        ),
-                      ),
+                        );
+                      }),
                     ),
 
                     /// Colour Dropdown
                     Positioned(
                       top: sh(660),
-                      left: sw(30),
+                      left: sw(10),
+                      right: sw(10),
                       child: Obx(
                             () => SizedBox(
-                          width: sw(380),
+                          width: sw(420),
                           height: sh(52),
                           child: DropdownButtonFormField<String>(
                             value:
                             c.colour.value.isEmpty ? null : c.colour.value,
-                            items: c.colours
+                            items:
+                            c.colours
                                 .map(
-                                  (col) => DropdownMenuItem(
+                                  (col) => DropdownMenuItem<String>(
                                 value: col,
                                 child: Text(
                                   col,
-                                  style:
-                                  FTextTheme.lightTextTheme.bodyLarge!
-                                      .copyWith(fontSize: sw(16)),
+                                  style: FTextTheme
+                                      .lightTextTheme
+                                      .bodyLarge!
+                                      .copyWith(fontSize: FTextTheme.lightTextTheme.bodyLarge!.fontSize! *
+                                      screenWidth /
+                                      baseWidth,),
                                 ),
                               ),
                             )
@@ -337,6 +382,14 @@ class UploadVehicleInfoScreen extends StatelessWidget {
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(sw(14)),
                                 borderSide: BorderSide.none,
+                              ),
+                              hintText: "Select Color",
+                              hintStyle: FTextTheme.lightTextTheme.bodyLarge!
+                                  .copyWith(
+                                color: FColors.chipBg,
+                                fontSize: FTextTheme.lightTextTheme.bodyLarge!.fontSize! *
+                                    screenWidth /
+                                    baseWidth,
                               ),
                               contentPadding: EdgeInsets.symmetric(
                                 horizontal: sw(12),
@@ -351,11 +404,13 @@ class UploadVehicleInfoScreen extends StatelessWidget {
                     /// Plate Number
                     Positioned(
                       top: sh(730),
-                      left: sw(30),
+                      left: sw(10),
+                      right: sw(10),
                       child: SizedBox(
-                        width: sw(380),
+                        width: sw(420),
                         height: sh(52),
                         child: TextField(
+                          controller: TextEditingController(text: c.plateNo.value),
                           onChanged: (v) => c.plateNo.value = v,
                           decoration: InputDecoration(
                             filled: true,
@@ -366,7 +421,12 @@ class UploadVehicleInfoScreen extends StatelessWidget {
                             ),
                             hintText: "Registration Plate",
                             hintStyle: FTextTheme.lightTextTheme.bodyLarge!
-                                .copyWith(color: FColors.chipBg, fontSize: sw(16)),
+                                .copyWith(
+                              color: FColors.chipBg,
+                              fontSize: FTextTheme.lightTextTheme.bodyLarge!.fontSize! *
+                                  screenWidth /
+                                  baseWidth,
+                            ),
                             contentPadding: EdgeInsets.symmetric(
                               horizontal: sw(12),
                               vertical: sh(14),
@@ -379,13 +439,14 @@ class UploadVehicleInfoScreen extends StatelessWidget {
                     /// Registration Certificate Field
                     Positioned(
                       top: sh(800),
-                      left: sw(30),
+                      left: sw(10),
+                      right: sw(10),
                       child: GestureDetector(
                         onTap: () {
                           Get.toNamed('/upload-registration');
                         },
                         child: Container(
-                          width: sw(380),
+                          width: sw(420),
                           height: sh(52),
                           padding: EdgeInsets.symmetric(horizontal: sw(12)),
                           decoration: BoxDecoration(
@@ -404,7 +465,8 @@ class UploadVehicleInfoScreen extends StatelessWidget {
                                 StorageService.getDriverStep("registration")
                                     ? Icons.check_circle
                                     : Icons.arrow_forward_ios,
-                                color: StorageService.getDriverStep("registration")
+                                color:
+                                StorageService.getDriverStep("registration")
                                     ? FColors.textGreen
                                     : FColors.black,
                                 size: sw(18),
@@ -435,8 +497,11 @@ class UploadVehicleInfoScreen extends StatelessWidget {
                             "Submit",
                             style: FTextTheme.darkTextTheme.bodyLarge?.copyWith(
                               color: Colors.white,
-                              fontSize: FTextTheme
-                                  .darkTextTheme.bodyLarge!.fontSize! *
+                              fontSize:
+                              FTextTheme
+                                  .darkTextTheme
+                                  .bodyLarge!
+                                  .fontSize! *
                                   screenWidth /
                                   baseWidth,
                             ),
@@ -449,8 +514,8 @@ class UploadVehicleInfoScreen extends StatelessWidget {
               ),
             ),
 
-            /// Loader Overlay
-            if (c.isLoading.value)
+            /// Single Loading Overlay for both data loading and form submission
+            if (dataLoading || loading)
               Container(
                 width: screenWidth,
                 height: screenHeight,

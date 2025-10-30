@@ -25,7 +25,6 @@ class GoOnlineController extends BaseController {
   BitmapDescriptor? customMarker;
   final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
 
-
   var flagPosition = Rx<LatLng?>(null);
   var isFlagSet = false.obs;
   var markers = <Marker>{}.obs;
@@ -34,6 +33,13 @@ class GoOnlineController extends BaseController {
   var isMapRotated = false.obs;
   var currentBearing = 0.0.obs;
 
+  // ADD THESE FOR EARNINGS
+  var totalEarnings = 0.obs;
+  var isEarningsVisible = true.obs;
+  var isLoadingEarnings = false.obs;
+  var isLoadingToggle = false.obs;
+
+
   @override
   void onInit() {
     super.onInit();
@@ -41,6 +47,7 @@ class GoOnlineController extends BaseController {
       getCurrentLocation();
     });
     _restoreOnlineStatus();
+    _fetchEarnings(); // ADD THIS to fetch earnings on screen start
   }
 
   @override
@@ -56,6 +63,64 @@ class GoOnlineController extends BaseController {
       isOnline.value = true;
       _subscribeToChannels();
     }
+  }
+
+  // ADD THIS METHOD TO FETCH EARNINGS
+  Future<void> _fetchEarnings() async {
+    try {
+      isLoadingEarnings(true);
+      await executeWithRetry(() async {
+        final token = StorageService.getAuthToken();
+        if (token == null) {
+          print("❌ User token not found for earnings API");
+          return;
+        }
+
+        FHttpHelper.setAuthToken(token, useBearer: true);
+        final response = await FHttpHelper.get("driver/earning");
+        print("💰 Earnings API response: $response");
+
+        if (response != null && response['totalEarnings'] != null) {
+          totalEarnings.value = response['totalEarnings'] is int
+              ? response['totalEarnings']
+              : int.tryParse(response['totalEarnings'].toString()) ?? 0;
+          print("✅ Earnings fetched: PKR ${totalEarnings.value}");
+        } else {
+          print("⚠️ No earnings data found in response");
+          totalEarnings.value = 0;
+        }
+      });
+    } catch (e, s) {
+      print("❌ Error fetching earnings: $e\n$s");
+      totalEarnings.value = 0;
+      // Don't show error snackbar as this is a background operation
+    } finally {
+      isLoadingEarnings(false);
+    }
+  }
+
+  // ADD THIS METHOD TO TOGGLE EARNINGS VISIBILITY
+  void toggleEarningsVisibility() {
+    isEarningsVisible.value = !isEarningsVisible.value;
+    print("👁️ Earnings visibility: ${isEarningsVisible.value}");
+  }
+
+  // ADD THIS METHOD TO GET EARNINGS DISPLAY TEXT
+  String get earningsDisplayText {
+    if (isLoadingEarnings.value) {
+      return "Loading...";
+    }
+    if (!isEarningsVisible.value) {
+      return "PKR ***";
+    }
+    return "PKR ${totalEarnings.value}";
+  }
+
+  // ADD THIS METHOD TO GET EYE ICON PATH
+  String get eyeIconPath {
+    return isEarningsVisible.value
+        ? "assets/images/openeye.svg"
+        : "assets/images/cleye.svg";
   }
 
   Future<void> _loadCustomMarker() async {
@@ -171,39 +236,6 @@ class GoOnlineController extends BaseController {
     }
   }
 
-  // void toggleOnline() async {
-  //
-  //   final body = {
-  //     "is_online": !isOnline.value,
-  //   };
-  //
-  //   final token = StorageService.getAuthToken();
-  //   if (token == null) {
-  //     print("Error" + "User token not found. Please login again.");
-  //     return; // ✅ prevent crash
-  //   }
-  //
-  //   FHttpHelper.setAuthToken(token, useBearer: true);
-  //
-  //   final response  = await FHttpHelper.post("driver/online", body);
-  //
-  //
-  //   print("driver online response : "+ response['is_online'].toString());
-  //   final newStatus = !isOnline.value;
-  //   isOnline.value = newStatus;
-  //   await StorageService.setDriverOnlineStatus(newStatus);
-  //
-  //   if (newStatus && response['is_online']) {
-  //     await _subscribeToChannels();
-  //     FSnackbar.show(title: "Online",message: 'You are now online and receiving ride requests');
-  //   } else {
-  //     // await _unsubscribeFromChannels();
-  //     _hasReceivedFirstRequest = false;
-  //     FSnackbar.show(title: 'You are now offline', message: "", isError: true);
-  //   }
-  // }
-
-
   Future<void> toggleOnline() async {
     final newStatus = !isOnline.value;
     final body = {"is_online": newStatus};
@@ -214,6 +246,7 @@ class GoOnlineController extends BaseController {
       return;
     }
 
+    isLoadingToggle(true);
     FHttpHelper.setAuthToken(token, useBearer: true);
 
     try {
@@ -232,12 +265,17 @@ class GoOnlineController extends BaseController {
         _hasReceivedFirstRequest = false;
         FSnackbar.show(title: "Offline", message: response['message'] ?? "You are now offline", isError: true);
       }
+
+      // Refresh earnings when online status changes
+      _fetchEarnings();
     } catch (e, s) {
       print("❌ toggleOnline error: $e\n$s");
       FSnackbar.show(title: "Error", message: "Failed to toggle online status", isError: true);
+    } finally {
+      // ADD THIS
+      isLoadingToggle(false);
     }
   }
-
 
   Future<void> _subscribeToChannels() async {
     final driverId = StorageService.getSignUpResponse()!.userId;
@@ -250,14 +288,14 @@ class GoOnlineController extends BaseController {
             privateChannel,
             events: {
               "ride-request": (data) {
-                FSnackbar.show(title: "Ride Request", message: "New Ride Request is here.");
+                // FSnackbar.show(title: "Ride Request", message: "New Ride Request is here.");
                 _handleNewRideRequest(data);
               },
             },
           );
           _subscribedChannels.add(privateChannel);
           print("✅ GoOnlineController subscribed to: $privateChannel");
-          FSnackbar.show(title: 'Request request', message: '$privateChannel');
+          // FSnackbar.show(title: 'Request request', message: '$privateChannel');
         }
       });
     } catch (e) {
@@ -291,23 +329,24 @@ class GoOnlineController extends BaseController {
           _hasReceivedFirstRequest = true;
           print("✅ First ride request - navigating to RideRequestListScreen");
 
+          _unsubscribeFromChannels();
+
           // Navigate to RideRequestListScreen with the request
           Get.toNamed('/ride-request-list', arguments: {
             'initialRequest': request,
             'isFromGoOnline': true
           });
+        } else {
+          // If we already received first request, check if this is a duplicate
+          print("ℹ️ Additional ride request received: ${request.id}");
+          // Optionally: Show notification but don't navigate again
+          FSnackbar.show(
+            title: 'New Ride Request',
+            message: 'From ${request.passengerName} - ${request.offerAmount} PKR',
+          );
         }
       } else {
         print("ℹ️ Ride request received but driver is offline");
-        // Get.snackbar(
-        //   'Ride Request Nearby',
-        //   'Ride requests are coming near you! Go online to accept rides.',
-        //   duration: const Duration(seconds: 2),
-        //   snackPosition: SnackPosition.TOP,
-        //   backgroundColor: Colors.orange,
-        //   colorText: Colors.white,
-        //   margin: const EdgeInsets.all(10),
-        // );
         FSnackbar.show(title: 'Ride Request', message: 'Ride requests are coming near you! Go online to accept rides.');
       }
     } catch (e, s) {

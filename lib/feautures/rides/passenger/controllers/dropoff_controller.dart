@@ -353,54 +353,75 @@ class DropOffController extends BaseController {
   }
 
   void _openStopsManager() {
+    final screenWidth = Get.width;
+    final screenHeight = Get.height;
+    final baseWidth = 440.0;
+
+    double sw(double w) => w * screenWidth / baseWidth;
+    double sh(double h) => h * screenHeight / baseWidth;
+
     Get.bottomSheet(
       Obx(
             () => Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(20),
-          decoration: const BoxDecoration(
+          padding: EdgeInsets.all(sw(20)),
+          decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(sw(20))),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 40,
-                height: 5,
-                margin: const EdgeInsets.only(bottom: 12),
+                width: sw(40),
+                height: sh(5),
+                margin: EdgeInsets.only(bottom: sh(12)),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade400,
-                  borderRadius: BorderRadius.circular(10),
+                  color: FColors.phoneInputField,
+                  borderRadius: BorderRadius.circular(sw(10)),
                 ),
               ),
-              const Text(
+              Text(
                 "Manage Stops",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: FTextTheme.lightTextTheme.titleLarge!.copyWith(
+                  fontWeight: FontWeight.w600,
+                  fontSize: FTextTheme.lightTextTheme.titleLarge!.fontSize! * screenWidth / baseWidth,
+                ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: sh(16)),
               if (stops.isEmpty)
-                const Text("No stops added yet",
-                    style: TextStyle(color: Colors.grey)),
+                Text(
+                  "No stops added yet",
+                  style: FTextTheme.lightTextTheme.titleMedium!.copyWith(
+                    color: FColors.chipBg,
+                    fontSize: FTextTheme.lightTextTheme.titleMedium!.fontSize! * screenWidth / baseWidth,
+                  ),
+                ),
               ...List.generate(
                 stops.length,
                     (i) => Card(
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(sw(12)),
                   ),
-                  child: ListTile(
-                    leading: Icon(Icons.place, color: FColors.secondaryColor),
-                    title: Text(stops[i].description, style: FTextTheme
-                        .lightTextTheme
-                        .titleMedium),
+                  child: ListTile(contentPadding: EdgeInsets.symmetric(vertical: 5, horizontal: 5),
+                    leading: Icon(Icons.place, color: FColors.secondaryColor, size: sw(30)),
+                    title: Text(
+                      stops[i].description,
+                      style: FTextTheme.lightTextTheme.titleMedium!.copyWith(
+                        fontWeight: FontWeight.normal,
+                        fontSize: FTextTheme.lightTextTheme.titleMedium!.fontSize! * screenWidth / baseWidth,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 2,
+                    ),
                     trailing: IconButton(
-                      icon: Icon(Icons.delete, color: FColors.primaryColor),
+                      icon: Icon(Icons.delete, color: FColors.secondaryColor, size: sw(30)),
                       onPressed: () => stops.removeAt(i),
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: sh(12)),
               ElevatedButton.icon(
                 onPressed: () async {
                   final result = await Get.toNamed(
@@ -416,19 +437,24 @@ class DropOffController extends BaseController {
                     if (stops.length < 3) stops.add(stop);
                   }
                 },
-                icon: const Icon(Icons.add_location_alt_outlined),
-                label: const Text("Add stop from map"),
+                icon: Icon(Icons.add_location_alt_outlined, size: sw(20)),
+                label: Text(
+                  "Add stop from map",
+                  style: FTextTheme.lightTextTheme.titleMedium!.copyWith(
+                    color: Colors.white,
+                    fontSize: FTextTheme.lightTextTheme.titleMedium!.fontSize! * screenWidth / baseWidth,
+                  ),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: FColors.secondaryColor,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(sw(12)),
                   ),
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  padding: EdgeInsets.symmetric(horizontal: sw(20), vertical: sh(4)),
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: sh(8)),
             ],
           ),
         ),

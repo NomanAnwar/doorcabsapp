@@ -1,4 +1,3 @@
-// go_to_pickup_screen.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -34,32 +33,41 @@ class GoToPickupScreen extends StatelessWidget {
         height: screenHeight,
         child: Stack(
           children: [
-            /// Map (top → till 520)
+            /// Map (top → till 520) - ✅ UPDATED: Use new controller observables
             Positioned(
               top: 0,
               left: 0,
               right: 0,
               height: sh(520),
               child: Obx(() {
-                if (c.currentPosition.value == null && c.pickupPosition.value == null) {
-                  return const Center(child: CircularProgressIndicator());
+                if (c.currentPosition.value == null) {
+                  return Center(
+                    child: CircularProgressIndicator(
+                      strokeWidth: sw(2),
+                      color: FColors.secondaryColor,
+                    ),
+                  );
                 }
 
-                CameraPosition initial;
-                if (c.currentPosition.value != null) {
-                  initial = CameraPosition(target: c.currentPosition.value!, zoom: 14);
-                } else {
-                  initial = CameraPosition(target: c.pickupPosition.value!, zoom: 14);
-                }
+                // ✅ UPDATED: Use currentPosition for initial camera
+                final initial = CameraPosition(
+                  target: c.currentPosition.value ?? const LatLng(0, 0),
+                  zoom: 14,
+                );
 
-                final poly = c.routePolyline.value;
-                final markers = c.markers.toSet();
-
+                // ✅ UPDATED: Use new observables from controller
                 return GoogleMap(
                   initialCameraPosition: initial,
                   onMapCreated: c.onMapCreated,
-                  markers: markers,
-                  polylines: poly != null ? {poly} : <Polyline>{},
+                  markers: c.driverMarkers.values.toSet(), // ✅ UPDATED: Use driverMarkers
+                  polylines: c.polylines.toSet(), // ✅ UPDATED: Use polylines (Set<Polyline>)
+                  myLocationButtonEnabled: false,
+                  zoomControlsEnabled: false,
+                  mapToolbarEnabled: false,
+                  compassEnabled: false,
+                  trafficEnabled: false,
+                  buildingsEnabled: true,
+                  indoorViewEnabled: false,
                 );
               }),
             ),
@@ -131,15 +139,21 @@ class GoToPickupScreen extends StatelessWidget {
                         children: [
                           Obx(() => Text(
                             c.passengerName.value.isNotEmpty ? c.passengerName.value.toUpperCase() : "NAME",
-                            style: FTextTheme.lightTextTheme.bodyLarge,
+                            style: FTextTheme.lightTextTheme.bodyLarge!.copyWith(
+                              fontSize: FTextTheme.lightTextTheme.bodyLarge!.fontSize! * screenWidth / baseWidth,
+                            ),
                           )),
                           SizedBox(width: sw(15)),
-                          const Icon(Icons.star, size: 14, color: Color(0xFFFFC300)),
+                          Icon(
+                              Icons.star,
+                              size: sw(14),
+                              color: const Color(0xFFFFC300)
+                          ),
                           SizedBox(width: sw(5)),
                           Obx(() => Text(
                             c.passengerRating.value.isNotEmpty ? c.passengerRating.value : "0",
                             style: FTextTheme.lightTextTheme.bodyLarge!.copyWith(
-                              fontSize: 10,
+                              fontSize: (FTextTheme.lightTextTheme.bodyLarge!.fontSize! * screenWidth / baseWidth) - 4,
                             ),
                           )),
                         ],
@@ -151,25 +165,25 @@ class GoToPickupScreen extends StatelessWidget {
                       top: sh(40),
                       left: sw(90),
                       child: Obx(() => SizedBox(
-                        width: sw(260), // ✅ restrict width
+                        width: sw(260),
                         child: RichText(
-                          overflow: TextOverflow.ellipsis, // ✅ show ellipsis if too long
+                          overflow: TextOverflow.ellipsis,
                           text: TextSpan(
                             children: [
                               TextSpan(
                                 text: 'Pickup: ',
-                                style: FTextTheme.lightTextTheme.bodyLarge!.copyWith(
+                                style: FTextTheme.lightTextTheme.bodySmall!.copyWith(
                                   fontSize: 10,
-                                  fontWeight: FontWeight.bold, // ✅ bold only this
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                               TextSpan(
                                 text: c.pickupAddress.value.isNotEmpty
                                     ? c.pickupAddress.value
                                     : 'location',
-                                style: FTextTheme.lightTextTheme.bodyLarge!.copyWith(
+                                style: FTextTheme.lightTextTheme.bodySmall!.copyWith(
                                   fontSize: 10,
-                                  fontWeight: FontWeight.normal, // ✅ normal text
+                                  fontWeight: FontWeight.normal,
                                 ),
                               ),
                             ],
@@ -183,25 +197,25 @@ class GoToPickupScreen extends StatelessWidget {
                       top: sh(63),
                       left: sw(90),
                       child: Obx(() => SizedBox(
-                        width: sw(260), // ✅ restrict width
+                        width: sw(260),
                         child: RichText(
-                          overflow: TextOverflow.ellipsis, // ✅ ellipsis overflow
+                          overflow: TextOverflow.ellipsis,
                           text: TextSpan(
                             children: [
                               TextSpan(
                                 text: 'Dropoff: ',
-                                style: FTextTheme.lightTextTheme.bodyLarge!.copyWith(
+                                style: FTextTheme.lightTextTheme.bodySmall!.copyWith(
                                   fontSize: 10,
-                                  fontWeight: FontWeight.bold, // ✅ bold only this
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                               TextSpan(
                                 text: c.dropoffAddress.value.isNotEmpty
                                     ? c.dropoffAddress.value
                                     : 'location',
-                                style: FTextTheme.lightTextTheme.bodyLarge!.copyWith(
+                                style: FTextTheme.lightTextTheme.bodySmall!.copyWith(
                                   fontSize: 10,
-                                  fontWeight: FontWeight.normal, // ✅ normal text
+                                  fontWeight: FontWeight.normal,
                                 ),
                               ),
                             ],
@@ -216,7 +230,10 @@ class GoToPickupScreen extends StatelessWidget {
                       left: sw(90),
                       child: Obx(() => Text(
                         "Estimated Arrival: ${c.estimatedArrivalTime.value.isNotEmpty ? c.estimatedArrivalTime.value : '0000'}",
-                        style: FTextTheme.lightTextTheme.bodyLarge!.copyWith(fontSize: 10),
+                        style: FTextTheme.lightTextTheme.bodySmall!.copyWith(
+                          fontSize: 10,
+                          fontWeight: FontWeight.normal,
+                        ),
                       )),
                     ),
 
@@ -226,7 +243,10 @@ class GoToPickupScreen extends StatelessWidget {
                       left: sw(90),
                       child: Obx(() => Text(
                         "Estimated Dropoff: ${c.estimatedDropoffTime.value.isNotEmpty ? c.estimatedDropoffTime.value : '11:00 am'}",
-                        style: FTextTheme.lightTextTheme.bodyLarge!.copyWith(fontSize: 10),
+                        style: FTextTheme.lightTextTheme.bodySmall!.copyWith(
+                          fontSize: 10,
+                          fontWeight: FontWeight.normal,
+                        ),
                       )),
                     ),
 
@@ -236,7 +256,10 @@ class GoToPickupScreen extends StatelessWidget {
                       left: sw(90),
                       child: Obx(() => Text(
                         "Estimated Distance: ${c.estimatedDistance.value.isNotEmpty ? c.estimatedDistance.value : '0 km'}",
-                        style: FTextTheme.lightTextTheme.bodyLarge!.copyWith(fontSize: 10),
+                        style: FTextTheme.lightTextTheme.bodySmall!.copyWith(
+                          fontSize: 10,
+                          fontWeight: FontWeight.normal,
+                        ),
                       )),
                     ),
 
@@ -247,7 +270,7 @@ class GoToPickupScreen extends StatelessWidget {
                       child: Text(
                         "2 min",
                         style: FTextTheme.lightTextTheme.bodyLarge!.copyWith(
-                          fontSize: 10,
+                          fontSize: FTextTheme.lightTextTheme.bodyLarge!.fontSize! * screenWidth / baseWidth,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -261,7 +284,6 @@ class GoToPickupScreen extends StatelessWidget {
                         onTap: () {
                           launchUrl(Uri(scheme: 'tel', path: c.phone.value));
                         },
-                        // onTap: () => c.callPhone(),
                         child: Image.asset("assets/images/call.png", width: sw(30), height: sh(30)),
                       ),
                     ),
@@ -285,9 +307,7 @@ class GoToPickupScreen extends StatelessWidget {
                           Container(
                             width: sw(185),
                             height: sh(37),
-                            padding: EdgeInsets.symmetric(
-                              horizontal: sw(8),
-                            ),
+                            padding: EdgeInsets.symmetric(horizontal: sw(8)),
                             decoration: BoxDecoration(
                               color: const Color(0xFF003566),
                               borderRadius: BorderRadius.circular(sw(10)),
@@ -297,10 +317,10 @@ class GoToPickupScreen extends StatelessWidget {
                                 Container(
                                   width: sw(48),
                                   height: sh(30),
-                                  padding: EdgeInsets.symmetric(vertical: 1),
+                                  padding: EdgeInsets.symmetric(vertical: sh(1)),
                                   decoration: BoxDecoration(
                                     color: FColors.white,
-                                    borderRadius: BorderRadius.circular(6),
+                                    borderRadius: BorderRadius.circular(sw(6)),
                                   ),
                                   child: Image.asset("assets/images/cash.png"),
                                 ),
@@ -310,6 +330,7 @@ class GoToPickupScreen extends StatelessWidget {
                                   style: FTextTheme.lightTextTheme.headlineSmall!.copyWith(
                                     fontWeight: FontWeight.w700,
                                     color: FColors.white,
+                                    fontSize: FTextTheme.lightTextTheme.headlineSmall!.fontSize! * screenWidth / baseWidth,
                                   ),
                                 ),
                               ],
@@ -345,11 +366,15 @@ class GoToPickupScreen extends StatelessWidget {
                         "I am at pick up Location",
                         style: FTextTheme.lightTextTheme.bodyLarge!.copyWith(
                           fontWeight: FontWeight.bold,
-                          fontSize: sw(14),
+                          fontSize: FTextTheme.lightTextTheme.bodyLarge!.fontSize! * screenWidth / baseWidth,
                         ),
                       ),
                       SizedBox(width: sw(12)),
-                      Icon(Icons.arrow_forward_ios, color: Colors.black, size: sw(18)),
+                      Icon(
+                          Icons.arrow_forward_ios,
+                          color: Colors.black,
+                          size: sw(18)
+                      ),
                     ],
                   ),
                 ),
@@ -370,7 +395,7 @@ class GoToPickupScreen extends StatelessWidget {
                     Text(
                       "Cancel Ride",
                       style: FTextTheme.lightTextTheme.bodyLarge!.copyWith(
-                        fontSize: 14,
+                        fontSize: FTextTheme.lightTextTheme.bodyLarge!.fontSize! * screenWidth / baseWidth,
                         fontWeight: FontWeight.bold,
                         color: Colors.red,
                       ),
@@ -406,13 +431,15 @@ class GoToPickupScreen extends StatelessWidget {
                     width: sw(20),
                     height: sw(20),
                     child: CircularProgressIndicator(
-                      strokeWidth: 2,
+                      strokeWidth: sw(2),
                       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                     ),
                   )
                       : Text(
                     c.rideStarted.value ? "Mark Complete" : "Start a Ride",
-                    style: FTextTheme.darkTextTheme.labelLarge,
+                    style: FTextTheme.darkTextTheme.labelLarge!.copyWith(
+                      fontSize: FTextTheme.darkTextTheme.labelLarge!.fontSize! * screenWidth / baseWidth,
+                    ),
                   ),
                 ),
               ),
@@ -428,13 +455,16 @@ class GoToPickupScreen extends StatelessWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const CircularProgressIndicator(color: Colors.white),
-                      const SizedBox(height: 20),
+                      CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: sw(2),
+                      ),
+                      SizedBox(height: sh(20)),
                       Text(
                         _getLoadingText(c),
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: Colors.white,
-                          fontSize: 16,
+                          fontSize: sw(16),
                           fontWeight: FontWeight.w500,
                         ),
                       ),

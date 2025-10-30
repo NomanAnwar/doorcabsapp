@@ -1,8 +1,8 @@
 import 'package:doorcab/common/widgets/snakbar/snackbar.dart';
 import 'package:doorcab/feautures/shared/services/pusher_channels.dart';
 import 'package:doorcab/feautures/shared/services/storage_service.dart';
+import 'package:doorcab/utils/http/http_client.dart';
 import 'package:get/get.dart';
-import '../../../../main.dart';
 import '../../../shared/controllers/base_controller.dart';
 import '../../../shared/services/driver_location_service.dart';
 import '../../../shared/services/pusher_beams.dart';
@@ -11,11 +11,11 @@ import '../models/request_model.dart';
 
 class RideRequestListController extends BaseController {
   final EnhancedPusherManager _pusherManager = EnhancedPusherManager();
-  final PusherChannelsService _pusherChannel = PusherChannelsService();
   final DriverLocationService _driverLocationService = DriverLocationService();
 
   final requests = <RequestModel>[].obs;
   final isOnline = false.obs;
+  final isLoadingToggle = false.obs; // ADD THIS for loading state
 
   bool _beamsInitialized = false;
   final Set<String> _subscribedChannels = {};
@@ -32,7 +32,8 @@ class RideRequestListController extends BaseController {
     final wasOnline = StorageService.getDriverOnlineStatus();
     if (wasOnline) {
       print('🔄 Restoring previous online status: $wasOnline');
-      toggleOnline(true);
+      isOnline.value = true;
+      _subscribeToChannels(StorageService.getSignUpResponse()!.userId);
     }
   }
 
@@ -79,19 +80,54 @@ class RideRequestListController extends BaseController {
     showError('You rejected the request');
   }
 
-  void toggleOnline(bool val) async {
+  // UPDATED METHOD WITH ENDPOINT CALL
+  Future<void> toggleOnline(bool val) async {
     if (isOnline.value == val) {
       print('ℹ️ Driver already ${val ? 'online' : 'offline'}, skipping');
       return;
     }
 
-    isOnline.value = val;
-    StorageService.setDriverOnlineStatus(val);
+    // Show loading immediately
+    isLoadingToggle(true);
 
-    if (val) {
-      await _goOnline();
-    } else {
-      await _goOffline();
+    try {
+      final body = {"is_online": val};
+      final token = StorageService.getAuthToken();
+
+      if (token == null) {
+        FSnackbar.show(title: "Error", message: "User token not found. Please login again.", isError: true);
+        isLoadingToggle(false);
+        return;
+      }
+
+      FHttpHelper.setAuthToken(token, useBearer: true);
+      final response = await FHttpHelper.post("driver/online", body);
+      print("Driver online API response: $response");
+
+      final serverStatus = response['is_online'] ?? false;
+
+      // Update local state based on server response
+      isOnline.value = serverStatus;
+      await StorageService.setDriverOnlineStatus(serverStatus);
+
+      if (serverStatus) {
+        await _goOnline();
+        FSnackbar.show(title: "Online", message: response['message'] ?? "You are now online");
+      } else {
+        await _goOffline();
+        FSnackbar.show(title: "Offline", message: response['message'] ?? "You are now offline", isError: true);
+
+        // Navigate back to GoOnlineScreen when successfully offline
+        Get.offAllNamed('/go-online');
+      }
+
+    } catch (e, s) {
+      print("❌ toggleOnline error: $e\n$s");
+      FSnackbar.show(title: "Error", message: "Failed to toggle online status", isError: true);
+      // Revert the toggle if API call fails
+      isOnline.value = !val;
+    } finally {
+      isLoadingToggle(false);
     }
   }
 
@@ -104,7 +140,6 @@ class RideRequestListController extends BaseController {
         await _driverLocationService.start();
         print("📍 Location service started");
         await _subscribeToChannels(driverId);
-        showSuccess('You are now online and receiving ride requests');
       });
     } catch (e) {
       print('❌ Error going online: $e');
@@ -121,7 +156,6 @@ class RideRequestListController extends BaseController {
         print("📍 Location service paused");
         await _unsubscribeFromChannels();
         _clearAllRequests();
-        showSuccess('You are now offline');
       });
     } catch (e) {
       print('❌ Error going offline: $e');
@@ -139,65 +173,11 @@ class RideRequestListController extends BaseController {
         requests.removeWhere((r) => r.id == rideId);
         print("🗑️ Removed request $rideId from list due to bid ignored");
       }
-
-      // FSnackbar.show(
-      //     title: "Bid Ignored",
-      //     message: "Passenger ignored your bid",
-      //     isError: true
-      // );
     } catch (e, s) {
       print("❌ Error handling bid-ignored: $e");
       print(s);
     }
   }
-
-  // Future<void> _subscribeToChannels(String driverId) async {
-  //   final privateChannel = "private-driver-$driverId";
-  //   final driverChannel = "driver-$driverId";
-  //
-  //   try {
-  //     await executeWithRetry(() async {
-  //       // Subscribe to private driver channel for ride requests
-  //       if (!_subscribedChannels.contains(privateChannel)) {
-  //         await _pusherManager.subscribeOnce(
-  //           privateChannel,
-  //           events: {
-  //             "ride-request": (data) {
-  //               _handleNewRideRequest(data);
-  //             },
-  //           },
-  //         );
-  //         _subscribedChannels.add(privateChannel);
-  //         print("✅ RideRequestListController subscribed to: $privateChannel");
-  //       }
-  //
-  //       // Subscribe to driver channel for bid acceptance
-  //       if (!_subscribedChannels.contains(driverChannel)) {
-  //         await _pusherManager.subscribeOnce(
-  //           driverChannel,
-  //           events: {
-  //             "bid-accepted": (eventData) {
-  //               _handleBidAccepted(eventData);
-  //             },
-  //             "bid-ignored": (eventData) {
-  //               FSnackbar.show(title: "bid ignored", message: eventData.toString());
-  //               // _handleBidAccepted(eventData);
-  //             },
-  //             "bid-rejected": (eventData) {
-  //               FSnackbar.show(title: "bid rejected", message: eventData.toString());
-  //               // _handleBidAccepted(eventData);
-  //             },
-  //           },
-  //         );
-  //         _subscribedChannels.add(driverChannel);
-  //         print("✅ RideRequestListController subscribed to: $driverChannel");
-  //       }
-  //     });
-  //   } catch (e) {
-  //     print('❌ Error subscribing to channels: $e');
-  //     rethrow;
-  //   }
-  // }
 
   Future<void> _subscribeToChannels(String driverId) async {
     final privateChannel = "private-driver-$driverId";
@@ -228,10 +208,9 @@ class RideRequestListController extends BaseController {
                 _handleBidAccepted(eventData);
               },
               "bid-ignored": (eventData) {
-                _handleBidIgnored(eventData); // Use the new handler
+                _handleBidIgnored(eventData);
               },
               "bid-rejected": (eventData) {
-                // FSnackbar.show(title: "Bid Rejected", message: eventData.toString());
                 FSnackbar.show(title: "Bid Rejected", message: "Offer best fare to passenger.");
               },
             },
@@ -260,33 +239,6 @@ class RideRequestListController extends BaseController {
     }
   }
 
-  // void _handleNewRideRequest(Map<String, dynamic> data) {
-  //   print("🚖 New ride request received in RideRequestListController: $data");
-  //
-  //   try {
-  //     final request = RequestModel.fromJson(data);
-  //
-  //     // Check for duplicate requests
-  //     if (requests.any((r) => r.id == request.id)) {
-  //       print('ℹ️ Request ${request.id} already exists, skipping');
-  //       return;
-  //     }
-  //
-  //     requests.add(request);
-  //
-  //     print("✅ Added request: ${request.id}, Passenger: ${request.passengerName}");
-  //
-  //     // Show notification
-  //     FSnackbar.show(title:'New Ride Request',message:
-  //       'From ${request.passengerName} - ${request.offerAmount} PKR',
-  //     );
-  //   } catch (e, s) {
-  //     print("❌ Error parsing ride request: $e");
-  //     print("📦 Raw data: $data");
-  //     print(s);
-  //   }
-  // }
-
   void _handleNewRideRequest(Map<String, dynamic> data) {
     print("🚖 New ride request received in RideRequestListController: $data");
 
@@ -314,10 +266,10 @@ class RideRequestListController extends BaseController {
         print("✅ Added new request: ${request.id}, Passenger: ${request.passengerName}");
 
         // Show new request notification
-        FSnackbar.show(
-          title: 'New Ride Request',
-          message: 'From ${request.passengerName} - ${request.offerAmount} PKR',
-        );
+        // FSnackbar.show(
+        //   title: 'New Ride Request',
+        //   message: 'From ${request.passengerName} - ${request.offerAmount} PKR',
+        // );
       }
 
     } catch (e, s) {
@@ -327,9 +279,9 @@ class RideRequestListController extends BaseController {
 
       // Show error notification
       FSnackbar.show(
-        title: 'Error',
-        message: 'Failed to process ride request',
-        isError: true
+          title: 'Error',
+          message: 'Failed to process ride request',
+          isError: true
       );
     }
   }

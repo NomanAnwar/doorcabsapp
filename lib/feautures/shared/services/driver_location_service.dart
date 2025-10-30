@@ -1,8 +1,6 @@
 import 'dart:async';
-import 'package:doorcab/common/widgets/snakbar/snackbar.dart';
 import 'package:doorcab/feautures/shared/services/storage_service.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:get/get.dart';
 import 'package:workmanager/workmanager.dart';
 import '../../../utils/http/http_client.dart';
 

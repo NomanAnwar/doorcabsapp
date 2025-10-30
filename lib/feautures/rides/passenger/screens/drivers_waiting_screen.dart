@@ -63,12 +63,18 @@ class DriversWaitingScreen extends StatelessWidget {
                       target: c.currentPosition.value!,
                       zoom: 14,
                     ),
-                    // myLocationEnabled: true,
-                    myLocationButtonEnabled: true,
                     onMapCreated: c.onMapCreated,
                     markers: c.driverMarkers.values.toSet(),
                     polylines:
                     c.polylines.value, // --- FIX: added to show polyline
+
+                    myLocationButtonEnabled: false,
+                    zoomControlsEnabled: false,
+                    mapToolbarEnabled: false,
+                    compassEnabled: false,
+                    trafficEnabled: false,
+                    buildingsEnabled: true,
+                    indoorViewEnabled: false,
                   );
                 }),
               ),

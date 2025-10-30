@@ -13,8 +13,6 @@ class VehicleImagesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // final controller = Get.put(VehicleImagesController());
-
     final controller = Get.put(VehicleImagesController());
 
     // Read the argument (if any)
@@ -26,7 +24,6 @@ class VehicleImagesScreen extends StatelessWidget {
         controller.pageController.jumpToPage(initialPage);
       }
     });
-
 
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
@@ -125,10 +122,44 @@ class VehicleImagesScreen extends StatelessWidget {
           child: SingleChildScrollView(
             child: Column(
               children: [
-                Text(
-                  step.title,
-                  textAlign: TextAlign.center,
-                  style: FTextTheme.lightTextTheme.titleMedium?.copyWith(
+                // Title with Next button
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: sw(20)),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          step.title,
+                          textAlign: TextAlign.center,
+                          style: FTextTheme.lightTextTheme.titleMedium?.copyWith(),
+                        ),
+                      ),
+                      // Show Next button only if image is captured and not on last step
+                      if (controller.capturedImages[index] != null && index < controller.steps.length - 1)
+                        SizedBox(
+                          width: sw(100),
+                          height: sh(34),
+                          child: ElevatedButton(
+                            onPressed: () => controller.nextPage(),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: FColors.secondaryColor,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(sw(8)),
+                              ),
+                              padding: EdgeInsets.zero,
+                            ),
+                            child: Text(
+                              'Next',
+                              textAlign: TextAlign.center,
+                              style: FTextTheme.darkTextTheme.bodyLarge!.copyWith(
+                                color: Colors.white,
+                                // fontSize: sw(12),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
                 SizedBox(height: sh(50)),
@@ -264,7 +295,6 @@ class VehicleImagesScreen extends StatelessWidget {
                     });
                   },
                 ),
-
               ],
             ),
           ),
@@ -359,7 +389,7 @@ class VehicleImagesScreen extends StatelessWidget {
     );
   }
 
-// Helper function to handle image picking logic
+  // Helper function to handle image picking logic
   Future<void> _pickImage(
       int index,
       VehicleImagesController controller,
@@ -376,11 +406,11 @@ class VehicleImagesScreen extends StatelessWidget {
       if (photo != null) {
         controller.capturedImages[index] = photo.path;
 
-        // Move to next step automatically
-        if (index < controller.steps.length - 2) {
+        // Move to next step automatically (original behavior)
+        if (index < controller.steps.length - 1) {
           await Future.delayed(const Duration(milliseconds: 500));
           controller.nextPage();
-        } else if (index == controller.steps.length - 2) {
+        } else if (index == controller.steps.length - 1) {
           await Future.delayed(const Duration(milliseconds: 500));
           controller.nextPage();
         }
@@ -395,5 +425,4 @@ class VehicleImagesScreen extends StatelessWidget {
       );
     }
   }
-
 }

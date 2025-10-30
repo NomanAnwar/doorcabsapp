@@ -11,14 +11,13 @@ class UploadCnicScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = Get.put(UploadCnicController());
-
+    final controller = Get.put(UploadCnicController());
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
 
-    /// Reference device size (iPhone 16 Pro Max)
-    const baseWidth = 440.0;
-    const baseHeight = 956.0;
+    // Base reference (iPhone 16 Pro Max)
+    final baseWidth = 440.0;
+    final baseHeight = 956.0;
 
     double sw(double w) => w * screenWidth / baseWidth;
     double sh(double h) => h * screenHeight / baseHeight;
@@ -26,24 +25,30 @@ class UploadCnicScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       body: Obx(() {
+        final loading = controller.isLoading.value;
+
         return Stack(
           children: [
+            /// Main UI
             SingleChildScrollView(
               child: SizedBox(
-                width: screenWidth,
                 height: screenHeight,
+                width: double.infinity,
                 child: Stack(
                   children: [
+                    /// Back Button
                     Positioned(
-                      top: sh(60),
+                      top: sh(55),
                       left: sw(29),
                       child: IconButton(
                         icon: Icon(Icons.arrow_back, size: sw(24)),
                         onPressed: () => Get.back(),
                       ),
                     ),
+
+                    /// Title
                     Positioned(
-                      top: sh(60),
+                      top: sh(65),
                       left: 0,
                       right: 0,
                       child: Center(
@@ -57,8 +62,9 @@ class UploadCnicScreen extends StatelessWidget {
                       ),
                     ),
 
+                    /// Enter CNIC Number Text
                     Positioned(
-                      top: sh(98),
+                      top: sh(105),
                       left: sw(40),
                       child: Text(
                         "Enter CNIC number",
@@ -67,15 +73,17 @@ class UploadCnicScreen extends StatelessWidget {
                         ),
                       ),
                     ),
+
+                    /// CNIC TextField
                     Positioned(
-                      top: sh(125),
+                      top: sh(135),
                       left: sw(24),
                       child: SizedBox(
                         width: sw(393),
                         height: sh(52),
                         child: TextField(
                           keyboardType: TextInputType.number,
-                          onChanged: (v) => c.cnicNumber.value = v,
+                          onChanged: (v) => controller.cnicNumber.value = v,
                           decoration: InputDecoration(
                             filled: true,
                             fillColor: const Color(0xFFE3E3E3),
@@ -84,7 +92,7 @@ class UploadCnicScreen extends StatelessWidget {
                               borderSide: BorderSide.none,
                             ),
                             hintText: "42101-1234567-1",
-                            hintStyle: FTextTheme.lightTextTheme.bodyMedium!
+                            hintStyle: FTextTheme.lightTextTheme.bodySmall!
                                 .copyWith(color: FColors.black.withOpacity(0.2)),
                             contentPadding: EdgeInsets.symmetric(
                               horizontal: sw(12),
@@ -95,7 +103,7 @@ class UploadCnicScreen extends StatelessWidget {
                       ),
                     ),
 
-                    // Front label + container
+                    /// Front Side Label
                     Positioned(
                       top: sh(213),
                       left: sw(112),
@@ -104,18 +112,20 @@ class UploadCnicScreen extends StatelessWidget {
                         style: TextStyle(fontSize: sw(16)),
                       ),
                     ),
+
+                    /// Front Side Container
                     Obx(() {
-                      final f = c.frontFile.value;
+                      final frontFile = controller.frontFile.value;
                       return Positioned(
                         top: sh(249),
                         left: sw(53),
                         child: GestureDetector(
-                          onTap: () async => await c.pickFront(),
+                          onTap: () async => await controller.pickFront(),
                           child: DashedBorderContainer(
                             width: sw(331),
                             height: sh(196),
                             borderRadius: sw(8),
-                            child: f == null
+                            child: frontFile == null
                                 ? Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
@@ -144,7 +154,7 @@ class UploadCnicScreen extends StatelessWidget {
                                         BorderRadius.circular(sw(8)),
                                       ),
                                     ),
-                                    onPressed: () => c.pickFront(),
+                                    onPressed: () => controller.pickFront(),
                                     child: Text(
                                       "Choose File",
                                       style:
@@ -157,7 +167,7 @@ class UploadCnicScreen extends StatelessWidget {
                                 : ClipRRect(
                               borderRadius: BorderRadius.circular(sw(8)),
                               child: Image.file(
-                                File(f.path),
+                                File(frontFile.path),
                                 width: sw(331),
                                 height: sh(196),
                                 fit: BoxFit.cover,
@@ -168,7 +178,7 @@ class UploadCnicScreen extends StatelessWidget {
                       );
                     }),
 
-                    // Back side
+                    /// Back Side Label
                     Positioned(
                       top: sh(482),
                       left: sw(112),
@@ -177,18 +187,20 @@ class UploadCnicScreen extends StatelessWidget {
                         style: TextStyle(fontSize: sw(16)),
                       ),
                     ),
+
+                    /// Back Side Container
                     Obx(() {
-                      final b = c.backFile.value;
+                      final backFile = controller.backFile.value;
                       return Positioned(
                         top: sh(518),
                         left: sw(53),
                         child: GestureDetector(
-                          onTap: () async => await c.pickBack(),
+                          onTap: () async => await controller.pickBack(),
                           child: DashedBorderContainer(
                             width: sw(331),
                             height: sh(196),
                             borderRadius: sw(8),
-                            child: b == null
+                            child: backFile == null
                                 ? Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
@@ -217,7 +229,7 @@ class UploadCnicScreen extends StatelessWidget {
                                         BorderRadius.circular(sw(8)),
                                       ),
                                     ),
-                                    onPressed: () => c.pickBack(),
+                                    onPressed: () => controller.pickBack(),
                                     child: Text(
                                       "Choose File",
                                       style:
@@ -230,7 +242,7 @@ class UploadCnicScreen extends StatelessWidget {
                                 : ClipRRect(
                               borderRadius: BorderRadius.circular(sw(8)),
                               child: Image.file(
-                                File(b.path),
+                                File(backFile.path),
                                 width: sw(331),
                                 height: sh(196),
                                 fit: BoxFit.cover,
@@ -241,7 +253,7 @@ class UploadCnicScreen extends StatelessWidget {
                       );
                     }),
 
-                    // Submit
+                    /// Submit Button
                     Positioned(
                       top: sh(876),
                       left: sw(42),
@@ -249,8 +261,7 @@ class UploadCnicScreen extends StatelessWidget {
                         width: sw(358),
                         height: sh(48),
                         child: ElevatedButton(
-                          onPressed:
-                          c.isLoading.value ? null : c.submitCnic,
+                          onPressed: loading ? null : controller.submitCnic,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: FColors.secondaryColor,
                             shape: RoundedRectangleBorder(
@@ -272,16 +283,14 @@ class UploadCnicScreen extends StatelessWidget {
               ),
             ),
 
-            // Fullscreen loader overlay
-            if (c.isLoading.value)
+            /// Loader Overlay
+            if (loading)
               Container(
-                width: screenWidth,
                 height: screenHeight,
+                width: screenWidth,
                 color: Colors.black.withOpacity(0.4),
                 child: const Center(
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                  ),
+                  child: CircularProgressIndicator(color: Colors.white),
                 ),
               ),
           ],

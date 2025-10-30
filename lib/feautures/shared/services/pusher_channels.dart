@@ -18,11 +18,6 @@ class PusherChannelsService {
   // channelName -> eventName -> list of handlers
   final Map<String, Map<String, List<void Function(Map<String, dynamic>)>>> _eventHandlers = {};
 
-  /*
-  // ❌ OLD initialize+subscribe (kept commented earlier)
-  ... your old commented initialize ...
-  */
-
   // Initialize only once
   Future<void> initialize() async {
     try {

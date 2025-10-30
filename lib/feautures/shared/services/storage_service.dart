@@ -1,4 +1,5 @@
 // lib/shared/services/storage_service.dart
+import 'package:get/get_rx/src/rx_types/rx_types.dart';
 import 'package:get_storage/get_storage.dart';
 import '../../start/models/sign_up_response.dart';
 import '../models/place_suggestion.dart';
@@ -30,6 +31,9 @@ class StorageService {
 
   // Chat storage keys
   static const _kChatMessages = 'chat_messages_';
+
+  static final Rx<Map<String, dynamic>?> _profile = Rx<Map<String, dynamic>?>(null);
+  static Rx<Map<String, dynamic>?> get observableProfile => _profile;
 
   static Future<void> init() async {
     await GetStorage.init();
@@ -68,14 +72,27 @@ class StorageService {
   }
 
   /// ================= PASSENGER PROFILE =================
+  // static Map<String, dynamic>? getProfile() {
+  //   final m = _box.read<Map>(_profileKey);
+  //   return m == null ? null : Map<String, dynamic>.from(m);
+  // }
+  //
+  // static void saveProfile(Map<String, dynamic> profile) {
+  //   _box.write(_profileKey, profile);
+  //   print("profile sata saved");
+  // }
+
   static Map<String, dynamic>? getProfile() {
     final m = _box.read<Map>(_profileKey);
-    return m == null ? null : Map<String, dynamic>.from(m);
+    final profile = m == null ? null : Map<String, dynamic>.from(m);
+    _profile.value = profile; // Update the observable
+    return profile;
   }
 
   static void saveProfile(Map<String, dynamic> profile) {
     _box.write(_profileKey, profile);
-    print("profile sata saved");
+    _profile.value = profile; // Update the observable
+    print("profile data saved");
   }
 
   static void setProfileCompleted(bool value) {
@@ -179,6 +196,7 @@ class StorageService {
     print("🚖 Driver Steps Status: $steps");
     print(" Driver Profile Completed: ${isDriverProfileCompleted()}");
   }
+
 
   /// ================= DRIVER ONLINE STATUS =================
   /// ✅ ADDED: Save driver's online/offline status

@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:doorcab/feautures/shared/services/storage_service.dart';
 import 'package:doorcab/utils/constants/colors.dart';
 import 'package:flutter/material.dart';
@@ -13,7 +14,7 @@ class RatingScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final args = Get.arguments as Map<String, dynamic>?;
-    final driver = args != null ? DriverModel.fromMap(args) : null;
+    // final driver = args != null ? DriverModel.fromMap(args) : null;
     final c = Get.put(RatingController());
 
     final role = StorageService.getRole();
@@ -78,11 +79,23 @@ class RatingScreen extends StatelessWidget {
                     width: sw(128),
                     height: sh(128),
                     child: ClipOval(
-                      child: Image.asset(
-                        driver?.avatar ?? 'assets/images/profile_img_sample.png',
+                      child: CachedNetworkImage(
+                        imageUrl: args!['image']?.toString() ?? '',
                         fit: BoxFit.cover,
                         width: sw(128),
                         height: sh(128),
+                        placeholder: (context, url) => Image.asset(
+                          'assets/images/profile_img_sample.png',
+                          fit: BoxFit.cover,
+                          width: sw(128),
+                          height: sh(128),
+                        ),
+                        errorWidget: (context, url, error) => Image.asset(
+                          'assets/images/profile_img_sample.png',
+                          fit: BoxFit.cover,
+                          width: sw(128),
+                          height: sh(128),
+                        ),
                       ),
                     ),
                   ),
@@ -95,7 +108,7 @@ class RatingScreen extends StatelessWidget {
                   right: 0,
                   child: role == "Driver"
                       ? Text(
-                    "Rate Your Experience With Passenger?",
+                    "Rate Your Experience With "+args!['name']+"?",
                     style: FTextTheme.lightTextTheme.titleSmall!.copyWith(
                       fontSize: FTextTheme.lightTextTheme.titleSmall!.fontSize! *
                           screenWidth /
@@ -104,7 +117,7 @@ class RatingScreen extends StatelessWidget {
                     textAlign: TextAlign.center,
                   )
                       : Text(
-                    "Rate Your Experience With ${driver?.name ?? 'Driver'}?",
+                    "Rate Your Experience With "+args?['name']+"?",
                     style: FTextTheme.lightTextTheme.titleSmall!.copyWith(
                       fontSize: FTextTheme.lightTextTheme.titleSmall!.fontSize! *
                           screenWidth /

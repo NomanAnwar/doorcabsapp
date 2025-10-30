@@ -40,6 +40,9 @@ class RideRequestDetailController extends BaseController {
   final RxBool isBidSubmitted = false.obs;
   final RxString bidStatus = "".obs; // "submitted", "accepted", "rejected", "ignored"
 
+  final RxBool isChipSelected = false.obs;
+  final RxInt selectedChipAmount = 0.obs;
+
   /// Custom offer input
   final TextEditingController offerController = TextEditingController();
 
@@ -401,6 +404,7 @@ class RideRequestDetailController extends BaseController {
   // REMOVED: _startOfferCountdown() method
 
 
+  // ✅ UPDATED: Handle bid responses
   void _handleBidResponse(Map<String, dynamic> data, String eventType) {
     print("🎯 Bid $eventType received: $data");
 
@@ -411,8 +415,7 @@ class RideRequestDetailController extends BaseController {
     switch (eventType) {
       case "bid-accepted":
         bidStatus.value = "accepted";
-        showSuccess(data['message'] ?? "Your bid was accepted!");
-        // Navigate to pickup screen after a short delay
+        // showSuccess(data['message'] ?? "Your bid was accepted!");
         Future.delayed(Duration(seconds: 2), () {
           Get.offNamed('/go-to-pickup', arguments: {"rideData": data});
         });
@@ -420,28 +423,19 @@ class RideRequestDetailController extends BaseController {
 
       case "bid-rejected":
         bidStatus.value = "rejected";
-        // FSnackbar.show(
-        //     title: "Bid Rejected 1",
-        //     message: data['message'] ?? "Your bid was rejected by the passenger",
-        //     isError: true
-        // );
-        // Stay on screen but allow new bid or close
+        // showError(data['message'] ?? "Your bid was rejected by the passenger");
         break;
 
       case "bid-ignored":
         bidStatus.value = "ignored";
-        // FSnackbar.show(
-        //     title: "Bid Ignored",
-        //     message: "Passenger ignored your bid",
-        //     isError: true
-        // );
-        // Navigate back to list screen after a short delay
+        showError("Passenger ignored your bid");
         Future.delayed(Duration(seconds: 1), () {
           Get.back(result: 'ignored');
         });
         break;
     }
   }
+
 
   // ✅ FIXED: Now accepts the current fare value (from chip or text field)
   // Future<void> acceptRide(String rideId, double fareOffered) async {
@@ -668,14 +662,64 @@ class RideRequestDetailController extends BaseController {
     // Get.back();
   }
 
-  // NEW: Method to manually close the screen
+  void selectChip(int amount) {
+    if (isChipSelected.value && selectedChipAmount.value == amount) {
+      // Deselect if same chip is clicked again
+      isChipSelected.value = false;
+      selectedChipAmount.value = 0;
+      fare.value = originalFare.value;
+      offerController.clear();
+    } else {
+      // Select new chip
+      isChipSelected.value = true;
+      selectedChipAmount.value = amount;
+      fare.value = amount;
+      offerController.clear(); // Clear text field when chip is selected
+    }
+  }
+
+  // ✅ NEW: Handle text field input
+  void onOfferTextChanged(String value) {
+    if (value.isNotEmpty) {
+      // When user types, clear chip selection
+      isChipSelected.value = false;
+      selectedChipAmount.value = 0;
+
+      final enteredAmount = int.tryParse(value);
+      if (enteredAmount != null) {
+        if (enteredAmount >= originalFare.value) {
+          fare.value = enteredAmount;
+        } else {
+          // If amount is less than original, keep it but button will be disabled
+          fare.value = enteredAmount;
+        }
+      }
+    } else {
+      // If text field is cleared, revert to original fare
+      fare.value = originalFare.value;
+    }
+  }
+
+  // ✅ NEW: Check if accept button should be enabled
+  bool get isAcceptButtonEnabled {
+    return fare.value >= originalFare.value && !isBidSubmitted.value;
+  }
+
+  // ✅ UPDATED: Close screen method with back button check
   void closeScreen() {
+    if (isBidSubmitted.value) {
+      FSnackbar.show(
+          title: "Please Wait",
+          message: "Cannot close while waiting for bid response",
+          isError: true
+      );
+      return;
+    }
     Get.back(result: isBidSubmitted.value ? 'submitted' : 'cancelled');
   }
 
   @override
   void onClose() {
-    // REMOVED: _offerTimer?.cancel();
     offerController.dispose();
     mapController = null;
     super.onClose();

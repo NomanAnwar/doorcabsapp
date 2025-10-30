@@ -1,3 +1,4 @@
+import 'package:doorcab/feautures/rides/driver/screens/go_online_screen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'dart:async';
@@ -6,6 +7,11 @@ import 'dart:convert';
 import 'package:doorcab/feautures/shared/services/storage_service.dart';
 
 import '../../../../utils/http/http_client.dart';
+import '../../passenger/controllers/available_bids_controller.dart';
+import '../../passenger/controllers/available_drivers_controller.dart';
+import '../../passenger/controllers/drivers_waiting_controller.dart';
+import '../../passenger/controllers/ride_booking_controller.dart';
+import '../../passenger/screens/ride_type_screen.dart';
 
 class RatingController extends GetxController {
   final rating = 0.0.obs;
@@ -26,26 +32,34 @@ class RatingController extends GetxController {
       isLoading.value = true;
 
       final token = StorageService.getAuthToken();
-      final role = StorageService.getRole(); // Get user role ("Driver" or "Passenger")
+      final role =
+          StorageService.getRole(); // Get user role ("Driver" or "Passenger")
 
       // ✅ Determine endpoint based on user role
-      final endpoint = '/tags/list/$role'; // This will be either /tags/list/Driver or /tags/list/Passenger
+      final endpoint =
+          '/tags/list/$role'; // This will be either /tags/list/Driver or /tags/list/Passenger
 
-      final response = await http.get(
-        Uri.parse('${FHttpHelper.baseUrl}$endpoint'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-      ).timeout(const Duration(seconds: 15));
+      final response = await http
+          .get(
+            Uri.parse('${FHttpHelper.baseUrl}$endpoint'),
+            headers: {
+              'Authorization': 'Bearer $token',
+              'Content-Type': 'application/json',
+            },
+          )
+          .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         final List<dynamic> responseData = json.decode(response.body);
 
         // ✅ No need to filter anymore - just extract tag names directly
-        final tagNames = responseData.map<String>((tag) {
-          return tag['name']?.toString() ?? '';
-        }).where((name) => name.isNotEmpty).toList();
+        final tagNames =
+            responseData
+                .map<String>((tag) {
+                  return tag['name']?.toString() ?? '';
+                })
+                .where((name) => name.isNotEmpty)
+                .toList();
 
         tags.assignAll(tagNames);
 
@@ -78,38 +92,62 @@ class RatingController extends GetxController {
       final args = Get.arguments as Map<String, dynamic>?;
 
       // Extract required data from arguments
-      final ratedToUserId = args?['userId'] ?? ''; // Adjust based on your argument structure
-      final rideId = args?['rideId'] ?? ''; // Adjust based on your argument structure
+      final ratedToUserId =
+          args?['userId'] ?? ''; // Adjust based on your argument structure
+      final rideId =
+          args?['rideId'] ?? ''; // Adjust based on your argument structure
 
       // Prepare the request body
       final Map<String, dynamic> requestBody = {
-        "rated_to": ratedToUserId, // This should come from your screen arguments
+        "rated_to": ratedToUserId,
+        // This should come from your screen arguments
         "rate": rating.value,
         "comments": messageController.text.trim(),
-        "ride_id": rideId, // This should come from your screen arguments
+        "ride_id": rideId,
+        // This should come from your screen arguments
         "rating_tags": selectedTags.toList(),
       };
 
       // Call the API using FHttpHelper
-      final response = await FHttpHelper.post('rating/give-rating', requestBody);
+      final response = await FHttpHelper.post(
+        'rating/give-rating',
+        requestBody,
+      );
 
-      print("Rating API Response : "+ response.toString());
+      print("Rating API Response : " + response.toString());
       // Show success message
       Get.snackbar("Success", "Your rating has been submitted successfully");
 
+      _clearAllRideControllers();
+
       // Navigate to ride history
       // Get.offNamed('/ride-history');
-      if( StorageService.getRole() == "Driver" ){
-        Get.offNamed('/go-online');
+      if (StorageService.getRole() == "Driver") {
+        // Get.offAll('/go-online');
+        Get.offAll(() => GoOnlineScreen());
       } else {
-        Get.offNamed('/ride-type');
+        // Get.offAll('/ride-type');
+        Get.offAll(() => RideTypeScreen());
       }
-
     } catch (e) {
       print('Error submitting rating: $e');
       Get.snackbar("Error", "Failed to submit rating. Please try again.");
     } finally {
       isSubmitting.value = false;
+    }
+  }
+
+  void _clearAllRideControllers() {
+    try {
+      // Clear all controllers from the ride flow
+      Get.delete<RideBookingController>(force: true);
+      Get.delete<AvailableDriversController>(force: true);
+      Get.delete<AvailableBidsController>(force: true);
+      Get.delete<DriversWaitingController>(force: true);
+
+      debugPrint('🧹 Cleared all ride controllers from memory');
+    } catch (e) {
+      debugPrint('⚠️ Error clearing controllers: $e');
     }
   }
 

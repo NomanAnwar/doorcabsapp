@@ -1,3 +1,5 @@
+import 'dart:math' show max;
+
 import 'package:doorcab/common/widgets/snakbar/snackbar.dart';
 import 'package:doorcab/feautures/rides/passenger/controllers/widgets/comments_sheet.dart';
 import 'package:doorcab/feautures/rides/passenger/controllers/widgets/payment_methods_sheet.dart';
@@ -19,14 +21,14 @@ import '../models/ride_option_model.dart';
 import '../models/ride_type_screen_model.dart';
 import '../../../shared/services/enhanced_pusher_manager.dart';
 
-class RideBookingController extends BaseController { // ✅ CHANGED: Extend BaseController
+class RideBookingController extends BaseController {
   // ======= State & Observables =======
   var autoAccept = false.obs;
   var pickupLocation = ''.obs;
   var dropoffLocation = ''.obs;
   var stops = <Map<String, dynamic>>[].obs;
 
-  final bids = <Map<String, dynamic>>[].obs;
+  // final bids = <Map<String, dynamic>>[].obs;
 
   var mapReady = false.obs;
   var selectedPassengers = 1.obs;
@@ -69,11 +71,26 @@ class RideBookingController extends BaseController { // ✅ CHANGED: Extend Base
   // Store calculated minimum fares
   final Map<String, double> _minimumFares = {};
 
+  // ✅ ADDED: Simple bottom sheet size tracking
+  final bottomSheetSize = 0.45.obs; // Initial size matches DraggableScrollableSheet
+
   final EnhancedPusherManager _pusherManager = EnhancedPusherManager();
 
   var isRequestingRide = false.obs;
   var isCalculatingRoute = false.obs;
   var isLoadingRideOptions = false.obs;
+
+  // ✅ ADDED: New observables for button states and vehicle-specific durations
+  final Map<String, int> vehicleDurations = <String, int>{}.obs;
+  final Map<String, RxBool> isPassengerDecrementDisabled = <String, RxBool>{}.obs;
+  final Map<String, RxBool> isPassengerIncrementDisabled = <String, RxBool>{}.obs;
+  final Map<String, RxBool> isFareDecrementDisabled = <String, RxBool>{}.obs;
+  final Map<String, RxBool> isFareIncrementDisabled = <String, RxBool>{}.obs;
+  final isRequestRideDisabled = false.obs;
+
+  // Animation controllers
+  final Map<String, RxBool> passengerAnimations = <String, RxBool>{}.obs;
+  final Map<String, RxBool> fareAnimations = <String, RxBool>{}.obs;
 
   // Marker icons
   BitmapDescriptor? pickupBitmap;
@@ -83,7 +100,7 @@ class RideBookingController extends BaseController { // ✅ CHANGED: Extend Base
   // Camera position
   final CameraPosition initialCameraPosition = const CameraPosition(
     target: LatLng(0, 0),
-    zoom: 16.0,
+    zoom: 12.0,
   );
 
   // ======= Lifecycle =======
@@ -101,9 +118,22 @@ class RideBookingController extends BaseController { // ✅ CHANGED: Extend Base
     _initializePassengerFareMaps();
     _preloadMarkerIcons();
 
+    // ✅ FIXED: Proper auto-accept initialization from storage
+    _initializeAutoAcceptFromStorage();
+
     isLoadingRideOptions.value = true;
 
     debugPrint('===== onInit END =====\n');
+  }
+
+  void _initializeAutoAcceptFromStorage() {
+    try {
+      autoAccept.value = StorageService.getAutoAcceptStatus();
+      debugPrint('🔧 Auto-accept initialized from storage: ${autoAccept.value}');
+    } catch (e) {
+      debugPrint('❌ Error reading auto-accept from storage: $e');
+      autoAccept.value = false; // Default to false on error
+    }
   }
 
   // ======= Getters =======
@@ -122,6 +152,12 @@ class RideBookingController extends BaseController { // ✅ CHANGED: Extend Base
 
   String get userCity {
     return userCityName.value;
+  }
+
+  // ✅ ADDED: Get vehicle-specific duration
+  String getVehicleDuration(String rideId) {
+    final duration = vehicleDurations[rideId] ?? durationMinutes.value;
+    return '$duration min';
   }
 
   // ======= Helpers: Stop coords & notifications =======
@@ -353,8 +389,50 @@ class RideBookingController extends BaseController { // ✅ CHANGED: Extend Base
     debugPrint('===== _initializePassengerFareMaps START =====');
     ridePassengers = {for (final ride in rideOptions) ride.id: RxInt(ride.initialPassengers)};
     rideFare = {for (final ride in rideOptions) ride.id: RxInt(ride.initialFare)};
+
+    // ✅ ADDED: Initialize button state observables
+    for (final ride in rideOptions) {
+      isPassengerDecrementDisabled[ride.id] = RxBool(true);
+      isPassengerIncrementDisabled[ride.id] = RxBool(false);
+      isFareDecrementDisabled[ride.id] = RxBool(true);
+      isFareIncrementDisabled[ride.id] = RxBool(false);
+      passengerAnimations[ride.id] = RxBool(false);
+      fareAnimations[ride.id] = RxBool(false);
+    }
+
+    _updateAllButtonStates(); // Initial state update
+
     debugPrint('  Initialized passenger map and fare map');
     debugPrint('===== _initializePassengerFareMaps END =====\n');
+  }
+
+  // ✅ ADDED: Update all button states
+  void _updateAllButtonStates() {
+    for (final ride in rideOptions) {
+      _updateButtonStates(ride.id);
+    }
+    _updateRequestRideButtonState();
+  }
+
+  void _updateButtonStates(String rideId) {
+    final ride = rideOptions.firstWhereOrNull((r) => r.id == rideId);
+    if (ride == null) return;
+
+    final currentPassengers = ridePassengers[rideId]?.value ?? ride.minPassengers;
+    final currentFare = rideFare[rideId]?.value ?? 0;
+    final minimumFare = _minimumFares[rideId] ?? 0;
+    final maxFare = minimumFare * 2;
+
+    isPassengerDecrementDisabled[rideId]?.value = currentPassengers <= ride.minPassengers;
+    isPassengerIncrementDisabled[rideId]?.value = currentPassengers >= ride.maxPassengers;
+    isFareDecrementDisabled[rideId]?.value = currentFare <= minimumFare;
+    isFareIncrementDisabled[rideId]?.value = currentFare >= maxFare;
+  }
+
+  void _updateRequestRideButtonState() {
+    isRequestRideDisabled.value = selectedRideType.value.isEmpty ||
+        isRequestingRide.value ||
+        isCalculatingFare.value;
   }
 
   // ======= City & city-data lookup =======
@@ -473,7 +551,11 @@ class RideBookingController extends BaseController { // ✅ CHANGED: Extend Base
           debugPrint('    fareController.text updated for selected type: ${fareController.text}');
         }
 
-        final etaText = '${durationMinutes.value} min';
+        // ✅ UPDATED: Calculate vehicle-specific duration
+        final vehicleDuration = _calculateVehicleDuration(option.name, distanceKm.value);
+        vehicleDurations[option.id] = vehicleDuration;
+        final etaText = '$vehicleDuration min';
+
         final index = rideOptions.indexWhere((r) => r.id == option.id);
         if (index != -1) {
           final updatedOption = rideOptions[index].copyWith(
@@ -485,12 +567,33 @@ class RideBookingController extends BaseController { // ✅ CHANGED: Extend Base
         }
       }
 
+      _updateAllButtonStates(); // ✅ Update button states after fare calculation
+
       debugPrint('  💰 Successfully calculated fares for ${rideOptions.length} vehicles');
     } catch (e) {
       debugPrint('  ❌ Error calculating fares: $e');
+      FSnackbar.show(title: 'Error', message: 'Failed to calculate fares: ${e.toString()}');
     } finally {
       isCalculatingFare.value = false;
       debugPrint('===== calculateFaresForAllVehicles END =====\n');
+    }
+  }
+
+  // ✅ ADDED: Vehicle-specific duration calculation
+  int _calculateVehicleDuration(String vehicleName, double distance) {
+    double baseDuration = durationMinutes.value.toDouble();
+
+    switch (vehicleName.toLowerCase()) {
+      case 'bike':
+        return (baseDuration * 0.8).round(); // Bike is 20% faster
+      case 'rickshaw':
+        return (baseDuration * 1.2).round(); // Rickshaw is 20% slower
+      case 'ride mini':
+      case 'ride ac':
+      case 'premium':
+        return (baseDuration * 0.9).round(); // Cars are 10% faster
+      default:
+        return durationMinutes.value;
     }
   }
 
@@ -504,6 +607,7 @@ class RideBookingController extends BaseController { // ✅ CHANGED: Extend Base
       selectedPassengers.value = ridePassengers[type]?.value ?? 1;
       debugPrint('  selectedRideType now: ${selectedRideType.value}, fareController: ${fareController.text}');
     }
+    _updateRequestRideButtonState();
   }
 
   // ======= Determine user city (address or coords) =======
@@ -665,7 +769,7 @@ class RideBookingController extends BaseController { // ✅ CHANGED: Extend Base
       }, maxRetries: 2);
     } catch (e) {
       debugPrint('❌ Route calculation failed after retries: $e');
-      showError("Unable to calculate route");
+      FSnackbar.show(title: 'Error', message: 'Unable to calculate route: ${e.toString()}');
     } finally {
       isCalculatingRoute.value = false;
       debugPrint('===== _calculateRouteAndUpdateMap END =====\n');
@@ -799,7 +903,7 @@ class RideBookingController extends BaseController { // ✅ CHANGED: Extend Base
       }, maxRetries: 2);
     } catch (e) {
       debugPrint('  ❌ Could not calculate route');
-      showError("Unable to calculate route");
+      FSnackbar.show(title: 'Error', message: 'Unable to calculate route: ${e.toString()}');
     }
 
     debugPrint('===== _drawRouteWithoutStops END =====');
@@ -886,6 +990,13 @@ class RideBookingController extends BaseController { // ✅ CHANGED: Extend Base
     debugPrint('===== _placeMarkers END, total markers=${markers.length} =====');
   }
 
+  // ✅ ADDED: Simple method to track bottom sheet size
+  void updateBottomSheetSize(double size) {
+    bottomSheetSize.value = size;
+    // The UI will handle the dynamic map container height automatically
+  }
+
+  @override
   void _fitMarkersInView() {
     debugPrint('===== _fitMarkersInView START =====');
     if (markers.isEmpty || mapController == null) {
@@ -894,8 +1005,9 @@ class RideBookingController extends BaseController { // ✅ CHANGED: Extend Base
     }
 
     final bounds = _calculateBounds();
-    mapController?.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50.0));
-    debugPrint('  animated camera to bounds: $bounds');
+    mapController?.animateCamera(
+      CameraUpdate.newLatLngBounds(bounds, 50),
+    );
     debugPrint('===== _fitMarkersInView END =====');
   }
 
@@ -958,27 +1070,51 @@ class RideBookingController extends BaseController { // ✅ CHANGED: Extend Base
 
   // ======= Passenger & Fare helpers =======
   void incrementPassengers(String rideId) {
-    final ride = rideOptions.firstWhere((r) => r.id == rideId);
+    final ride = rideOptions.firstWhereOrNull((r) => r.id == rideId);
+    if (ride == null) return;
+
     if (ridePassengers[rideId]!.value < ride.maxPassengers) {
       ridePassengers[rideId]!.value++;
       selectedPassengers.value = ridePassengers[rideId]!.value;
+
+      // ✅ ADDED: Animation effect
+      _triggerPassengerAnimation(rideId);
+      _updateButtonStates(rideId);
+
       debugPrint('incrementPassengers: $rideId -> ${ridePassengers[rideId]!.value}');
     }
   }
 
   void decrementPassengers(String rideId) {
-    final ride = rideOptions.firstWhere((r) => r.id == rideId);
+    final ride = rideOptions.firstWhereOrNull((r) => r.id == rideId);
+    if (ride == null) return;
+
     if (ridePassengers[rideId]!.value > ride.minPassengers) {
       ridePassengers[rideId]!.value--;
       selectedPassengers.value = ridePassengers[rideId]!.value;
+
+      // ✅ ADDED: Animation effect
+      _triggerPassengerAnimation(rideId);
+      _updateButtonStates(rideId);
+
       debugPrint('decrementPassengers: $rideId -> ${ridePassengers[rideId]!.value}');
     }
   }
 
   void incrementFare(String rideId) {
     final currentFare = rideFare[rideId]!.value;
-    rideFare[rideId]!.value = currentFare + 5;
-    debugPrint('incrementFare: $rideId -> ${rideFare[rideId]!.value}');
+    final minimumFare = _minimumFares[rideId] ?? 0;
+    final maxFare = minimumFare * 2;
+
+    if (currentFare < maxFare) {
+      rideFare[rideId]!.value = currentFare + 5;
+
+      // ✅ ADDED: Animation effect
+      _triggerFareAnimation(rideId);
+      _updateButtonStates(rideId);
+
+      debugPrint('incrementFare: $rideId -> ${rideFare[rideId]!.value}');
+    }
   }
 
   void decrementFare(String rideId) {
@@ -987,44 +1123,100 @@ class RideBookingController extends BaseController { // ✅ CHANGED: Extend Base
 
     if (currentFare - 5 >= minimumFare) {
       rideFare[rideId]!.value = currentFare - 5;
+
+      // ✅ ADDED: Animation effect
+      _triggerFareAnimation(rideId);
+      _updateButtonStates(rideId);
+
       debugPrint('decrementFare: $rideId -> ${rideFare[rideId]!.value}');
-    } else {
-      // showError('You cannot set fare lower than PKR $minimumFare');
-      Get.snackbar(
-        'Error',
-        'You cannot set fare lower than PKR $minimumFare',
-        backgroundColor: Colors.orange,
-        colorText: Colors.white,
+    }
+  }
+
+  // ✅ ADDED: Animation methods
+  void _triggerPassengerAnimation(String rideId) {
+    passengerAnimations[rideId]?.value = true;
+    Future.delayed(Duration(milliseconds: 300), () {
+      passengerAnimations[rideId]?.value = false;
+    });
+  }
+
+  void _triggerFareAnimation(String rideId) {
+    fareAnimations[rideId]?.value = true;
+    Future.delayed(Duration(milliseconds: 300), () {
+      fareAnimations[rideId]?.value = false;
+    });
+  }
+
+  void toggleAutoAccept(bool value) => autoAccept.value = value;
+
+// ✅ UPDATED: Proper auto-accept toggle with storage persistence
+  void onAutoAcceptToggle(bool value) {
+    try {
+      // Update local state
+      autoAccept.value = value;
+
+      // Persist to storage
+      StorageService.setAutoAcceptStatus(value);
+
+      debugPrint('🔧 Auto-accept toggled: $value (saved to storage)');
+
+      // Show appropriate feedback
+      if (value) {
+        final fareDisplay = selectedRideType.value.isNotEmpty ? selectedVehicleFare.toString() : "matching";
+        FSnackbar.show(
+            title: 'Auto Accept Enabled',
+            message: "Now Auto-accept Bids for PKR $fareDisplay"
+        );
+      } else {
+        FSnackbar.show(
+            title: 'Auto Accept Disabled',
+            message: "Auto-accept Bids Disabled"
+        );
+      }
+    } catch (e) {
+      debugPrint('❌ Error toggling auto-accept: $e');
+      // Revert UI state on error
+      autoAccept.value = !value;
+      FSnackbar.show(
+          title: 'Error',
+          message: 'Failed to update auto-accept setting'
       );
     }
   }
 
-  void toggleAutoAccept(bool value) => autoAccept.value = value;
+// ✅ ADDED: Getter for dynamic fare display in messages
+  String get _autoAcceptFareDisplay {
+    if (selectedRideType.value.isEmpty) {
+      return "matching";
+    }
+    return "PKR ${selectedVehicleFare}";
+  }
 
   // ======= Request ride =======
   Future<void> onRequestRide() async {
     debugPrint('\n===== onRequestRide START =====');
 
     if (pickupLocation.value.isEmpty || dropoffLocation.value.isEmpty) {
-      showError('Pickup and Drop-off are required.');
+      FSnackbar.show(title: 'Error', message: 'Pickup and Drop-off are required.');
       debugPrint('  Missing pickup/dropoff, aborting');
       return;
     }
 
     if (pickupCoords == null || dropoffCoords == null) {
-      showError('Could not determine coordinates for locations.');
+      FSnackbar.show(title: 'Error', message: 'Could not determine coordinates for locations.');
       debugPrint('  Missing coords, aborting');
       return;
     }
 
     if (!mapReady.value || isCalculatingFare.value) {
-      showError('Route and fare are being prepared.');
+      FSnackbar.show(title: 'Error', message: 'Route and fare are being prepared.');
       debugPrint('  map not ready or fare calculating, aborting');
       return;
     }
 
     isLoading.value = true;
     isRequestingRide.value = true;
+    _updateRequestRideButtonState();
 
     try {
       await executeWithRetry(() async {
@@ -1040,35 +1232,32 @@ class RideBookingController extends BaseController { // ✅ CHANGED: Extend Base
 
         final response = await FHttpHelper.post('ride/request', requestBody);
         debugPrint("  Ride Request API Response : $response");
-        // FSnackbar.show(title: 'Request', message: '$response');
 
-        if (response['message'] == 'Ride requested successfully.') {
+        if (response['message'] == 'Ride request sent successfully.') {
           final rideData = response;
           final rideId = rideData['rideId'];
 
           final passengerId = StorageService.getSignUpResponse()!.userId;
-          if (passengerId != null) {
-            // ✅ UPDATED: Use enhanced pusher manager
-            await _pusherManager.subscribeOnce(
-              "passenger-$passengerId",
-              events: {
-                "new-bid": (data) {
-                  debugPrint("📨 Passenger received new bid: $data");
-                  try {
-                    bids.add(data);
-                  } catch (e) {
-                    debugPrint("❌ Error storing bid: $e");
-                  }
-                },
-                "nearby-drivers": (data) {
-                  debugPrint("🗺️ Nearby drivers update: $data");
-                },
-              },
-            );
-          }
+          // if (passengerId != null) {
+          //   await _pusherManager.subscribeOnce(
+          //     "passenger-$passengerId",
+          //     events: {
+          //       "new-bid": (data) {
+          //         debugPrint("📨 Passenger received new bid: $data");
+          //         try {
+          //           // bids.add(data);
+          //         } catch (e) {
+          //           debugPrint("❌ Error storing bid: $e");
+          //         }
+          //       },
+          //       "nearby-drivers": (data) {
+          //         debugPrint("🗺️ Nearby drivers update: $data");
+          //       },
+          //     },
+          //   );
+          // }
 
-          // await _sendPushNotificationToDrivers(rideData, requestBody['requested_rideFare']);
-          showSuccess('Ride requested successfully!');
+          FSnackbar.show(title: 'Success', message: 'Ride requested successfully!');
 
           Get.toNamed('/available-drivers', arguments: {
             'rideId': rideId,
@@ -1081,66 +1270,31 @@ class RideBookingController extends BaseController { // ✅ CHANGED: Extend Base
             'payment': selectedPaymentLabel.value,
             'pickupLat': pickupCoords?.latitude,
             'pickupLng': pickupCoords?.longitude,
-            'bids': bids,
+            // 'bids': bids,
           });
         } else {
           throw Exception(response['message'] ?? 'Failed to request ride');
         }
       }, maxRetries: 2);
     } catch (e) {
-      showError('Failed to request ride: ${e.toString()}');
       debugPrint('  onRequestRide error: $e');
+      FSnackbar.show(title: 'Error', message: 'Failed to request ride: ${e.toString()}');
     } finally {
       isLoading.value = false;
       isRequestingRide.value = false;
+      _updateRequestRideButtonState();
       debugPrint('===== onRequestRide END =====\n');
     }
   }
 
-  // Future<Map<String, dynamic>> _prepareRideRequestBody() async {
-  //   debugPrint('===== _prepareRideRequestBody START =====');
-  //   final dropoffs = await _getStopCoordinates();
-  //   debugPrint('  dropoffs prepared: ${dropoffs.length}');
-  //
-  //   final fareBreakdown = _calculateFareBreakdown();
-  //   debugPrint('  fareBreakdown: $fareBreakdown');
-  //
-  //   double requestedRideFare;
-  //   try {
-  //     requestedRideFare = double.parse(fareController.text.trim());
-  //   } catch (e) {
-  //     debugPrint('  ❌ Error parsing fare: ${fareController.text}');
-  //     requestedRideFare = selectedVehicleFare.toDouble();
-  //     fareController.text = requestedRideFare.toString();
-  //   }
-  //
-  //   if (requestedRideFare <= 0) {
-  //     requestedRideFare = selectedVehicleFare.toDouble();
-  //     fareController.text = requestedRideFare.toString();
-  //   }
-  //
-  //   final requestBody = {
-  //     "pickup_lat": pickupCoords!.latitude,
-  //     "pickup_lng": pickupCoords!.longitude,
-  //     "ride_city": userCity,
-  //     "dropoffs": dropoffs,
-  //     "distance": distanceKm.value,
-  //     "vehicle_type": selectedVehicleName,
-  //     "requested_rideFare": fareBreakdown['total_fare'],
-  //     "fare": fareBreakdown,
-  //     "payment_type": selectedPaymentBackendValue,
-  //     "passengers_no": selectedPassengers.value,
-  //     "request_datetime": selectedDate.value != null && selectedTime.value != null
-  //         ? _formatDateTime(selectedDate.value!, selectedTime.value!)
-  //         : DateTime.now().toIso8601String(),
-  //   };
-  //
-  //   debugPrint('  Full Request Body:');
-  //   _printFormattedJson(requestBody);
-  //   debugPrint('===== _prepareRideRequestBody END =====');
-  //   return requestBody;
-  // }
+  void refreshMapView() {
+    if (mapController == null || markers.isEmpty) return;
 
+    final bounds = _calculateBounds();
+    mapController?.animateCamera(
+      CameraUpdate.newLatLngBounds(bounds, 50),
+    );
+  }
 
   Future<Map<String, dynamic>> _prepareRideRequestBody() async {
     debugPrint('===== _prepareRideRequestBody START =====');
@@ -1164,56 +1318,59 @@ class RideBookingController extends BaseController { // ✅ CHANGED: Extend Base
       fareController.text = requestedRideFare.toString();
     }
 
-    // FIXED: Update dropoffs format to include stop_order
+    // ✅ CORRECTED: Proper dropoffs format
     final formattedDropoffs = dropoffs.asMap().entries.map((entry) {
       final index = entry.key;
       final dropoff = entry.value;
       return {
         "lat": dropoff["lat"],
         "lng": dropoff["lng"],
-        "stop_order": index + 1, // FIXED: Added stop_order field
+        "stop_order": index + 1,
         "address": dropoff["address"],
       };
     }).toList();
 
-    // FIXED: Prepare fare breakdown in new format
+    // ✅ CORRECTED: Proper fare structure
     final formattedFare = {
-      "baseFare": fareBreakdown['base_fare'] ?? 0, // FIXED: Changed key name
-      "distanceCharges": fareBreakdown['distance_charge'] ?? 0, // FIXED: Changed key name
+      "baseFare": fareBreakdown['base_fare'] ?? 0,
+      "distanceCharges": fareBreakdown['distance_charge'] ?? 0,
       "surgeCharges": (fareBreakdown['total_fare'] ?? 0) -
           (fareBreakdown['base_fare'] ?? 0) -
-          (fareBreakdown['distance_charge'] ?? 0), // FIXED: Calculate surge charges
-      "discount": 0, // FIXED: Added discount field
-      "waiting_charge_amount": 0, // FIXED: Added waiting charge field
+          (fareBreakdown['distance_charge'] ?? 0),
+      "discount": 0,
+      "waiting_charge_amount": 0,
     };
 
-    final requestBody = {
-      // "pickup_lat": pickupCoords!.latitude,
-      // "pickup_lng": pickupCoords!.longitude,
-      "ride_city": userCity,
-      "dropoffs": dropoffs, // Keep original format
-      "distance": distanceKm.value,
-      "vehicle_type": selectedVehicleName,
-      "requested_rideFare": fareBreakdown['total_fare'],
-      "fare": fareBreakdown, // Keep original format
-      "payment_type": selectedPaymentBackendValue,
-      "passengers_no": selectedPassengers.value,
-      "request_datetime": selectedDate.value != null && selectedTime.value != null
-          ? _formatDateTime(selectedDate.value!, selectedTime.value!)
-          : DateTime.now().toIso8601String(),
+    // ✅ GET COUNTRY AND CITY FROM COORDINATES (More accurate)
+    final locationDetails = await _getLocationDetailsFromCoords(pickupCoords!);
+    final String country = locationDetails['country']!;
+    final String city = locationDetails['city']!;
 
-      // FIXED: ADD NEW FIELDS AS REQUIRED
-      "pickup_loc": { // FIXED: Added new pickup_loc object
+    debugPrint('  Extracted from coordinates:');
+    debugPrint('    Country: $country');
+    debugPrint('    City: $city');
+
+    // ✅ CORRECTED: Complete request body matching the required format
+    final requestBody = {
+      "country_name": country, // ✅ ADDED
+      "pickup_loc": {
         "lat": pickupCoords!.latitude,
         "lng": pickupCoords!.longitude,
         "address": pickupLocation.value,
-        "city": userCity,
+        "city": city,
       },
-      "dropoffs": formattedDropoffs, // FIXED: Updated dropoffs with stop_order
-      "fare": formattedFare, // FIXED: Updated fare with new structure
-      "passengers_no": selectedPassengers.value.toString(), // FIXED: Convert to string
-      "ride_type": "Instant ride", // FIXED: Added ride_type field
-      "comments": comment.value, // FIXED: Added comments field
+      "dropoffs": formattedDropoffs, // ✅ CORRECTED format
+      "distance": distanceKm.value,
+      "vehicle_type": selectedVehicleName,
+      "requested_rideFare": requestedRideFare, // ✅ Using parsed fare
+      "fare": formattedFare, // ✅ CORRECTED fare structure
+      "payment_type": selectedPaymentBackendValue,
+      "passengers_no": selectedPassengers.value.toString(), // ✅ Ensure string format
+      "request_datetime": selectedDate.value != null && selectedTime.value != null
+          ? _formatDateTime(selectedDate.value!, selectedTime.value!)
+          : DateTime.now().toIso8601String(),
+      "ride_type": "Instant ride", // ✅ ADDED
+      "comments": comment.value,
     };
 
     debugPrint('  Full Request Body:');
@@ -1222,6 +1379,23 @@ class RideBookingController extends BaseController { // ✅ CHANGED: Extend Base
     return requestBody;
   }
 
+  Future<Map<String, String>> _getLocationDetailsFromCoords(LatLng coords) async {
+    try {
+      final placemarks = await placemarkFromCoordinates(coords.latitude, coords.longitude);
+
+      if (placemarks.isNotEmpty) {
+        final placemark = placemarks.first;
+        return {
+          'country': placemark.country ?? 'Pakistan',
+          'city': placemark.locality ?? placemark.subAdministrativeArea ?? 'Unknown',
+        };
+      }
+    } catch (e) {
+      debugPrint('Error in reverse geocoding: $e');
+    }
+
+    return {'country': 'Pakistan', 'city': 'Unknown'};
+  }
 
   void _printFormattedJson(Map<String, dynamic> json) {
     final encoder = JsonEncoder.withIndent('  ');
@@ -1232,8 +1406,6 @@ class RideBookingController extends BaseController { // ✅ CHANGED: Extend Base
   Future<void> _sendPushNotificationToDrivers(Map<String, dynamic> rideData, double amount) async {
     debugPrint('===== _sendPushNotificationToDrivers START =====');
     try {
-
-
       final notificationBody = {
         "rideId": rideData['rideId'],
         "pickup": {"lat": pickupCoords!.latitude, "lng": pickupCoords!.longitude, "address": pickupLocation.value},
@@ -1291,46 +1463,6 @@ class RideBookingController extends BaseController { // ✅ CHANGED: Extend Base
       return "00";
     }
     return selectedVehicleFare.toString();
-  }
-
-  // Add these methods to your RideBookingController class
-
-// Check if passenger decrement button should be disabled
-  bool isPassengerDecrementDisabled(String rideId) {
-    final ride = rideOptions.firstWhereOrNull((r) => r.id == rideId);
-    if (ride == null) return true;
-    final currentPassengers = ridePassengers[rideId]?.value ?? ride.minPassengers;
-    return currentPassengers <= ride.minPassengers;
-  }
-
-// Check if passenger increment button should be disabled
-  bool isPassengerIncrementDisabled(String rideId) {
-    final ride = rideOptions.firstWhereOrNull((r) => r.id == rideId);
-    if (ride == null) return true;
-    final currentPassengers = ridePassengers[rideId]?.value ?? ride.minPassengers;
-    return currentPassengers >= ride.maxPassengers;
-  }
-
-// Check if fare decrement button should be disabled
-  bool isFareDecrementDisabled(String rideId) {
-    final currentFare = rideFare[rideId]?.value ?? 0;
-    final minimumFare = _minimumFares[rideId] ?? 0;
-    return currentFare <= minimumFare;
-  }
-
-// Check if fare increment button should be disabled
-  bool isFareIncrementDisabled(String rideId) {
-    final currentFare = rideFare[rideId]?.value ?? 0;
-    final minimumFare = _minimumFares[rideId] ?? 0;
-    final maxFare = minimumFare * 2; // Double the calculated fare
-    return currentFare >= maxFare;
-  }
-
-// Check if request ride button should be disabled
-  bool get isRequestRideDisabled {
-    return selectedRideType.value.isEmpty ||
-        isRequestingRide.value ||
-        isCalculatingFare.value;
   }
 
   @override

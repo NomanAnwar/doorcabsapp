@@ -36,7 +36,7 @@ class RideTypeScreen extends StatelessWidget {
     }
 
     try {
-      Future.delayed(const Duration(milliseconds: 50), () {
+      Future.delayed(const Duration(milliseconds: 20), () {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(msg),
@@ -142,7 +142,7 @@ class RideTypeScreen extends StatelessWidget {
     };
 
     // Use a small delay to ensure the ripple effect is visible
-    Future.delayed(Duration(milliseconds: 50), () {
+    Future.delayed(Duration(milliseconds: 20), () {
       Get.toNamed(
         _routeFromCategory(service.categoryName),
         arguments: arguments,
@@ -300,8 +300,8 @@ class RideTypeScreen extends StatelessWidget {
             child: InkWell(
               onTap: onTap,
               borderRadius: borderRadius ?? BorderRadius.circular(12),
-              splashColor: FColors.primaryColor.withOpacity(0.3),
-              highlightColor: FColors.primaryColor.withOpacity(0.1),
+              splashColor: FColors.secondaryColor.withOpacity(0.2),
+              highlightColor: FColors.secondaryColor.withOpacity(0.1),
               child: child,
             ),
           ),
@@ -322,7 +322,7 @@ class RideTypeScreen extends StatelessWidget {
           child: _buildServiceImage(courier, sw(184), sh(95)),
         ),
         _buildTappableContainer(
-          top: sh(434),
+          top: sh(425),
           left: sw(47),
           width: sw(120),
           height: sh(30),
@@ -363,10 +363,10 @@ class RideTypeScreen extends StatelessWidget {
           child: _buildServiceImage(freight, sw(184), sh(95)),
         ),
         _buildTappableContainer(
-          top: sh(432),
+          top: sh(425),
           left: sw(278),
           width: sw(120),
-          height: sh(30),
+          height: sh(35),
           onTap: () => _navigateToService(freight, context),
           child: Padding(
             padding: EdgeInsets.all(sw(8)),
@@ -404,10 +404,10 @@ class RideTypeScreen extends StatelessWidget {
           child: _buildServiceImage(cityToCity, sw(220), sh(160)),
         ),
         _buildTappableContainer(
-          top: sh(602),
+          top: sh(595),
           left: sw(47),
           width: sw(120),
-          height: sh(30),
+          height: sh(35),
           onTap: () => _navigateToService(cityToCity, context),
           child: Padding(
             padding: EdgeInsets.all(sw(8)),
@@ -445,10 +445,10 @@ class RideTypeScreen extends StatelessWidget {
           child: _buildServiceImage(instantRide, sw(220), sh(160)),
         ),
         _buildTappableContainer(
-          top: sh(601),
+          top: sh(595),
           left: sw(278),
           width: sw(120),
-          height: sh(30),
+          height: sh(35),
           onTap: () => _navigateToService(instantRide, context),
           child: Padding(
             padding: EdgeInsets.all(sw(8)),
@@ -489,10 +489,10 @@ class RideTypeScreen extends StatelessWidget {
           ),
         ),
         _buildTappableContainer(
-          top: sh(722),
+          top: sh(715),
           left: sw(47),
           width: sw(120),
-          height: sh(30),
+          height: sh(35),
           onTap: () => _navigateToService(delivery, context),
           child: Padding(
             padding: EdgeInsets.all(sw(8)),
@@ -522,8 +522,8 @@ class RideTypeScreen extends StatelessWidget {
       widgets.addAll([
         _buildTappableContainer(
           top: sh(632),
-          left: sw(162),
-          width: sw(257),
+          left: sw(158),
+          width: sw(265),
           height: sh(95),
           onTap: () => _navigateToService(scheduleRide, context),
           borderRadius: BorderRadius.circular(10.0),
@@ -532,14 +532,14 @@ class RideTypeScreen extends StatelessWidget {
               color: FColors.primaryColor.withOpacity(0.4),
               borderRadius: BorderRadius.circular(10.0),
             ),
-            padding: EdgeInsets.all(sw(12)),
+            padding: EdgeInsets.symmetric(horizontal: sw(6  ), vertical: sw(6)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 Text(
                   "Schedule Your Ride?",
-                  textAlign: TextAlign.right,
+                  textAlign: TextAlign.center,
                   style: FTextTheme.lightTextTheme.headlineSmall!.copyWith(
                     fontSize:
                     (FTextTheme.lightTextTheme.headlineSmall!.fontSize! - 1) *
@@ -564,14 +564,17 @@ class RideTypeScreen extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
-                      Text(
-                        scheduleRide.categoryName,
-                        style: FTextTheme.lightTextTheme.labelSmall!.copyWith(
-                          fontSize: FTextTheme
-                              .lightTextTheme.labelSmall!.fontSize! *
-                              screenWidth /
-                              baseWidth,
-                          fontWeight: FontWeight.w600,
+                      Flexible(
+                        child: Text(
+                          scheduleRide.categoryName,
+                          overflow: TextOverflow.ellipsis,
+                          softWrap: false,
+                          style: FTextTheme.lightTextTheme.labelSmall!.copyWith(
+                            fontSize: FTextTheme.lightTextTheme.labelSmall!.fontSize! *
+                                screenWidth /
+                                baseWidth,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 4),
@@ -581,6 +584,7 @@ class RideTypeScreen extends StatelessWidget {
                       ),
                     ],
                   ),
+
                 ),
               ],
             ),

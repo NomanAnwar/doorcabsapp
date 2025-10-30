@@ -15,10 +15,8 @@ final DriverLocationService _driverLocationService = DriverLocationService();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
   // Initialize core services
   // await _initializeCoreServices();
-
   runApp(const MyApp());
 }
 

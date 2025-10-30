@@ -52,7 +52,7 @@ class DropOffScreen extends StatelessWidget {
                   "Enter Your Route",
                   style: FTextTheme.lightTextTheme.headlineSmall!.copyWith(
                     fontSize:
-                        FTextTheme.lightTextTheme.headlineMedium!.fontSize! *
+                    FTextTheme.lightTextTheme.headlineMedium!.fontSize! *
                         screenWidth /
                         baseWidth,
                   ),
@@ -68,15 +68,15 @@ class DropOffScreen extends StatelessWidget {
               bottom: sh(100),
               // Leave space for the confirm button at bottom
               child: SingleChildScrollView(
-                padding: EdgeInsets.symmetric(horizontal: sw(23)),
+                padding: EdgeInsets.symmetric(horizontal: sw(10)),
                 child: Obx(
-                  () => Column(
+                      () => Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       /// Pickup
                       Container(
                         height: sh(52),
-                        width: sw(393),
+                        width: screenWidth,
                         padding: EdgeInsets.symmetric(horizontal: sw(12)),
                         decoration: BoxDecoration(
                           color: const Color(0xFFEFEFEF),
@@ -96,31 +96,31 @@ class DropOffScreen extends StatelessWidget {
                                 focusNode: c.pickupFocus,
                                 style: FTextTheme.lightTextTheme.titleMedium!
                                     .copyWith(
-                                      fontWeight: FontWeight.w500,
-                                      fontSize:
-                                          FTextTheme
-                                              .lightTextTheme
-                                              .titleMedium!
-                                              .fontSize! *
-                                          screenWidth /
-                                          baseWidth,
-                                    ),
+                                  fontWeight: FontWeight.w500,
+                                  fontSize:
+                                  FTextTheme
+                                      .lightTextTheme
+                                      .titleMedium!
+                                      .fontSize! *
+                                      screenWidth /
+                                      baseWidth,
+                                ),
                                 decoration: InputDecoration(
                                   hintText: "Model Town Link Rd Zainab Tower",
                                   hintStyle: FTextTheme
                                       .lightTextTheme
                                       .titleMedium!
                                       .copyWith(
-                                        color: FColors.chipBg,
-                                        fontWeight: FontWeight.w500,
-                                        fontSize:
-                                            FTextTheme
-                                                .lightTextTheme
-                                                .titleMedium!
-                                                .fontSize! *
-                                            screenWidth /
-                                            baseWidth,
-                                      ),
+                                    color: FColors.chipBg,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize:
+                                    FTextTheme
+                                        .lightTextTheme
+                                        .titleMedium!
+                                        .fontSize! *
+                                        screenWidth /
+                                        baseWidth,
+                                  ),
                                   border: InputBorder.none,
                                   contentPadding: EdgeInsets.symmetric(
                                     horizontal: sw(5),
@@ -140,127 +140,79 @@ class DropOffScreen extends StatelessWidget {
                           ],
                         ),
                       ),
-                      SizedBox(height: sh(16)),
+                      SizedBox(height: sh(6)),
 
-                      /// Drop-off + Add Stops
-                      Stack(
-                        children: [
-                          /// Background field
-                          Container(
-                            width: sw(393),
-                            height: sh(52),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFEFEFEF),
-                              borderRadius: BorderRadius.circular(sw(10)),
+                      /// Drop-off
+                      Container(
+                        width: screenWidth,
+                        height: sh(52),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEFEFEF),
+                          borderRadius: BorderRadius.circular(sw(10)),
+                        ),
+                        padding: EdgeInsets.symmetric(horizontal: sw(12)),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            SizedBox(width: sw(4)),
+                            Icon(
+                              Icons.near_me_sharp,
+                              color: FColors.black,
+                              size: sw(20),
                             ),
-                            padding: EdgeInsets.symmetric(horizontal: sw(12)),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                SizedBox(width: sw(4)),
-                                Icon(
-                                  Icons.near_me_sharp,
-                                  color: FColors.black,
-                                  size: sw(20),
-                                ),
-                                SizedBox(width: sw(12)),
+                            SizedBox(width: sw(12)),
 
-                                Expanded(
-                                  child: TextField(
-                                    controller: c.dropCtrl,
-                                    focusNode: c.dropFocus,
-                                    style: FTextTheme
+                            Expanded(
+                              child: TextField(
+                                controller: c.dropCtrl,
+                                focusNode: c.dropFocus,
+                                style: FTextTheme
+                                    .lightTextTheme
+                                    .titleMedium!
+                                    .copyWith(
+                                  fontWeight: FontWeight.w500,
+                                  fontSize:
+                                  FTextTheme
+                                      .lightTextTheme
+                                      .titleMedium!
+                                      .fontSize! *
+                                      screenWidth /
+                                      baseWidth,
+                                ),
+                                decoration: InputDecoration(
+                                  hintText: "Drop Off",
+                                  hintStyle: FTextTheme
+                                      .lightTextTheme
+                                      .titleMedium!
+                                      .copyWith(
+                                    fontWeight: FontWeight.w500,
+                                    color: FColors.chipBg,
+                                    fontSize:
+                                    FTextTheme
                                         .lightTextTheme
                                         .titleMedium!
-                                        .copyWith(
-                                          fontWeight: FontWeight.w500,
-                                          fontSize:
-                                              FTextTheme
-                                                  .lightTextTheme
-                                                  .titleMedium!
-                                                  .fontSize! *
-                                              screenWidth /
-                                              baseWidth,
-                                        ),
-                                    decoration: InputDecoration(
-                                      hintText: "Drop Off",
-                                      hintStyle: FTextTheme
-                                          .lightTextTheme
-                                          .titleMedium!
-                                          .copyWith(
-                                            fontWeight: FontWeight.w500,
-                                            color: FColors.chipBg,
-                                            fontSize:
-                                                FTextTheme
-                                                    .lightTextTheme
-                                                    .titleMedium!
-                                                    .fontSize! *
-                                                screenWidth /
-                                                baseWidth,
-                                          ),
-                                      border: InputBorder.none,
-                                      contentPadding: EdgeInsets.symmetric(
-                                        horizontal: sw(2),
-                                        vertical: sh(12),
-                                      ),
-                                    ),
-                                    onTap: () {
-                                      c.toggleField(ActiveField.dropoff);
-                                      // Select all text when tapped
-                                      c.dropCtrl.selection = TextSelection(
-                                        baseOffset: 0,
-                                        extentOffset: c.dropCtrl.text.length,
-                                      );
-                                    },
+                                        .fontSize! *
+                                        screenWidth /
+                                        baseWidth,
+                                  ),
+                                  border: InputBorder.none,
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: sw(2),
+                                    vertical: sh(12),
                                   ),
                                 ),
-                              ],
-                            ),
-                          ),
-
-                          /// ADD STOP button
-                          Positioned(
-                            right: sw(8),
-                            top: sh(10),
-                            child: SizedBox(
-                              width: sw(105),
-                              height: sh(30),
-                              child: TextButton.icon(
-                                style: TextButton.styleFrom(
-                                  backgroundColor: const Color(0xFFFFC107),
-                                  padding: EdgeInsets.only(
-                                    left: sw(3),
-                                    right: sw(2),
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(sw(10)),
-                                  ),
-                                ),
-                                onPressed: c.addStop,
-                                label: Text(
-                                  "ADD STOPS",
-                                  style: FTextTheme.lightTextTheme.labelSmall!
-                                      .copyWith(
-                                        fontSize:
-                                            (FTextTheme
-                                                .lightTextTheme
-                                                .labelSmall!
-                                                .fontSize!) *
-                                            screenWidth /
-                                            baseWidth,
-                                      ),
-                                ),
-                                icon: SvgPicture.asset(
-                                  "assets/images/add_stop_plus.svg",
-                                  width: sw(15),
-                                  height: sw(15),
-                                  color: Colors.black,
-                                ),
-                                iconAlignment: IconAlignment.end,
+                                onTap: () {
+                                  c.toggleField(ActiveField.dropoff);
+                                  // Select all text when tapped
+                                  c.dropCtrl.selection = TextSelection(
+                                    baseOffset: 0,
+                                    extentOffset: c.dropCtrl.text.length,
+                                  );
+                                },
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
 
                       /// Choose on Map
@@ -281,14 +233,14 @@ class DropOffScreen extends StatelessWidget {
                               "Choose on Map",
                               style: FTextTheme.lightTextTheme.bodyLarge!
                                   .copyWith(
-                                    fontSize:
-                                        FTextTheme
-                                            .lightTextTheme
-                                            .bodyLarge!
-                                            .fontSize! *
-                                        screenWidth /
-                                        baseWidth,
-                                  ),
+                                fontSize:
+                                FTextTheme
+                                    .lightTextTheme
+                                    .bodyLarge!
+                                    .fontSize! *
+                                    screenWidth /
+                                    baseWidth,
+                              ),
                             ),
                           ],
                         ),
@@ -313,27 +265,27 @@ class DropOffScreen extends StatelessWidget {
                           separatorBuilder: (_, __) => const Divider(height: 1),
                           itemBuilder:
                               (_, i) => ListTile(
-                                leading: Icon(
-                                  Icons.location_on_outlined,
-                                  size: sw(18),
-                                  color: FColors.secondaryColor,
-                                ),
-                                title: Text(
-                                  c.suggestions[i].description,
-                                  style: FTextTheme.lightTextTheme.bodyLarge!
-                                      .copyWith(
-                                        fontSize:
-                                            FTextTheme
-                                                .lightTextTheme
-                                                .bodyLarge!
-                                                .fontSize! *
-                                            screenWidth /
-                                            baseWidth,
-                                      ),
-                                ),
-                                onTap:
-                                    () => c.selectSuggestion(c.suggestions[i]),
+                            leading: Icon(
+                              Icons.location_on_outlined,
+                              size: sw(18),
+                              color: FColors.secondaryColor,
+                            ),
+                            title: Text(
+                              c.suggestions[i].description,
+                              style: FTextTheme.lightTextTheme.bodyLarge!
+                                  .copyWith(
+                                fontSize:
+                                FTextTheme
+                                    .lightTextTheme
+                                    .bodyLarge!
+                                    .fontSize! *
+                                    screenWidth /
+                                    baseWidth,
                               ),
+                            ),
+                            onTap:
+                                () => c.selectSuggestion(c.suggestions[i]),
+                          ),
                         ),
                         SizedBox(height: sh(16)),
                       ],
@@ -345,8 +297,10 @@ class DropOffScreen extends StatelessWidget {
                           children: [
                             Padding(
                               padding: EdgeInsets.only(
-                                bottom: sh(4),
-                                top: sh(4),
+                                  bottom: sh(4),
+                                  top: sh(4),
+                                  right: sw(13),
+                                  left: sw(13)
                               ),
                               child: InkWell(
                                 onTap: () => c.selectRecent(c.recent[i]),
@@ -373,7 +327,7 @@ class DropOffScreen extends StatelessWidget {
                                     Expanded(
                                       child: Column(
                                         crossAxisAlignment:
-                                            CrossAxisAlignment.start,
+                                        CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             c.recent[i].description,
@@ -381,14 +335,14 @@ class DropOffScreen extends StatelessWidget {
                                                 .lightTextTheme
                                                 .bodyLarge!
                                                 .copyWith(
-                                                  fontSize:
-                                                      FTextTheme
-                                                          .lightTextTheme
-                                                          .bodyLarge!
-                                                          .fontSize! *
-                                                      screenWidth /
-                                                      baseWidth,
-                                                ),
+                                              fontSize:
+                                              FTextTheme
+                                                  .lightTextTheme
+                                                  .bodyLarge!
+                                                  .fontSize! *
+                                                  screenWidth /
+                                                  baseWidth,
+                                            ),
                                           ),
                                           SizedBox(height: sh(2)),
                                           Text(
@@ -397,16 +351,16 @@ class DropOffScreen extends StatelessWidget {
                                                 .lightTextTheme
                                                 .labelSmall!
                                                 .copyWith(
-                                                  fontWeight: FontWeight.w400,
-                                                  color: FColors.chipBg,
-                                                  fontSize:
-                                                      FTextTheme
-                                                          .lightTextTheme
-                                                          .labelSmall!
-                                                          .fontSize! *
-                                                      screenWidth /
-                                                      baseWidth,
-                                                ),
+                                              fontWeight: FontWeight.w400,
+                                              color: FColors.chipBg,
+                                              fontSize:
+                                              FTextTheme
+                                                  .lightTextTheme
+                                                  .labelSmall!
+                                                  .fontSize! *
+                                                  screenWidth /
+                                                  baseWidth,
+                                            ),
                                           ),
                                         ],
                                       ),
@@ -418,16 +372,16 @@ class DropOffScreen extends StatelessWidget {
                                           .lightTextTheme
                                           .labelSmall!
                                           .copyWith(
-                                            fontWeight: FontWeight.w400,
-                                            color: FColors.chipBg,
-                                            fontSize:
-                                                FTextTheme
-                                                    .lightTextTheme
-                                                    .labelSmall!
-                                                    .fontSize! *
-                                                screenWidth /
-                                                baseWidth,
-                                          ),
+                                        fontWeight: FontWeight.w400,
+                                        color: FColors.chipBg,
+                                        fontSize:
+                                        FTextTheme
+                                            .lightTextTheme
+                                            .labelSmall!
+                                            .fontSize! *
+                                            screenWidth /
+                                            baseWidth,
+                                      ),
                                     ),
                                     SizedBox(width: sw(8)),
                                     Transform(
@@ -444,16 +398,60 @@ class DropOffScreen extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            Divider(
-                              color: FColors.buttonDisabled,
-                              thickness: 2,
-                              height: sh(10),
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: sw(15)),
+                              child: Divider(
+                                color: FColors.buttonDisabled,
+                                thickness: 2,
+                                height: sh(10),
+                              ),
                             ),
                           ],
                         ),
 
                       SizedBox(height: sh(28)),
                     ],
+                  ),
+                ),
+              ),
+            ),
+
+            /// ADD STOP button - Positioned independently in main Stack
+            Positioned(
+              top: sh(162), // Position between the two fields
+              right: sw(9),
+              child: SizedBox(
+                width: sw(35),
+                height: sw(35),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: c.addStop,
+                    // borderRadius: BorderRadius.circular(sw(8)),
+                    child: Container(
+                      width: sw(35),
+                      height: sw(35),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFC107),
+                        // shape: BoxShape.circle,
+                        borderRadius: BorderRadius.circular(sw(10)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: sw(4),
+                            offset: Offset(0, sw(2)),
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: SvgPicture.asset(
+                          "assets/images/add_stop_plus.svg",
+                          width: sw(15),
+                          height: sw(15),
+                          color: Colors.black,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -480,7 +478,7 @@ class DropOffScreen extends StatelessWidget {
                     style: FTextTheme.darkTextTheme.titleSmall!.copyWith(
                       fontWeight: FontWeight.w500,
                       fontSize:
-                          FTextTheme.lightTextTheme.titleSmall!.fontSize! *
+                      FTextTheme.lightTextTheme.titleSmall!.fontSize! *
                           screenWidth /
                           baseWidth,
                     ),

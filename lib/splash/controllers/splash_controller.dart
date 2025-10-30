@@ -5,6 +5,7 @@ import '../../feautures/shared/services/driver_location_service.dart';
 import '../../feautures/shared/services/enhanced_pusher_manager.dart';
 import '../../feautures/shared/services/pusher_beams.dart';
 import '../../feautures/shared/services/storage_service.dart';
+import '../../feautures/start/models/driver_verification_helper.dart';
 import '../../utils/http/http_client.dart';
 
 final EnhancedPusherManager _pusherManager = EnhancedPusherManager();
@@ -19,6 +20,8 @@ class SplashController extends BaseController {
     _initializeCoreServices();
     _checkNavigation();
   }
+
+
 
   Future<void> _initializeCoreServices() async {
     try {
@@ -38,8 +41,14 @@ class SplashController extends BaseController {
     }
   }
 
+  void initializeObservableProfile() {
+    StorageService.getProfile(); // This will update the observable profile
+  }
+
   Future<void> _checkNavigation() async {
     await Future.delayed(const Duration(seconds: 1));
+
+    initializeObservableProfile();
 
     await executeWithRetry(() async {
       final lang = StorageService.getLanguage();
@@ -72,21 +81,87 @@ class SplashController extends BaseController {
     }
   }
 
-  void _handleDriverFlow(Map<String, dynamic> driverSteps) {
-    final hasStartedSteps = driverSteps.values.any((v) => v == true);
-    final isCompleted = hasStartedSteps ? _validateDriverSteps(driverSteps) : false;
+  // void _handleDriverFlow(Map<String, dynamic> driverSteps) {
+  //   final hasStartedSteps = driverSteps.values.any((v) => v == true);
+  //   final isCompleted = hasStartedSteps ? _validateDriverSteps(driverSteps) : false;
+  //
+  //   if (!hasStartedSteps) {
+  //     print("Driver 1");
+  //     Get.offAllNamed('/select_driver_type');
+  //   } else if (!isCompleted) {
+  //     print("Driver 11: $isCompleted");
+  //     Get.offAllNamed('/profile-completion');
+  //   } else if(isCompleted) {
+  //     print("Driver 12: $isCompleted");
+  //     Get.offAllNamed('/go-online');
+  //   }else {
+  //     Get.offAllNamed('/ride-type');
+  //   }
+  // }
 
-    if (!hasStartedSteps) {
-      print("Driver 1");
-      Get.offAllNamed('/select_driver_type');
-    } else if (!isCompleted) {
-      print("Driver 11: $isCompleted");
-      Get.offAllNamed('/profile-completion');
-    } else if(isCompleted) {
-      print("Driver 12: $isCompleted");
-      Get.offAllNamed('/go-online');
-    }else {
-      Get.offAllNamed('/ride-type');
+  // Update the _handleDriverFlow method in SplashController
+
+  void _handleDriverFlow(Map<String, dynamic> driverSteps) async {
+    try {
+      // Get fresh profile data for accurate verification status
+      final profileResponse = await FHttpHelper.get(
+        "driver/${StorageService.getSignUpResponse()?.userId.toString()}",
+      );
+
+      final driverProfile = profileResponse["driver"];
+      StorageService.saveProfile(driverProfile);
+
+      // ✅ ADDED: Check if this is a first-time user
+      final isProfileUpdated = driverProfile['isProfileUpdated'] ?? false;
+
+      if (!isProfileUpdated) {
+        print("➡️ Splash → First time driver → Select Driver Type");
+        Get.offAllNamed('/select_driver_type');
+        return;
+      }
+
+      final hasUploadedAll = DriverVerificationHelper.hasUploadedAllDocuments(driverProfile);
+      final isFullyVerified = DriverVerificationHelper.isFullyVerified(driverProfile);
+      final blockingReason = DriverVerificationHelper.getBlockingReason(driverProfile);
+
+      print("🚗 Splash - Driver Verification Status:");
+      print("📁 All Documents Uploaded: $hasUploadedAll");
+      print("✅ Fully Verified: $isFullyVerified");
+      print("🚫 Blocking Reason: $blockingReason");
+
+      if (!hasUploadedAll) {
+        // User hasn't uploaded all documents yet
+        final hasStartedSteps = driverSteps.values.any((v) => v == true);
+
+        if (!hasStartedSteps) {
+          print("➡️ Splash → Select Driver Type");
+          Get.offAllNamed('/select_driver_type');
+        } else {
+          print("➡️ Splash → Profile Completion (documents incomplete)");
+          Get.offAllNamed('/profile-completion');
+        }
+      } else if (!isFullyVerified) {
+        // Documents uploaded but pending approval
+        print("➡️ Splash → Profile Completion (pending approval)");
+        Get.offAllNamed('/profile-completion');
+      } else {
+        // Fully verified and approved
+        print("➡️ Splash → Go Online");
+        Get.offAllNamed('/go-online');
+      }
+    } catch (e) {
+      print('❌ Error fetching driver profile in splash: $e');
+      // Fallback to basic step checking
+      final hasStartedSteps = driverSteps.values.any((v) => v == true);
+      final isCompleted = hasStartedSteps ? _validateDriverSteps(driverSteps) : false;
+
+      if (!hasStartedSteps) {
+        Get.offAllNamed('/select_driver_type');
+      } else if (!isCompleted) {
+        Get.offAllNamed('/profile-completion');
+      } else {
+        Get.offAllNamed('/go-online');
+      }
     }
   }
 
