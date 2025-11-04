@@ -1,15 +1,13 @@
-import 'package:doorcab/feautures/shared/services/storage_service.dart';
-import 'package:doorcab/splash/views/splash_screen.dart';
-import 'package:doorcab/utils/http/http_client.dart';
 import 'package:doorcab/utils/routes/app_pages.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'feautures/shared/handlers/lifecycle_handler.dart';
 import 'feautures/shared/services/driver_location_service.dart';
+import 'feautures/shared/services/permission_service.dart';
 import 'feautures/shared/services/pusher_background_service.dart';
 import 'feautures/shared/services/pusher_beams.dart';
 import 'feautures/shared/services/enhanced_pusher_manager.dart';
+import 'feautures/shared/widgets/permission_gate.dart';
 
 final EnhancedPusherManager _pusherManager = EnhancedPusherManager();
 final PusherBeamsService _pusherBeams = PusherBeamsService();
@@ -18,18 +16,22 @@ final PusherBackgroundService _backgroundService = PusherBackgroundService();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   // Initialize core services
   await _initializeCoreServices();
+
+  // Initialize Permission Service
+  Get.put(PermissionService());
+
   runApp(const MyApp());
 }
 
 Future<void> _initializeCoreServices() async {
-
   try {
-
     // Initialize background service first
     await _backgroundService.initialize();
 
+    // Comment/uncomment services as needed
     // await Firebase.initializeApp();
     // FHttpHelper.setBaseUrl("https://dc.tricasol.pk");
     // await _pusherManager.initializeOnce();
@@ -44,7 +46,6 @@ Future<void> _initializeCoreServices() async {
   } catch (e) {
     print('⚠️ Service initialization error: $e');
   }
-
 }
 
 class MyApp extends StatelessWidget {
@@ -63,17 +64,14 @@ class MyApp extends StatelessWidget {
         WidgetsBinding.instance.addObserver(LifecycleEventHandler());
         return child!;
       },
-      home: const SplashScreen(),
+      home: const PermissionGate(), // Changed to PermissionGate
     );
   }
 }
 
-
-
 class NavigationService {
   static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 }
-
 
 // import 'package:doorcab/feautures/shared/services/storage_service.dart';
 // import 'package:doorcab/splash/views/splash_screen.dart';

@@ -1,3 +1,4 @@
+// drivers_waiting_controller.dart
 import 'dart:async';
 import 'dart:convert';
 import 'dart:ui' as ui;
@@ -17,6 +18,7 @@ import '../../../shared/services/storage_service.dart';
 import '../models/driver_ride_info.dart';
 
 class DriversWaitingController extends BaseController {
+  // ------------------------- Unchanged original state -------------------------
   final currentPosition = Rxn<LatLng>();
   final driverMarkers = <String, Marker>{}.obs;
   final polylines = <Polyline>{}.obs;
@@ -42,17 +44,32 @@ class DriversWaitingController extends BaseController {
   late final Map<String, dynamic> rideArgs;
   final isCancelling = false.obs;
 
-  // 🔄 InDrive Animation Control
   LatLng? _lastDriverPosition;
+
+  // ------------------------- New / modified fields for map animation -------------------------
   bool _isCameraFollowing = true;
   bool _isAnimating = false;
 
+  // Animation controller replacement: use a Timer to drive interpolation so it is cancelable.
+  Timer? _markerAnimationTimer;
+  DateTime? _lastUpdateTimestamp; // used to compute durations between updates
+
+  // Simple smoothing (EMA) to reduce jitter. Set to 0 to disable smoothing.
+  final double _smoothingAlpha = 0.35; // 0..1, higher = more weight to new sample
+
+  // Minimum camera move threshold in meters to recenter camera (to avoid jitter)
+  final double _cameraFollowThresholdMeters = 6.0;
+
+  // Minimum time between forced camera updates (ms)
+  final int _cameraThrottleMs = 300;
+
+  // Marker icons
   BitmapDescriptor? _driverIcon;
   BitmapDescriptor? _pickupIcon;
   BitmapDescriptor? _stopIcon;
   BitmapDescriptor? _dropIcon;
 
-
+  // ------------------------- Original lifecycle -------------------------
   @override
   void onInit() async {
     super.onInit();
@@ -62,7 +79,7 @@ class DriversWaitingController extends BaseController {
     print("📌 Ride args in Drivers Waiting Controller: ${rideArgs['rideType']}");
 
     if (args.isNotEmpty) {
-      print("📦 Args received: $args");
+      print("📦 Args received in drivers waiting controller : $args");
 
       final bid = args['bid'] as Map<String, dynamic>?;
 
@@ -79,7 +96,7 @@ class DriversWaitingController extends BaseController {
 
     _placeStaticMarkersFromRideInfo();
 
-    // ✅ FIXED: Create initial driver marker
+    // ✅ Create initial driver marker
     if (rideInfo.value?.pickup != null) {
       currentPosition.value = LatLng(
         (rideInfo.value!.pickup!['lat'] as num).toDouble(),
@@ -110,7 +127,7 @@ class DriversWaitingController extends BaseController {
   void onMapCreated(GoogleMapController c) {
     _mapController = c;
 
-    // ✅ USE GOOGLE MAPS-STYLE BOUNDS FITTING
+    // Fit to pickup & current position like Google Maps initial behavior
     final pickup = rideInfo.value?.pickup;
     if (currentPosition.value != null && pickup != null) {
       final pickupPos = LatLng(
@@ -126,9 +143,12 @@ class DriversWaitingController extends BaseController {
         )),
       );
     }
+
+    // Optionally set padding so UI overlays don't cover important map areas
+    // You can call: _mapController?.setPadding(left, top, right, bottom);
   }
 
-  /// ===================== 🔔 DRIVER LOCATION SUBSCRIPTION =====================
+  /// ===================== DRIVER LOCATION SUBSCRIPTION (Pusher) =====================
   void _subscribeToDriverLocation(String rideId) {
     _pusherManager.subscribeOnce(
       "ride-$rideId",
@@ -151,28 +171,109 @@ class DriversWaitingController extends BaseController {
             return;
           }
 
-          final newPos = LatLng(lat, lng);
-          print("📍 New driver position: $newPos");
+          final rawNewPos = LatLng(lat, lng);
+          print("📍 New driver position (raw): $rawNewPos");
 
-          // ✅ IMPROVED: Smooth transition with progressive polyline removal
-          if (_lastDriverPosition == null) {
-            _lastDriverPosition = newPos;
-            _updateDriverMarker(newPos);
+          // ------------------ Apply simple smoothing (EMA) to reduce jitter ------------------
+          final smoothed = _applySmoothing(_lastDriverPosition, rawNewPos);
+          print("📍 New driver position (smoothed): $smoothed");
+
+          // ------------------ Time delta for animation duration calculation ------------------
+          final now = DateTime.now();
+          int elapsedMs;
+          if (_lastUpdateTimestamp == null) {
+            elapsedMs = 800; // default initial duration
           } else {
-            // 🧭 Smooth animation between positions with polyline updates
-            await _smoothTransitionToNewLocation(_lastDriverPosition!, newPos);
+            elapsedMs = now.difference(_lastUpdateTimestamp!).inMilliseconds;
+            // avoid 0 or extremely small durations
+            if (elapsedMs < 100) elapsedMs = 100;
           }
-          _lastDriverPosition = newPos;
+          _lastUpdateTimestamp = now;
 
-          // ✅ Google Maps-style camera following
+          // If we don't have a last driver position, initialize it and place the marker immediately.
+          if (_lastDriverPosition == null) {
+            _lastDriverPosition = smoothed;
+            _updateDriverMarker(smoothed);
+          } else {
+            // ------------------ Animate marker smoothly (cancelable) ------------------
+            await _animateDriverMarkerCancelable(_lastDriverPosition!, smoothed, elapsedMs);
+          }
+
+          // ------------------ Update last driver position AFTER animation started ------------------
+          _lastDriverPosition = smoothed;
+
+          // ------------------ Camera follow logic ------------------
           if (_isCameraFollowing && _mapController != null) {
-            await _mapController!.animateCamera(
-              CameraUpdate.newLatLng(newPos),
-            );
+            // Throttle camera updates by both distance and time
+            bool shouldRecenter = false;
+
+            // Distance check
+            try {
+              final centerLat = _lastDriverPosition!.latitude;
+              final centerLng = _lastDriverPosition!.longitude;
+
+              final distance = Geolocator.distanceBetween(
+                centerLat,
+                centerLng,
+                smoothed.latitude,
+                smoothed.longitude,
+              );
+
+              if (distance > _cameraFollowThresholdMeters) {
+                shouldRecenter = true;
+              }
+            } catch (e) {
+              shouldRecenter = true;
+            }
+
+            // Time throttle: avoid recentering too often
+            final nowMs = DateTime.now().millisecondsSinceEpoch;
+            int lastCameraUpdateMs = 0;
+            // store last camera update timestamp in a private field; reuse _lastUpdateTimestamp for simplicity:
+            if (_lastUpdateTimestamp != null) {
+              lastCameraUpdateMs = _lastUpdateTimestamp!.millisecondsSinceEpoch;
+            }
+            final sinceLast = (DateTime.now().millisecondsSinceEpoch - lastCameraUpdateMs);
+            if (sinceLast < _cameraThrottleMs) {
+              // if too soon, skip recenter even if distance > threshold
+              if (!shouldRecenter) {
+                // nothing
+              } else {
+                // allow recenter if distance is big (e.g., > 30 m)
+                final bigJump = Geolocator.distanceBetween(
+                  _lastDriverPosition!.latitude,
+                  _lastDriverPosition!.longitude,
+                  smoothed.latitude,
+                  smoothed.longitude,
+                );
+                if (bigJump < 30) {
+                  shouldRecenter = false;
+                }
+              }
+            }
+
+            if (shouldRecenter) {
+              final bearing = _calculateBearing(_lastDriverPosition, smoothed);
+              // Animate camera to new position with bearing & tilt for driving perspective
+              try {
+                await _mapController!.animateCamera(
+                  CameraUpdate.newCameraPosition(
+                    CameraPosition(
+                      target: smoothed,
+                      zoom: 17.0,
+                      bearing: bearing,
+                      tilt: 45.0,
+                    ),
+                  ),
+                );
+              } catch (e) {
+                print('❌ Camera animate error: $e');
+              }
+            }
           }
         },
 
-
+        // ------------------ Keep all other event handlers unchanged ------------------
         "driver-arrived": (data) {
           print("📢 Driver has arrived at pickup: $data");
           FSnackbar.show(title: 'Driver Arrived',message: "Driver arrived at your pick up location.");
@@ -272,79 +373,92 @@ class DriversWaitingController extends BaseController {
     );
   }
 
+  /// ===================== SMOOTH, CANCELABLE DRIVER MARKER ANIMATION =====================
+  /// This replaces the previous Future.delayed loops with a cancelable Timer-based
+  /// interpolation. It ensures that when a new driver position arrives we cancel
+  /// the previous animation and start a new one.
+  Future<void> _animateDriverMarkerCancelable(LatLng from, LatLng to, int suggestedDurationMs) async {
+    // Cancel existing animation if any
+    if (_markerAnimationTimer != null && _markerAnimationTimer!.isActive) {
+      _markerAnimationTimer!.cancel();
+      _markerAnimationTimer = null;
+      _isAnimating = false;
+    }
 
-  /// ===================== 🚗 SMOOTH LOCATION TRANSITION =====================
-  Future<void> _smoothTransitionToNewLocation(LatLng from, LatLng to) async {
-    if (_isAnimating) return;
+    // If distance is very small, skip animation and set marker directly
+    final moveDistance = Geolocator.distanceBetween(
+      from.latitude, from.longitude,
+      to.latitude, to.longitude,
+    );
+    if (moveDistance < 0.5) {
+      _updateDriverMarker(to);
+      return;
+    }
+
     _isAnimating = true;
 
-    const int steps = 20;
-    const Duration stepDuration = Duration(milliseconds: 100);
+    // Clamp duration: don't animate longer than 1500 ms and not shorter than 120 ms
+    int durationMs = suggestedDurationMs;
+    if (durationMs < 120) durationMs = 120;
+    if (durationMs > 1500) durationMs = 1500;
 
-    for (int i = 1; i <= steps; i++) {
-      await Future.delayed(stepDuration);
+    final int frames = (durationMs / 40).ceil(); // ~25 fps (40ms)
+    int currentFrame = 0;
+    final startTime = DateTime.now();
 
-      // Calculate intermediate position
-      final progress = i / steps;
+    // Precompute bearing from 'from' to 'to' BEFORE updating _lastDriverPosition
+    final bearing = _calculateBearing(from, to);
+
+    _markerAnimationTimer = Timer.periodic(Duration(milliseconds: (durationMs / frames).round()), (t) {
+      currentFrame++;
+      final now = DateTime.now();
+      final elapsed = now.difference(startTime).inMilliseconds;
+      double progress = elapsed / durationMs;
+      if (progress > 1) progress = 1.0;
+
       final lat = from.latitude + (to.latitude - from.latitude) * progress;
       final lng = from.longitude + (to.longitude - from.longitude) * progress;
       final intermediate = LatLng(lat, lng);
 
-      // ✅ ONLY update driver marker - polyline remains unchanged
-      _updateDriverMarker(intermediate);
-    }
+      // Update marker with computed rotation (use precomputed bearing when progress > small epsilon)
+      final rotation = (progress < 0.01) ? _calculateBearing(_lastDriverPosition, intermediate) : bearing;
 
-    // Final position update
-    _updateDriverMarker(to);
+      // Update marker (position + rotation)
+      driverMarkers["driver"] = Marker(
+        markerId: const MarkerId("driver"),
+        position: intermediate,
+        rotation: rotation,
+        zIndex: 2,
+        flat: true,
+        anchor: const Offset(0.5, 0.5),
+        icon: _driverIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+      );
+      driverMarkers.refresh();
 
-    _isAnimating = false;
+      if (progress >= 1.0) {
+        t.cancel();
+        _markerAnimationTimer = null;
+        _isAnimating = false;
+      }
+    });
+
+    // don't await the timer - allow it to run while control returns to caller
   }
-  // Future<void> _smoothTransitionToNewLocation(LatLng from, LatLng to) async {
-  //   if (_isAnimating) return;
-  //   _isAnimating = true;
-  //
-  //   const int steps = 20; // More steps for smoother animation
-  //   const Duration stepDuration = Duration(milliseconds: 100);
-  //
-  //   // ✅ Get the current route points to progressively remove them
-  //   List<LatLng> currentRoutePoints = [];
-  //   if (polylines.isNotEmpty) {
-  //     final polyline = polylines.first;
-  //     currentRoutePoints = List<LatLng>.from(polyline.points);
-  //   }
-  //
-  //   for (int i = 1; i <= steps; i++) {
-  //     await Future.delayed(stepDuration);
-  //
-  //     // Calculate intermediate position
-  //     final progress = i / steps;
-  //     final lat = from.latitude + (to.latitude - from.latitude) * progress;
-  //     final lng = from.longitude + (to.longitude - from.longitude) * progress;
-  //     final intermediate = LatLng(lat, lng);
-  //
-  //     // Update driver marker
-  //     _updateDriverMarker(intermediate);
-  //
-  //     // ✅ IMPROVED: Progressive polyline removal
-  //     if (currentRoutePoints.isNotEmpty) {
-  //       _updatePolylineProgressively(currentRoutePoints, intermediate, progress);
-  //     }
-  //   }
-  //
-  //   // Final position update
-  //   _updateDriverMarker(to);
-  //
-  //   // ✅ After animation, update the route if needed
-  //   await _updateRouteAfterMovement(to);
-  //
-  //   _isAnimating = false;
-  // }
 
-  /// ===================== 🗺️ PROGRESSIVE POLYLINE UPDATING =====================
+  /// ===================== SIMPLE EMA SMOOTHING =====================
+  LatLng _applySmoothing(LatLng? previous, LatLng current) {
+    if (previous == null || _smoothingAlpha <= 0) return current;
+    if (_smoothingAlpha >= 1.0) return current;
+    final double lat = _smoothingAlpha * current.latitude + (1 - _smoothingAlpha) * previous.latitude;
+    final double lng = _smoothingAlpha * current.longitude + (1 - _smoothingAlpha) * previous.longitude;
+    return LatLng(lat, lng);
+  }
+
+  /// ===================== POLYLINE PROGRESSIVE UPDATE (UNCHANGED LOGIC) =====================
   void _updatePolylineProgressively(List<LatLng> fullRoute, LatLng currentPosition, double progress) {
     if (fullRoute.isEmpty) return;
 
-    // ✅ Find the closest point in the route to current position
+    // Find the closest point in the route to current position
     int closestIndex = 0;
     double minDistance = double.maxFinite;
 
@@ -362,22 +476,22 @@ class DriversWaitingController extends BaseController {
       }
     }
 
-    // ✅ Create new polyline points - keep points ahead of the driver
+    // Create new polyline points - keep points ahead of the driver
     final remainingPoints = fullRoute.sublist(closestIndex);
 
-    // ✅ Add current position as the first point for smooth connection
+    // Add current position as the first point for smooth connection
     final updatedPoints = [currentPosition, ...remainingPoints];
 
     _setPolyline(updatedPoints);
   }
 
-  /// ===================== 🛣️ UPDATE ROUTE AFTER MOVEMENT =====================
+  /// ===================== UPDATE ROUTE AFTER MOVEMENT (UNCHANGED LOGIC) =====================
   Future<void> _updateRouteAfterMovement(LatLng currentPosition) async {
     final pickup = rideInfo.value?.pickup;
     final dropoffs = rideInfo.value?.dropoffs ?? [];
 
     if (!rideStarted.value) {
-      // ✅ Driver to Pickup route
+      // Driver to Pickup route
       if (pickup != null) {
         final pickupPos = LatLng(
           (pickup['lat'] as num).toDouble(),
@@ -390,7 +504,7 @@ class DriversWaitingController extends BaseController {
         }
       }
     } else {
-      // ✅ Driver to Dropoffs route
+      // Driver to Dropoffs route
       if (dropoffs.isNotEmpty) {
         final firstDropoff = dropoffs.first;
         final dropoffPos = LatLng(
@@ -405,7 +519,6 @@ class DriversWaitingController extends BaseController {
     }
   }
 
-  /// ===================== 📏 SIGNIFICANT MOVEMENT CHECK =====================
   bool _hasMovedSignificantly(LatLng pos1, LatLng pos2) {
     final distance = Geolocator.distanceBetween(
       pos1.latitude, pos1.longitude,
@@ -416,7 +529,7 @@ class DriversWaitingController extends BaseController {
     return distance > 50;
   }
 
-  /// ===================== 🗺️ GOOGLE MAPS-STYLE ROUTE DISPLAY =====================
+  /// ===================== GOOGLE MAPS-STYLE ROUTE DISPLAY (UNCHANGED except minor fixes) =====================
   Future<void> _showRouteLikeGoogleMaps(LatLng origin, LatLng destination) async {
     try {
       // Step 1: Show close-up of starting point (Google Maps behavior)
@@ -430,7 +543,6 @@ class DriversWaitingController extends BaseController {
               tilt: 0,
             ),
           ),
-          duration: Duration(milliseconds: 800),
         );
       }
 
@@ -446,7 +558,6 @@ class DriversWaitingController extends BaseController {
 
       // Step 5: Zoom out to show entire route
       await _fitMapToBoundsLikeGoogleMaps(polylinePoints);
-
     } catch (e) {
       print('❌ Error showing route: $e');
       // Fallback to basic route display
@@ -492,13 +603,14 @@ class DriversWaitingController extends BaseController {
       bounds.northeast.latitude, bounds.northeast.longitude,
     );
 
-    // ✅ Google Maps-style zoom logic
+    // Google Maps-style zoom logic
     double zoomLevel = _calculateOptimalZoom(distance, routePoints.length);
     int animationDuration = _calculateAnimationDuration(distance);
 
     final centerLat = (bounds.northeast.latitude + bounds.southwest.latitude) / 2;
     final centerLng = (bounds.northeast.longitude + bounds.southwest.longitude) / 2;
 
+    // NOTE: animateCamera doesn't accept duration param in google_maps_flutter.
     await _mapController!.animateCamera(
       CameraUpdate.newCameraPosition(
         CameraPosition(
@@ -506,12 +618,10 @@ class DriversWaitingController extends BaseController {
           zoom: zoomLevel,
         ),
       ),
-      duration: Duration(milliseconds: animationDuration),
     );
   }
 
   double _calculateOptimalZoom(double distance, int pointCount) {
-    // ✅ Smart zoom calculation based on distance and route complexity
     if (distance < 1000) return 17.0; // Very close - street detail
     if (distance < 5000) return 14.0; // Neighborhood level
     if (distance < 20000) return 12.0; // City level
@@ -520,50 +630,20 @@ class DriversWaitingController extends BaseController {
   }
 
   int _calculateAnimationDuration(double distance) {
-    // ✅ Smooth animations - longer distances get slower animations
     if (distance < 1000) return 500;
     if (distance < 5000) return 800;
     if (distance < 20000) return 1200;
     return 1500;
   }
 
-  /// ===================== 🧭 SMOOTH DRIVER MARKER MOVEMENT =====================
-  Future<void> _animateDriverMarker(LatLng from, LatLng to) async {
-    if (_isAnimating) return;
-    _isAnimating = true;
-
-    const int steps = 30;
-    const Duration stepDuration = Duration(milliseconds: 50);
-
-    // ✅ Get current route for progressive updates
-    List<LatLng> currentRoutePoints = [];
-    if (polylines.isNotEmpty) {
-      final polyline = polylines.first;
-      currentRoutePoints = List<LatLng>.from(polyline.points);
-    }
-
-    for (int i = 1; i <= steps; i++) {
-      await Future.delayed(stepDuration);
-      final lat = from.latitude + (to.latitude - from.latitude) * (i / steps);
-      final lng = from.longitude + (to.longitude - from.longitude) * (i / steps);
-      final intermediate = LatLng(lat, lng);
-
-      _updateDriverMarker(intermediate);
-
-      // ✅ Update polyline progressively during animation
-      if (currentRoutePoints.isNotEmpty) {
-        _updatePolylineProgressively(currentRoutePoints, intermediate, i / steps);
-      }
-    }
-
-    _isAnimating = false;
-  }
-
+  /// ===================== DRIVER MARKER UPDATE (keeps custom icon + rotation) =====================
+  // Note: we no longer compute bearing here from a potentially already-overwritten _lastDriverPosition.
+  // Bearing is computed in the animation flow before updating the last position.
   void _updateDriverMarker(LatLng position) {
     driverMarkers["driver"] = Marker(
       markerId: const MarkerId("driver"),
       position: position,
-      rotation: _calculateBearing(_lastDriverPosition, position),
+      rotation: 0.0,
       zIndex: 2,
       flat: true,
       anchor: const Offset(0.5, 0.5),
@@ -582,7 +662,7 @@ class DriversWaitingController extends BaseController {
     );
   }
 
-  // ---------------- YOUR ORIGINAL ROUTE + MAP LOGIC (UPDATED) ----------------
+  // ---------------- ORIGINAL ROUTE & MAP HELPERS (kept largely as-is) ----------------
   Future<List<LatLng>> _fetchRoutePolylineWithRetry(LatLng origin, LatLng destination) async {
     try {
       return await executeWithRetryAndReturn(
@@ -637,10 +717,7 @@ class DriversWaitingController extends BaseController {
           width: 100,
         );
         _stopIcon = await _bitmapFromAsset('assets/images/place.png', width: 80);
-        _dropIcon = await _bitmapFromAsset(
-          'assets/images/place.png',
-          width: 100,
-        );
+        _dropIcon = await _bitmapFromAsset('assets/images/place.png', width: 100);
         print("✅ All icons loaded");
       });
     } catch (e) {
@@ -743,6 +820,9 @@ class DriversWaitingController extends BaseController {
     return LatLngBounds(northeast: LatLng(x1, y1), southwest: LatLng(x0, y0));
   }
 
+  /// ===================== PLACE STATIC MARKERS (PICKUP, STOPS, DROPOFF) =====================
+  /// This preserves your original logic. Markers for pickup, stop_n, dropoff are placed using
+  /// custom icons loaded in _loadMarkerIcons().
   void _placeStaticMarkersFromRideInfo() {
     driverMarkers.removeWhere(
           (k, v) => k == 'pickup' || k.startsWith('stop_') || k == 'dropoff',
@@ -802,7 +882,7 @@ class DriversWaitingController extends BaseController {
     driverMarkers.refresh();
   }
 
-  // ✅ YOUR ORIGINAL CANCELLATION METHODS (UNCHANGED)
+  // ------------------ Cancellation & other original methods remain unchanged ------------------
   Future<void> showCancelReasons(BuildContext context) async {
     final screenWidth = Get.width;
     final screenHeight = Get.height;
@@ -970,6 +1050,11 @@ class DriversWaitingController extends BaseController {
     fareController.dispose();
 
     PusherBackgroundService().stopBackgroundMode();
+
+    // Cancel any running animations / timers
+    _markerAnimationTimer?.cancel();
+    _markerAnimationTimer = null;
+
     super.onClose();
   }
 }

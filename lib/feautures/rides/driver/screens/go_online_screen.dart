@@ -398,7 +398,7 @@ class GoOnlineScreen extends StatelessWidget {
                   right: 0,
                   child: Container(
                     width: double.infinity,
-                    height: sh(64),
+                    height: sh(70),
                     padding: EdgeInsets.symmetric(horizontal: sw(10)),
                     decoration: BoxDecoration(
                       color: Colors.white,
@@ -457,7 +457,7 @@ class GoOnlineScreen extends StatelessWidget {
                 /// Bottom Sheet
                 Obx(() {
                   return Positioned(
-                    bottom: sh(64),
+                    bottom: sh(68),
                     left: 0,
                     right: 0,
                     child: GestureDetector(
@@ -839,8 +839,8 @@ class GoOnlineScreen extends StatelessWidget {
         }
       },
       child: Container(
-        width: sw(90),
-        height: sh(65),
+        width: sw(100),
+        height: sh(70),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
