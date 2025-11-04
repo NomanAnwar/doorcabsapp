@@ -131,7 +131,7 @@ class RideTypeScreen extends StatelessWidget {
     final arguments = {
       'service': service,
       'vehicles': service.vehicleList,
-      'cities': controller.cities,
+      // 'cities': controller.cities,
       if (userLocation != null) ...{
         'userLocation': userLocation.toJson(),
         'userCurrentLocation': userLocation.toLatLng(),
@@ -396,7 +396,7 @@ class RideTypeScreen extends StatelessWidget {
       widgets.addAll([
         _buildTappableContainer(
           top: sh(448),
-          left: sw(18),
+          left: sw(10),
           width: sw(220),
           height: sh(160),
           onTap: () => _navigateToService(cityToCity, context),
@@ -405,7 +405,7 @@ class RideTypeScreen extends StatelessWidget {
         ),
         _buildTappableContainer(
           top: sh(595),
-          left: sw(47),
+          left: sw(40),
           width: sw(120),
           height: sh(35),
           onTap: () => _navigateToService(cityToCity, context),
@@ -437,7 +437,7 @@ class RideTypeScreen extends StatelessWidget {
       widgets.addAll([
         _buildTappableContainer(
           top: sh(448),
-          left: sw(244),
+          left: sw(235),
           width: sw(220),
           height: sh(160),
           onTap: () => _navigateToService(instantRide, context),
@@ -446,7 +446,7 @@ class RideTypeScreen extends StatelessWidget {
         ),
         _buildTappableContainer(
           top: sh(595),
-          left: sw(278),
+          left: sw(260),
           width: sw(120),
           height: sh(35),
           onTap: () => _navigateToService(instantRide, context),
@@ -478,7 +478,7 @@ class RideTypeScreen extends StatelessWidget {
       widgets.addAll([
         _buildTappableContainer(
           top: sh(634),
-          left: sw(33),
+          left: sw(30),
           width: sw(82),
           height: sh(85),
           onTap: () => _navigateToService(delivery, context),
@@ -490,7 +490,7 @@ class RideTypeScreen extends StatelessWidget {
         ),
         _buildTappableContainer(
           top: sh(715),
-          left: sw(47),
+          left: sw(40),
           width: sw(120),
           height: sh(35),
           onTap: () => _navigateToService(delivery, context),
@@ -522,7 +522,7 @@ class RideTypeScreen extends StatelessWidget {
       widgets.addAll([
         _buildTappableContainer(
           top: sh(632),
-          left: sw(158),
+          left: sw(150),
           width: sw(265),
           height: sh(95),
           onTap: () => _navigateToService(scheduleRide, context),
@@ -592,7 +592,7 @@ class RideTypeScreen extends StatelessWidget {
         ),
         _buildTappableContainer(
           top: sh(653),
-          left: sw(148),
+          left: sw(140),
           width: sw(125),
           height: sh(113),
           onTap: () => _navigateToService(scheduleRide, context),
@@ -609,9 +609,10 @@ class RideTypeScreen extends StatelessWidget {
     String loadingText = 'Loading services...';
     if (controller.isLoadingLocation.value) {
       loadingText = 'Getting your location...';
-    } else if (controller.isLoadingCities.value) {
-      loadingText = 'Loading cities...';
     }
+    // else if (controller.isLoadingCities.value) {
+    //   loadingText = 'Loading cities...';
+    // }
 
     return Center(
       child: Column(
@@ -827,19 +828,19 @@ class RideTypeScreen extends StatelessWidget {
             ),
 
             // ✅ Optional: Show loading indicator for cities if still loading
-            if (controller.isLoadingCities.value)
-              Positioned(
-                top: sh(400),
-                left: 0,
-                right: 0,
-                child: const Center(
-                  child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      Color(0xFF003566),
-                    ),
-                  ),
-                ),
-              ),
+            // if (controller.isLoadingCities.value)
+            //   Positioned(
+            //     top: sh(400),
+            //     left: 0,
+            //     right: 0,
+            //     child: const Center(
+            //       child: CircularProgressIndicator(
+            //         valueColor: AlwaysStoppedAnimation<Color>(
+            //           Color(0xFF003566),
+            //         ),
+            //       ),
+            //     ),
+            //   ),
           ],
         );
       }),

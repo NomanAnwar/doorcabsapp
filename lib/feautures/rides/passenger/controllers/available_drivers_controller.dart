@@ -14,6 +14,7 @@ import '../../../../utils/http/http_client.dart';
 import '../../../../utils/theme/custom_theme/text_theme.dart';
 import '../../../shared/controllers/base_controller.dart';
 import '../../../shared/services/enhanced_pusher_manager.dart';
+import '../../../shared/services/pusher_background_service.dart';
 import '../../../shared/services/storage_service.dart';
 import '../screens/available_bids_screen.dart';
 import '../screens/ride_type_screen.dart';
@@ -142,6 +143,14 @@ class AvailableDriversController extends BaseController {
     _updateButtonStates(); // Initial update
 
     startCountdown();
+    _startBackgroundService();
+  }
+
+  void _startBackgroundService() {
+    final passengerId = StorageService.getSignUpResponse()?.userId;
+    if (passengerId != null) {
+      PusherBackgroundService().startBackgroundMode(passengerId);
+    }
   }
 
   // ✅ ADDED: Start both event listening and API fallback
@@ -217,13 +226,54 @@ class AvailableDriversController extends BaseController {
     try {
       if (data["drivers"] != null) {
         final drivers = data["drivers"] as List;
-        viewingDrivers.value = drivers.length;
 
-        driverMarkers.clear();
-        driverAvatars.clear();
+        // ✅ Keep existing markers, only update/add new ones
+        final existingDriverIds = driverMarkers.keys.where((key) => key.startsWith('driver_')).toSet();
+        final newDriverIds = <String>{};
 
-        // 🔴 Add pickup marker first
-        if (currentPosition.value != null) {
+        // Process each driver from the event
+        for (var driver in drivers) {
+          final driverId = driver["driverId"]?.toString();
+          if (driverId == null) continue;
+
+          final loc = driver["location"];
+          if (loc == null) continue;
+
+          final latRaw = loc["lat"];
+          final lngRaw = loc["lng"];
+          if (latRaw == null || lngRaw == null) continue;
+
+          final lat = (latRaw is num) ? latRaw.toDouble() : double.tryParse(latRaw.toString());
+          final lng = (lngRaw is num) ? lngRaw.toDouble() : double.tryParse(lngRaw.toString());
+          if (lat == null || lng == null) continue;
+
+          final driverPosition = LatLng(lat, lng);
+          newDriverIds.add(driverId);
+
+          // ✅ Only add/update if driver doesn't exist or position changed
+          if (!driverMarkers.containsKey(driverId) ||
+              _hasPositionChanged(driverMarkers[driverId]!.position, driverPosition)) {
+
+            driverMarkers[driverId] = Marker(
+              markerId: MarkerId("driver_$driverId"),
+              position: driverPosition,
+              icon: customDriverIcon,
+              infoWindow: InfoWindow(title: "Driver ${driver['name']?['firstName'] ?? driverId}"),
+            );
+
+            debugPrint("📍 Updated driver $driverId position: $driverPosition");
+          }
+        }
+
+        // ✅ Remove drivers that are no longer in the nearby list
+        final driversToRemove = existingDriverIds.where((id) => !newDriverIds.contains(id.replaceFirst('driver_', '')));
+        for (final driverId in driversToRemove) {
+          driverMarkers.remove(driverId);
+          debugPrint("🗑️ Removed driver: $driverId");
+        }
+
+        // ✅ Ensure pickup marker is always present (only add once)
+        if (currentPosition.value != null && !driverMarkers.containsKey("pickup")) {
           driverMarkers["pickup"] = Marker(
             markerId: const MarkerId("pickup"),
             position: currentPosition.value!,
@@ -232,46 +282,19 @@ class AvailableDriversController extends BaseController {
           );
         }
 
-        // 🔵 Add all drivers
-        for (var driver in drivers) {
-          final driverId = driver["driverId"]?.toString() ??
-              UniqueKey().toString();
-          final loc = driver["location"];
-          if (loc == null) continue;
-
-          final latRaw = loc["lat"];
-          final lngRaw = loc["lng"];
-          if (latRaw == null || lngRaw == null) continue;
-
-          final lat = (latRaw is num)
-              ? latRaw.toDouble()
-              : double.tryParse(latRaw.toString());
-          final lng = (lngRaw is num)
-              ? lngRaw.toDouble()
-              : double.tryParse(lngRaw.toString());
-          if (lat == null || lng == null) continue;
-
-          final markerId = MarkerId("driver_$driverId");
-          final driverPosition = LatLng(lat, lng);
-
-          driverMarkers[driverId] = Marker(
-            markerId: markerId,
-            position: driverPosition,
-            icon: customDriverIcon,
-            infoWindow: InfoWindow(title: "Driver $driverId"),
-          );
-
-          // ✅ UPDATED: Use profile image from event or fallback to asset
-          final profileImage = driver["profileImage"]?.toString();
-          driverAvatars.add(
-              profileImage ?? "assets/images/profile_img_sample.png");
-        }
-
-        debugPrint("✅ Processed ${drivers.length} drivers from event");
+        viewingDrivers.value = newDriverIds.length;
+        debugPrint("✅ Processed ${newDriverIds.length} drivers (${driversToRemove.length} removed)");
       }
     } catch (e) {
       debugPrint("❌ Error processing driver data: $e");
     }
+  }
+
+// ✅ Helper to check if driver position changed significantly
+  bool _hasPositionChanged(LatLng oldPos, LatLng newPos) {
+    const threshold = 0.0001; // ~11 meters
+    return (oldPos.latitude - newPos.latitude).abs() > threshold ||
+        (oldPos.longitude - newPos.longitude).abs() > threshold;
   }
 
   // ✅ ADDED: Method to update button states

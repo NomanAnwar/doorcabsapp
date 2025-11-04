@@ -12,6 +12,7 @@ import 'package:http/http.dart' as http;
 import '../../../../utils/http/http_client.dart';
 import '../../../shared/controllers/base_controller.dart';
 import '../../../shared/services/enhanced_pusher_manager.dart';
+import '../../../shared/services/pusher_background_service.dart';
 import '../../../shared/services/storage_service.dart';
 import '../models/driver_ride_info.dart';
 
@@ -94,6 +95,16 @@ class DriversWaitingController extends BaseController {
     if (rideInfo.value != null && (rideInfo.value!.rideId?.isNotEmpty ?? false)) {
       _subscribeToDriverLocation(rideInfo.value!.rideId!);
     }
+    _startBackgroundService();
+  }
+
+  void _startBackgroundService() {
+    final passengerId = StorageService.getSignUpResponse()?.userId;
+    final rideId = rideInfo.value?.rideId;
+
+    if (passengerId != null && rideId != null) {
+      PusherBackgroundService().startBackgroundMode(passengerId, rideId: rideId);
+    }
   }
 
   void onMapCreated(GoogleMapController c) {
@@ -143,44 +154,15 @@ class DriversWaitingController extends BaseController {
           final newPos = LatLng(lat, lng);
           print("📍 New driver position: $newPos");
 
-          // ✅ FIXED: Google Maps-style smooth animation
+          // ✅ IMPROVED: Smooth transition with progressive polyline removal
           if (_lastDriverPosition == null) {
             _lastDriverPosition = newPos;
             _updateDriverMarker(newPos);
           } else {
-            // 🧭 Smooth animation between positions
-            _animateDriverMarker(_lastDriverPosition!, newPos);
+            // 🧭 Smooth animation between positions with polyline updates
+            await _smoothTransitionToNewLocation(_lastDriverPosition!, newPos);
           }
           _lastDriverPosition = newPos;
-
-          final pickup = rideInfo.value?.pickup;
-          final dropoffs = rideInfo.value?.dropoffs ?? [];
-
-          // ✅ FIX: Define pickupPos here so it's available in both scopes
-          LatLng? pickupPos;
-          if (pickup != null) {
-            pickupPos = LatLng(
-              (pickup['lat'] as num).toDouble(),
-              (pickup['lng'] as num).toDouble(),
-            );
-          }
-
-          if (!rideStarted.value) {
-            // ✅ Driver to Pickup route - Google Maps style
-            if (pickupPos != null) {
-              await _showRouteLikeGoogleMaps(newPos, pickupPos);
-            }
-          } else {
-            // ✅ Driver to Dropoffs route - Google Maps style
-            if (dropoffs.isNotEmpty) {
-              final firstDropoff = dropoffs.first;
-              final dropoffPos = LatLng(
-                (firstDropoff['lat'] as num).toDouble(),
-                (firstDropoff['lng'] as num).toDouble(),
-              );
-              await _showRouteLikeGoogleMaps(newPos, dropoffPos);
-            }
-          }
 
           // ✅ Google Maps-style camera following
           if (_isCameraFollowing && _mapController != null) {
@@ -190,16 +172,17 @@ class DriversWaitingController extends BaseController {
           }
         },
 
+
         "driver-arrived": (data) {
           print("📢 Driver has arrived at pickup: $data");
-          showSuccess("Driver arrived at your pick up location.");
+          FSnackbar.show(title: 'Driver Arrived',message: "Driver arrived at your pick up location.");
         },
 
         "ride-started": (data) {
           print("🚦 Ride started: $data");
           rideStarted.value = true;
 
-          showSuccess("Enjoy your trip!");
+          FSnackbar.show(title: "Ride Started", message: "Enjoy your trip!");
 
           updateView.value = true;
 
@@ -228,6 +211,7 @@ class DriversWaitingController extends BaseController {
         "ride-ended": (data) {
           print("🏁 Ride ended: $data");
           showSuccess('Ride completed successfully');
+
 
           final args = Get.arguments as Map<String, dynamic>? ?? {};
           final bid = args['bid'] as Map<String, dynamic>?;
@@ -263,6 +247,8 @@ class DriversWaitingController extends BaseController {
           print("   - Name: $driverName");
           print("   - Image: $driverImage");
 
+          PusherBackgroundService().stopBackgroundMode();
+
           Get.offAllNamed('/rate', arguments: {
             'userId': driverId,
             'rideId': rideId,
@@ -273,6 +259,7 @@ class DriversWaitingController extends BaseController {
 
         "ride-cancelled": (data) {
           print("❌ Ride cancelled: $data");
+          PusherBackgroundService().stopBackgroundMode();
           Get.offAllNamed('/ride-type');
         },
 
@@ -283,6 +270,150 @@ class DriversWaitingController extends BaseController {
         },
       },
     );
+  }
+
+
+  /// ===================== 🚗 SMOOTH LOCATION TRANSITION =====================
+  Future<void> _smoothTransitionToNewLocation(LatLng from, LatLng to) async {
+    if (_isAnimating) return;
+    _isAnimating = true;
+
+    const int steps = 20;
+    const Duration stepDuration = Duration(milliseconds: 100);
+
+    for (int i = 1; i <= steps; i++) {
+      await Future.delayed(stepDuration);
+
+      // Calculate intermediate position
+      final progress = i / steps;
+      final lat = from.latitude + (to.latitude - from.latitude) * progress;
+      final lng = from.longitude + (to.longitude - from.longitude) * progress;
+      final intermediate = LatLng(lat, lng);
+
+      // ✅ ONLY update driver marker - polyline remains unchanged
+      _updateDriverMarker(intermediate);
+    }
+
+    // Final position update
+    _updateDriverMarker(to);
+
+    _isAnimating = false;
+  }
+  // Future<void> _smoothTransitionToNewLocation(LatLng from, LatLng to) async {
+  //   if (_isAnimating) return;
+  //   _isAnimating = true;
+  //
+  //   const int steps = 20; // More steps for smoother animation
+  //   const Duration stepDuration = Duration(milliseconds: 100);
+  //
+  //   // ✅ Get the current route points to progressively remove them
+  //   List<LatLng> currentRoutePoints = [];
+  //   if (polylines.isNotEmpty) {
+  //     final polyline = polylines.first;
+  //     currentRoutePoints = List<LatLng>.from(polyline.points);
+  //   }
+  //
+  //   for (int i = 1; i <= steps; i++) {
+  //     await Future.delayed(stepDuration);
+  //
+  //     // Calculate intermediate position
+  //     final progress = i / steps;
+  //     final lat = from.latitude + (to.latitude - from.latitude) * progress;
+  //     final lng = from.longitude + (to.longitude - from.longitude) * progress;
+  //     final intermediate = LatLng(lat, lng);
+  //
+  //     // Update driver marker
+  //     _updateDriverMarker(intermediate);
+  //
+  //     // ✅ IMPROVED: Progressive polyline removal
+  //     if (currentRoutePoints.isNotEmpty) {
+  //       _updatePolylineProgressively(currentRoutePoints, intermediate, progress);
+  //     }
+  //   }
+  //
+  //   // Final position update
+  //   _updateDriverMarker(to);
+  //
+  //   // ✅ After animation, update the route if needed
+  //   await _updateRouteAfterMovement(to);
+  //
+  //   _isAnimating = false;
+  // }
+
+  /// ===================== 🗺️ PROGRESSIVE POLYLINE UPDATING =====================
+  void _updatePolylineProgressively(List<LatLng> fullRoute, LatLng currentPosition, double progress) {
+    if (fullRoute.isEmpty) return;
+
+    // ✅ Find the closest point in the route to current position
+    int closestIndex = 0;
+    double minDistance = double.maxFinite;
+
+    for (int i = 0; i < fullRoute.length; i++) {
+      final distance = Geolocator.distanceBetween(
+        currentPosition.latitude,
+        currentPosition.longitude,
+        fullRoute[i].latitude,
+        fullRoute[i].longitude,
+      );
+
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestIndex = i;
+      }
+    }
+
+    // ✅ Create new polyline points - keep points ahead of the driver
+    final remainingPoints = fullRoute.sublist(closestIndex);
+
+    // ✅ Add current position as the first point for smooth connection
+    final updatedPoints = [currentPosition, ...remainingPoints];
+
+    _setPolyline(updatedPoints);
+  }
+
+  /// ===================== 🛣️ UPDATE ROUTE AFTER MOVEMENT =====================
+  Future<void> _updateRouteAfterMovement(LatLng currentPosition) async {
+    final pickup = rideInfo.value?.pickup;
+    final dropoffs = rideInfo.value?.dropoffs ?? [];
+
+    if (!rideStarted.value) {
+      // ✅ Driver to Pickup route
+      if (pickup != null) {
+        final pickupPos = LatLng(
+          (pickup['lat'] as num).toDouble(),
+          (pickup['lng'] as num).toDouble(),
+        );
+
+        // Only update route if driver has moved significantly
+        if (_hasMovedSignificantly(currentPosition, pickupPos)) {
+          await _showRouteLikeGoogleMaps(currentPosition, pickupPos);
+        }
+      }
+    } else {
+      // ✅ Driver to Dropoffs route
+      if (dropoffs.isNotEmpty) {
+        final firstDropoff = dropoffs.first;
+        final dropoffPos = LatLng(
+          (firstDropoff['lat'] as num).toDouble(),
+          (firstDropoff['lng'] as num).toDouble(),
+        );
+
+        if (_hasMovedSignificantly(currentPosition, dropoffPos)) {
+          await _showRouteLikeGoogleMaps(currentPosition, dropoffPos);
+        }
+      }
+    }
+  }
+
+  /// ===================== 📏 SIGNIFICANT MOVEMENT CHECK =====================
+  bool _hasMovedSignificantly(LatLng pos1, LatLng pos2) {
+    final distance = Geolocator.distanceBetween(
+      pos1.latitude, pos1.longitude,
+      pos2.latitude, pos2.longitude,
+    );
+
+    // Consider movement significant if more than 50 meters
+    return distance > 50;
   }
 
   /// ===================== 🗺️ GOOGLE MAPS-STYLE ROUTE DISPLAY =====================
@@ -404,6 +535,13 @@ class DriversWaitingController extends BaseController {
     const int steps = 30;
     const Duration stepDuration = Duration(milliseconds: 50);
 
+    // ✅ Get current route for progressive updates
+    List<LatLng> currentRoutePoints = [];
+    if (polylines.isNotEmpty) {
+      final polyline = polylines.first;
+      currentRoutePoints = List<LatLng>.from(polyline.points);
+    }
+
     for (int i = 1; i <= steps; i++) {
       await Future.delayed(stepDuration);
       final lat = from.latitude + (to.latitude - from.latitude) * (i / steps);
@@ -411,6 +549,11 @@ class DriversWaitingController extends BaseController {
       final intermediate = LatLng(lat, lng);
 
       _updateDriverMarker(intermediate);
+
+      // ✅ Update polyline progressively during animation
+      if (currentRoutePoints.isNotEmpty) {
+        _updatePolylineProgressively(currentRoutePoints, intermediate, i / steps);
+      }
     }
 
     _isAnimating = false;
@@ -807,6 +950,7 @@ class DriversWaitingController extends BaseController {
 
       print('✅ ride-cancelled response: $res');
       showSuccess('Ride cancelled successfully');
+      PusherBackgroundService().stopBackgroundMode();
 
       Get.back();
       isCancelling.value = false;
@@ -824,6 +968,8 @@ class DriversWaitingController extends BaseController {
   void onClose() {
     _waitingTimer?.cancel();
     fareController.dispose();
+
+    PusherBackgroundService().stopBackgroundMode();
     super.onClose();
   }
 }

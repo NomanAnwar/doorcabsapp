@@ -10,6 +10,7 @@ import 'package:doorcab/feautures/shared/services/storage_service.dart';
 import '../../../../main.dart';
 import '../../../../utils/http/http_client.dart';
 import '../../../shared/controllers/base_controller.dart';
+import '../../../shared/services/pusher_background_service.dart';
 import '../models/request_model.dart';
 
 class GoOnlineController extends BaseController {
@@ -48,11 +49,27 @@ class GoOnlineController extends BaseController {
     });
     _restoreOnlineStatus();
     _fetchEarnings(); // ADD THIS to fetch earnings on screen start
+    _startBackgroundService();
+  }
+
+  Future<void> _startBackgroundService() async {
+    if (isOnline.value) {
+      final driverId = StorageService.getSignUpResponse()?.userId;
+      if (driverId != null) {
+        await PusherBackgroundService().startBackgroundMode(driverId);
+        print("🚗 Driver background service started");
+      }
+    }
   }
 
   @override
   void onClose() {
     // _unsubscribeFromChannels();
+
+    // ✅ ADD: Stop background service when controller closes
+    if (!isOnline.value) {
+      PusherBackgroundService().stopBackgroundMode();
+    }
     super.onClose();
   }
 
@@ -260,9 +277,17 @@ class GoOnlineController extends BaseController {
 
       if (serverStatus) {
         await _subscribeToChannels();
+
+        // ✅ ADD: Start background service for drivers
+        final driverId = StorageService.getSignUpResponse()!.userId;
+        await PusherBackgroundService().startBackgroundMode(driverId);
+
         FSnackbar.show(title: "Online", message: response['message'] ?? "You are now online");
       } else {
         _hasReceivedFirstRequest = false;
+
+        // ✅ ADD: Stop background service
+        await PusherBackgroundService().stopBackgroundMode();
         FSnackbar.show(title: "Offline", message: response['message'] ?? "You are now offline", isError: true);
       }
 

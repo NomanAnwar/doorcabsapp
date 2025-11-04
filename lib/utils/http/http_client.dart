@@ -136,4 +136,63 @@ class FHttpHelper {
       throw Exception(error['message'] ?? 'Error: ${response.statusCode}');
     }
   }
+
+  /// GET request with body (non-standard but required by some APIs)
+  static Future<Map<String, dynamic>> getWithBody(String endpoint, dynamic data) async {
+    return _requestWithBody(
+      method: 'GET',
+      endpoint: endpoint,
+      body: data,
+    );
+  }
+
+  /// Core request handler for methods that need body (like GET with body)
+  static Future<Map<String, dynamic>> _requestWithBody({
+    required String method,
+    required String endpoint,
+    dynamic body,
+  }) async {
+    final uri = Uri.parse('$_baseUrl/$endpoint');
+
+    final headers = {
+      HttpHeaders.contentTypeHeader: 'application/json',
+    };
+
+    if (_authToken != null) {
+      if (_useBearer) {
+        headers[HttpHeaders.authorizationHeader] = 'Bearer $_authToken';
+      } else {
+        headers['token'] = _authToken!;
+      }
+    }
+
+    try {
+      if (kDebugMode) {
+        print('[FHttpHelper] $method with body: $uri');
+        if (body != null) print('Body: $body');
+        print('Headers: $headers');
+      }
+
+      // Create a custom request for GET with body
+      final request = http.Request(method, uri);
+      request.headers.addAll(headers);
+      if (body != null) {
+        request.body = json.encode(body);
+      }
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      return _handleResponse(response);
+    } on SocketException {
+      throw Exception('No internet connection');
+    } on HttpException {
+      throw Exception('HTTP error occurred');
+    } on FormatException {
+      throw Exception('Invalid response format');
+    } on TimeoutException {
+      throw Exception('Request timed out');
+    }
+  }
+
 }

@@ -98,5 +98,12 @@
 		<!-- Change to 'production' for App Store releases -->
 		<key>UIStatusBarHidden</key>
 		<false/>
+        <key>UIBackgroundModes</key>
+        <array>
+            <string>fetch</string>
+            <string>remote-notification</string>
+            <!-- ADD THIS FOR BACKGROUND PUSHER -->
+            <string>audio</string>
+        </array>
 	</dict>
 </plist>

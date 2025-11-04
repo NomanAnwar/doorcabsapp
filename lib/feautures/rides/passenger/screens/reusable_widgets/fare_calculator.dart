@@ -60,7 +60,8 @@ class FareCalculator {
   }) {
     try {
       final double baseFare = city.fare.toDouble();
-      final double perKmCharge = city.perKmCharge.toDouble();
+      // final double perKmCharge = city.perKmCharge.toDouble();
+      final double perKmCharge = city.fare.toDouble();
       final double waitingCharges = city.waitingCharges.toDouble();
       final double surgeValue = city.surgeValue.toDouble();
       final bool isSurged = city.isSurged;

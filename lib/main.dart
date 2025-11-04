@@ -5,37 +5,46 @@ import 'package:doorcab/utils/routes/app_pages.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'feautures/shared/handlers/lifecycle_handler.dart';
 import 'feautures/shared/services/driver_location_service.dart';
+import 'feautures/shared/services/pusher_background_service.dart';
 import 'feautures/shared/services/pusher_beams.dart';
 import 'feautures/shared/services/enhanced_pusher_manager.dart';
 
 final EnhancedPusherManager _pusherManager = EnhancedPusherManager();
 final PusherBeamsService _pusherBeams = PusherBeamsService();
 final DriverLocationService _driverLocationService = DriverLocationService();
+final PusherBackgroundService _backgroundService = PusherBackgroundService();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // Initialize core services
-  // await _initializeCoreServices();
+  await _initializeCoreServices();
   runApp(const MyApp());
 }
 
 Future<void> _initializeCoreServices() async {
+
   try {
-    await Firebase.initializeApp();
-    FHttpHelper.setBaseUrl("https://dc.tricasol.pk");
-    await _pusherManager.initializeOnce();
-    await _pusherBeams.initialize();
-    await _pusherBeams.registerDevice();
+
+    // Initialize background service first
+    await _backgroundService.initialize();
+
+    // await Firebase.initializeApp();
+    // FHttpHelper.setBaseUrl("https://dc.tricasol.pk");
+    // await _pusherManager.initializeOnce();
+    // await _pusherBeams.initialize();
+    // await _pusherBeams.registerDevice();
 
     // Configure location service if driver
-    if (StorageService.getRole() == "Driver" || StorageService.getRole() == "driver") {
-      await _driverLocationService.configure();
-      await _driverLocationService.start();
-    }
+    // if (StorageService.getRole() == "Driver" || StorageService.getRole() == "driver") {
+    //   await _driverLocationService.configure();
+    //   await _driverLocationService.start();
+    // }
   } catch (e) {
     print('⚠️ Service initialization error: $e');
   }
+
 }
 
 class MyApp extends StatelessWidget {
@@ -48,9 +57,21 @@ class MyApp extends StatelessWidget {
       title: 'DoorCabs',
       initialRoute: '/',
       getPages: AppPages.pages,
+      navigatorKey: NavigationService.navigatorKey,
+      builder: (context, child) {
+        // Add lifecycle observer for background/foreground detection
+        WidgetsBinding.instance.addObserver(LifecycleEventHandler());
+        return child!;
+      },
       home: const SplashScreen(),
     );
   }
+}
+
+
+
+class NavigationService {
+  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 }
 
 

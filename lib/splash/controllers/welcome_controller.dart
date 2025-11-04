@@ -18,7 +18,12 @@ class WelcomeController extends BaseController {
 
   Future<void> _loadLanguages() async {
     await executeWithRetry(() async {
-      final response = await FHttpHelper.get("site/get-languages");
+      // Get user country
+      final String country = await _getUserCountry();
+
+      // Construct URL with country parameter
+      final String url = "site/get-languages/$country";
+      final response = await FHttpHelper.get(url);
       print("Languages API Response : "+ response.toString());
 
       if (response["success"] == true && response["supported_languages"] != null) {
@@ -31,6 +36,89 @@ class WelcomeController extends BaseController {
         }
       }
     });
+  }
+
+  Future<String> _getUserCountry() async {
+    try {
+      // Method 1: Get full country name from device locale
+      final locale = Get.deviceLocale;
+      if (locale != null && locale.countryCode != null) {
+        return _getCountryNameFromCode(locale.countryCode!);
+      }
+
+      return 'Pakistan'; // Default fallback country name
+    } catch (e) {
+      print("Error getting user country: $e");
+      return 'United States'; // Default fallback country name
+    }
+  }
+
+  String _getCountryNameFromCode(String countryCode) {
+    // Map of country codes to full country names
+    final countryMap = {
+      'US': 'United States',
+      'PK': 'Pakistan',
+      'IN': 'India',
+      'GB': 'United Kingdom',
+      'CA': 'Canada',
+      'AU': 'Australia',
+      'DE': 'Germany',
+      'FR': 'France',
+      'IT': 'Italy',
+      'ES': 'Spain',
+      'BR': 'Brazil',
+      'CN': 'China',
+      'JP': 'Japan',
+      'KR': 'South Korea',
+      'MX': 'Mexico',
+      'RU': 'Russia',
+      'SA': 'Saudi Arabia',
+      'AE': 'United Arab Emirates',
+      'ZA': 'South Africa',
+      'NG': 'Nigeria',
+      'EG': 'Egypt',
+      'TR': 'Turkey',
+      'NL': 'Netherlands',
+      'SE': 'Sweden',
+      'NO': 'Norway',
+      'DK': 'Denmark',
+      'FI': 'Finland',
+      'PL': 'Poland',
+      'PT': 'Portugal',
+      'GR': 'Greece',
+      'BE': 'Belgium',
+      'CH': 'Switzerland',
+      'AT': 'Austria',
+      'IE': 'Ireland',
+      'SG': 'Singapore',
+      'MY': 'Malaysia',
+      'TH': 'Thailand',
+      'ID': 'Indonesia',
+      'VN': 'Vietnam',
+      'PH': 'Philippines',
+      'BD': 'Bangladesh',
+      'LK': 'Sri Lanka',
+      'NP': 'Nepal',
+      'MM': 'Myanmar',
+      'KH': 'Cambodia',
+      'LA': 'Laos',
+      'BT': 'Bhutan',
+      'MV': 'Maldives',
+      'AF': 'Afghanistan',
+      'IR': 'Iran',
+      'IQ': 'Iraq',
+      'SY': 'Syria',
+      'LB': 'Lebanon',
+      'JO': 'Jordan',
+      'IL': 'Israel',
+      'KW': 'Kuwait',
+      'QA': 'Qatar',
+      'OM': 'Oman',
+      'BH': 'Bahrain',
+      'YE': 'Yemen',
+    };
+
+    return countryMap[countryCode] ?? 'United States';
   }
 
   void selectLanguage(LanguageModel lang) {

@@ -12,6 +12,7 @@ import '../../../../utils/http/http_client.dart';
 import '../../../../utils/theme/custom_theme/text_theme.dart';
 import '../../../shared/controllers/base_controller.dart';
 import '../../../shared/services/enhanced_pusher_manager.dart';
+import '../../../shared/services/pusher_background_service.dart';
 import '../../../shared/services/storage_service.dart';
 import '../screens/ride_type_screen.dart';
 import 'available_drivers_controller.dart';
@@ -65,6 +66,14 @@ class AvailableBidsController extends BaseController {
 
     _startCountdown();
     _listenForNearbyDriversEvent(); // ✅ ADDED: Listen for nearby drivers
+    _startBackgroundService();
+  }
+
+  void _startBackgroundService() {
+    final passengerId = StorageService.getSignUpResponse()?.userId;
+    if (passengerId != null) {
+      PusherBackgroundService().startBackgroundMode(passengerId);
+    }
   }
 
   // ✅ ADDED: Listen to nearby-drivers Pusher events (same as previous screen)
@@ -94,22 +103,33 @@ class AvailableBidsController extends BaseController {
   }
 
   // ✅ ADDED: Process driver data from events (same as previous screen)
+// In AvailableBidsController - for driverAvatars
   void _processDriverData(Map<String, dynamic> data) {
     try {
       if (data["drivers"] != null) {
         final drivers = data["drivers"] as List;
-        viewingDrivers.value = drivers.length;
 
-        driverAvatars.clear();
+        // ✅ Track existing avatars to avoid duplicates
+        final existingAvatars = driverAvatars.toSet();
+        final newAvatars = <String>{};
 
-        // Process driver avatars
         for (var driver in drivers) {
-          // ✅ UPDATED: Use profile image from event or fallback to asset
           final profileImage = driver["profileImage"]?.toString();
-          driverAvatars.add(profileImage ?? "assets/images/profile_img_sample.png");
+          final avatarUrl = profileImage ?? "assets/images/profile_img_sample.png";
+
+          // ✅ Only add if not already in list
+          if (!existingAvatars.contains(avatarUrl)) {
+            newAvatars.add(avatarUrl);
+          }
         }
 
-        debugPrint("✅ AvailableBidsScreen: Processed ${drivers.length} drivers from event");
+        // ✅ Add only new unique avatars
+        if (newAvatars.isNotEmpty) {
+          driverAvatars.addAll(newAvatars);
+        }
+
+        viewingDrivers.value = driverAvatars.length;
+        debugPrint("✅ AvailableBidsScreen: ${newAvatars.length} new drivers, total: ${driverAvatars.length}");
       }
     } catch (e) {
       debugPrint("❌ Error processing driver data in AvailableBidsScreen: $e");
@@ -134,7 +154,6 @@ class AvailableBidsController extends BaseController {
     });
   }
 
-  /// Adds bid with 10s timer, stores timer object and an isProcessing flag
   void addBidWithTimer(Map<String, dynamic> bid) {
     // Create a mutable copy to avoid accidental shared references
     final bidRx = Map<String, dynamic>.from(bid);
@@ -163,64 +182,10 @@ class AvailableBidsController extends BaseController {
     // default progress color
     bidRx['progressColor'] = 0xFF0066FF;
 
-    // We will store the Timer object on this map so we can cancel it later
+    // ✅ REPLACED: Use the new reusable timer method
+    _startBidTimer(bidRx, 10);
+
     bids.add(bidRx);
-
-    // Start the per-bid timer and keep reference
-    Timer periodic = Timer.periodic(const Duration(seconds: 1), (timer) {
-      try {
-        final seconds = (bidRx['timer'] as RxInt);
-        if (seconds.value > 0) {
-          seconds.value--;
-          bidRx['progressColor'] =
-          seconds.value <= 10 ? 0xFFF8DC25 : 0xFF0066FF; // keep same logic
-        } else {
-          // Timer completed for this bid
-          timer.cancel();
-
-          // store timerObj nullified (optional)
-          bidRx['timerObj'] = null;
-
-          // If already processing (accept/reject started), skip auto-reject
-          final isProcessing =
-              (bidRx['isProcessing'] is RxBool && (bidRx['isProcessing'] as RxBool).value) ||
-                  (bidRx['isProcessing'] == true);
-          if (isProcessing) {
-            print(
-                "⏱️ Timer ended for bid ${bidRx['bidId']} but it's already being processed — skipping auto-reject.");
-            // Remove from UI only if not already removed
-            bids.removeWhere((b) => b['bidId'] == bidRx['bidId']);
-            return;
-          }
-
-          print(
-              "⏱️ Timer ended for bid ${bidRx['bidId']}. Auto-rejecting in background.");
-
-          // Mark processing so accept/reject won't race
-          if (bidRx['isProcessing'] is RxBool) {
-            (bidRx['isProcessing'] as RxBool).value = true;
-          } else {
-            bidRx['isProcessing'] = true.obs;
-          }
-
-          // Remove from local list first for immediate UX
-          bids.removeWhere((b) => b['bidId'] == bidRx['bidId']);
-
-          // Call reject in background (don't await)
-          rejectBid(bid);
-        }
-      } catch (e, s) {
-        print("❌ Error in per-bid timer for ${bidRx['bidId']}: $e");
-        print(s);
-        try {
-          timer.cancel();
-        } catch (_) {}
-        bids.removeWhere((b) => b['bidId'] == bidRx['bidId']);
-      }
-    });
-
-    // attach timer object so we can cancel it when needed
-    bidRx['timerObj'] = periodic;
   }
 
 
@@ -450,6 +415,8 @@ class AvailableBidsController extends BaseController {
 
 // ✅ UPDATED: Cancel ride method to accept location parameter
   Future<void> cancelRide(String cancellationReason, LatLng userLocation) async {
+    // ✅ STEP 1: Immediately stop all timers
+    _cancelAllTimersAndProcessing();
     isCancellingRide.value = true;
 
     try {
@@ -459,6 +426,7 @@ class AvailableBidsController extends BaseController {
 
       if (token == null) {
         isCancellingRide.value = false;
+        _restartAllTimersAndProcessing(); // Restart if no token
         throw Exception("User token not found. Please login again.");
       }
 
@@ -475,9 +443,7 @@ class AvailableBidsController extends BaseController {
       final response = await FHttpHelper.post('ride/ride-cancelled/$rideId', cancelBody);
       debugPrint("  Cancel Ride API Response : $response");
 
-      // Cancel all timers and clear data
-      _cancelAllTimers();
-
+      // ✅ STEP 2: Only clear everything if cancellation SUCCESS
       FSnackbar.show(title: "Success", message: "Ride cancelled successfully");
 
       isCancellingRide.value = false;
@@ -485,10 +451,117 @@ class AvailableBidsController extends BaseController {
 
       _clearAllRideControllers();
       Get.offAll(() => RideTypeScreen());
+
     } catch (e) {
+      // ✅ STEP 3: If cancellation FAILS, RESTART everything
       isCancellingRide.value = false;
-      showError("Failed to cancel ride: ${e.toString()}");
+      FSnackbar.show(title: 'Failed', message: "Failed to cancel ride: ${e.toString()}", isError: true);
+      _restartAllTimersAndProcessing();
     }
+  }
+
+  // ✅ NEW: Immediately stop all timers and mark bids as non-processing
+  void _cancelAllTimersAndProcessing() {
+    print("🛑 Stopping all timers and processing...");
+
+    // Stop global timer
+    _timer?.cancel();
+    _timer = null;
+
+    // Stop all bid timers
+    for (final bid in List<Map<String, dynamic>>.from(bids)) {
+      try {
+        // Cancel individual bid timer
+        final timerObj = bid['timerObj'];
+        if (timerObj is Timer && timerObj.isActive) {
+          timerObj.cancel();
+          bid['timerObj'] = null;
+          print("⏹️ Stopped timer for bid ${bid['bidId']}");
+        }
+
+        // Mark as not processing so they can be restarted if needed
+        if (bid['isProcessing'] is RxBool) {
+          (bid['isProcessing'] as RxBool).value = false;
+        } else {
+          bid['isProcessing'] = false.obs;
+        }
+      } catch (e) {
+        print("❌ Error stopping bid timer for ${bid['bidId']}: $e");
+      }
+    }
+  }
+
+// ✅ NEW: Restart timers after failed cancellation
+  void _restartAllTimersAndProcessing() {
+    print("🔄 Restarting bid timers after cancellation failed");
+
+    // Restart global countdown
+    _startCountdown();
+
+    // Restart individual bid timers with remaining time
+    for (final bid in bids) {
+      try {
+        final remainingTime = bid['timer'] is RxInt ? (bid['timer'] as RxInt).value : 10;
+
+        if (remainingTime > 0) {
+          // Cancel any existing timer
+          final existingTimer = bid['timerObj'];
+          if (existingTimer is Timer && existingTimer.isActive) {
+            existingTimer.cancel();
+          }
+
+          // Restart the timer
+          _startBidTimer(bid, remainingTime);
+        }
+      } catch (e) {
+        print("❌ Error restarting bid timer: $e");
+      }
+    }
+  }
+
+// ✅ NEW: Extract timer logic to reusable method
+  void _startBidTimer(Map<String, dynamic> bid, int initialTime) {
+    bid['timer'] = initialTime.obs;
+    bid['progressColor'] = 0xFF0066FF;
+
+    Timer periodic = Timer.periodic(const Duration(seconds: 1), (timer) {
+      try {
+        final seconds = (bid['timer'] as RxInt);
+        if (seconds.value > 0) {
+          seconds.value--;
+          bid['progressColor'] = seconds.value <= 10 ? 0xFFF8DC25 : 0xFF0066FF;
+        } else {
+          timer.cancel();
+          bid['timerObj'] = null;
+
+          final isProcessing = (bid['isProcessing'] is RxBool && (bid['isProcessing'] as RxBool).value) ||
+              (bid['isProcessing'] == true);
+
+          if (isProcessing) {
+            print("⏱️ Timer ended but bid is processing — skipping auto-reject.");
+            bids.removeWhere((b) => b['bidId'] == bid['bidId']);
+            return;
+          }
+
+          print("⏱️ Timer ended for bid ${bid['bidId']}. Auto-rejecting.");
+
+          if (bid['isProcessing'] is RxBool) {
+            (bid['isProcessing'] as RxBool).value = true;
+          } else {
+            bid['isProcessing'] = true.obs;
+          }
+
+          bids.removeWhere((b) => b['bidId'] == bid['bidId']);
+          rejectBid(bid);
+        }
+      } catch (e, s) {
+        print("❌ Error in bid timer: $e");
+        timer.cancel();
+        bids.removeWhere((b) => b['bidId'] == bid['bidId']);
+      }
+    });
+
+    bid['timerObj'] = periodic;
   }
 
 // ✅ UPDATED: Confirm cancellation to use location

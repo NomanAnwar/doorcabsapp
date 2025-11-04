@@ -28,8 +28,6 @@ class RideBookingController extends BaseController {
   var dropoffLocation = ''.obs;
   var stops = <Map<String, dynamic>>[].obs;
 
-  // final bids = <Map<String, dynamic>>[].obs;
-
   var mapReady = false.obs;
   var selectedPassengers = 1.obs;
   var rideType = ''.obs;
@@ -62,6 +60,10 @@ class RideBookingController extends BaseController {
   var isCalculatingFare = false.obs;
   var userCityName = ''.obs;
 
+  // ✅ ADDED: Track if city data is loaded and if city is supported
+  var isCityDataLoaded = false.obs;
+  var isCitySupported = true.obs;
+
   // Using dynamic ride options from API
   final rideOptions = <RideOption>[].obs;
 
@@ -72,7 +74,8 @@ class RideBookingController extends BaseController {
   final Map<String, double> _minimumFares = {};
 
   // ✅ ADDED: Simple bottom sheet size tracking
-  final bottomSheetSize = 0.45.obs; // Initial size matches DraggableScrollableSheet
+  final bottomSheetSize =
+      0.45.obs; // Initial size matches DraggableScrollableSheet
 
   final EnhancedPusherManager _pusherManager = EnhancedPusherManager();
 
@@ -82,8 +85,10 @@ class RideBookingController extends BaseController {
 
   // ✅ ADDED: New observables for button states and vehicle-specific durations
   final Map<String, int> vehicleDurations = <String, int>{}.obs;
-  final Map<String, RxBool> isPassengerDecrementDisabled = <String, RxBool>{}.obs;
-  final Map<String, RxBool> isPassengerIncrementDisabled = <String, RxBool>{}.obs;
+  final Map<String, RxBool> isPassengerDecrementDisabled =
+      <String, RxBool>{}.obs;
+  final Map<String, RxBool> isPassengerIncrementDisabled =
+      <String, RxBool>{}.obs;
   final Map<String, RxBool> isFareDecrementDisabled = <String, RxBool>{}.obs;
   final Map<String, RxBool> isFareIncrementDisabled = <String, RxBool>{}.obs;
   final isRequestRideDisabled = false.obs;
@@ -91,6 +96,8 @@ class RideBookingController extends BaseController {
   // Animation controllers
   final Map<String, RxBool> passengerAnimations = <String, RxBool>{}.obs;
   final Map<String, RxBool> fareAnimations = <String, RxBool>{}.obs;
+
+  final bids = <Map<String, dynamic>>[].obs;
 
   // Marker icons
   BitmapDescriptor? pickupBitmap;
@@ -100,8 +107,16 @@ class RideBookingController extends BaseController {
   // Camera position
   final CameraPosition initialCameraPosition = const CameraPosition(
     target: LatLng(0, 0),
-    zoom: 12.0,
+    zoom: 14.0,
   );
+
+  // ✅ ADDED: Default city data as fallback
+  final Map<String, dynamic> _defaultCityData = {
+    'fare': 100.0, // Default base fare
+    'is_surged': false,
+    'surge_value': 1.0,
+    'city_name': 'Default',
+  };
 
   // ======= Lifecycle =======
   @override
@@ -110,7 +125,9 @@ class RideBookingController extends BaseController {
     debugPrint('\n===== onInit START =====');
 
     final args = Get.arguments as Map?;
-    debugPrint('onInit: Got arguments = ${args == null ? 'null' : args.keys.toList()}');
+    debugPrint(
+      'onInit: Got arguments = ${args == null ? 'null' : args.keys.toList()}',
+    );
 
     _debugPrintArguments(args);
 
@@ -129,7 +146,9 @@ class RideBookingController extends BaseController {
   void _initializeAutoAcceptFromStorage() {
     try {
       autoAccept.value = StorageService.getAutoAcceptStatus();
-      debugPrint('🔧 Auto-accept initialized from storage: ${autoAccept.value}');
+      debugPrint(
+        '🔧 Auto-accept initialized from storage: ${autoAccept.value}',
+      );
     } catch (e) {
       debugPrint('❌ Error reading auto-accept from storage: $e');
       autoAccept.value = false; // Default to false on error
@@ -206,12 +225,15 @@ class RideBookingController extends BaseController {
     final apiData = selected.apiData;
     final baseFare = (apiData?['base_fare'] as double?) ?? 0;
     final perKmCharge = (apiData?['per_km_charge'] as double?) ?? 0;
-    final cityData = _getCityData(userCity);
+
+    // ✅ UPDATED: Use city data or default
+    final cityData = _getCityData(userCityName.value) ?? _defaultCityData;
 
     final distanceCharge = (distanceKm.value * perKmCharge).roundToDouble();
-    final surgeMultiplier = (cityData?['is_surged'] == true)
-        ? (cityData?['surge_value'] as num?)?.toDouble() ?? 1.0
-        : 1.0;
+    final surgeMultiplier =
+        (cityData?['is_surged'] == true)
+            ? (cityData?['surge_value'] as num?)?.toDouble() ?? 1.0
+            : 1.0;
     final totalFare = selectedVehicleFare.toDouble();
 
     final result = {
@@ -227,7 +249,13 @@ class RideBookingController extends BaseController {
   }
 
   String _formatDateTime(DateTime date, TimeOfDay time) {
-    final combined = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+    final combined = DateTime(
+      date.year,
+      date.month,
+      date.day,
+      time.hour,
+      time.minute,
+    );
     return combined.toIso8601String();
   }
 
@@ -245,7 +273,9 @@ class RideBookingController extends BaseController {
     if (args['service'] != null) {
       final service = args['service'];
       if (service is RideTypeScreenModel) {
-        debugPrint('  Service: ${service.categoryName}, vehicles: ${service.vehicleList.length}');
+        debugPrint(
+          '  Service: ${service.categoryName}, vehicles: ${service.vehicleList.length}',
+        );
       }
     }
 
@@ -254,14 +284,11 @@ class RideBookingController extends BaseController {
       debugPrint('  vehicles length: ${v.length}');
     }
 
-    if (args['cities'] is List) {
-      final c = args['cities'] as List;
-      debugPrint('  cities length: ${c.length}');
-    }
-
     debugPrint('  pickup: ${args['pickup']}');
     debugPrint('  dropoff: ${args['dropoff']}');
-    debugPrint('  stops count: ${args['stops'] is List ? (args['stops'] as List).length : 0}');
+    debugPrint(
+      '  stops count: ${args['stops'] is List ? (args['stops'] as List).length : 0}',
+    );
     debugPrint('===== _debugPrintArguments END =====\n');
   }
 
@@ -283,10 +310,11 @@ class RideBookingController extends BaseController {
       debugPrint('  stops assigned, count=${stops.length}');
     }
 
-    if (args['cities'] is List) {
-      cities.assignAll(args['cities'] as List);
-      debugPrint('  cities assigned, count=${cities.length}');
-    }
+    // ✅ REMOVED: Cities from arguments - we'll fetch from API
+    // if (args['cities'] is List) {
+    //   cities.assignAll(args['cities'] as List);
+    //   debugPrint('  cities assigned, count=${cities.length}');
+    // }
 
     if (args['vehicles'] is List) {
       vehicles.assignAll(args['vehicles'] as List);
@@ -308,18 +336,26 @@ class RideBookingController extends BaseController {
 
     // Determine user city using pickup lat/lng if available, else address fallback
     if (args['pickupLat'] != null && args['pickupLng'] != null) {
-      final pickupLatLng = LatLng((args['pickupLat'] as num).toDouble(), (args['pickupLng'] as num).toDouble());
+      final pickupLatLng = LatLng(
+        (args['pickupLat'] as num).toDouble(),
+        (args['pickupLng'] as num).toDouble(),
+      );
       pickupCoords = pickupLatLng;
       debugPrint('  pickupCoords set from args: $pickupCoords');
 
       _determineUserCity(pickupLatLng);
     } else if (args['userCurrentAddress'] is String) {
-      debugPrint('  fallback: userCurrentAddress available, calling _determineUserCity with address');
+      debugPrint(
+        '  fallback: userCurrentAddress available, calling _determineUserCity with address',
+      );
       _determineUserCity(args['userCurrentAddress'] as String);
     }
 
     if (args['dropoffLat'] != null && args['dropoffLng'] != null) {
-      dropoffCoords = LatLng((args['dropoffLat'] as num).toDouble(), (args['dropoffLng'] as num).toDouble());
+      dropoffCoords = LatLng(
+        (args['dropoffLat'] as num).toDouble(),
+        (args['dropoffLng'] as num).toDouble(),
+      );
       debugPrint('  dropoffCoords set from args: $dropoffCoords');
     }
 
@@ -352,30 +388,36 @@ class RideBookingController extends BaseController {
         final passengers = vehicle.noOfPassengers;
         final vehicleId = vehicle.id;
 
-        debugPrint('   -> vehicle: $vehicleName, baseFare: $baseFare, perKm: $perKmCharge');
+        debugPrint(
+          '   -> vehicle: $vehicleName, baseFare: $baseFare, perKm: $perKmCharge',
+        );
 
-        options.add(RideOption(
-          id : vehicleId,
-          name : vehicleName,
-          imageAsset : _getVehicleImage(vehicleName),
-          subtitle : '$passengers passengers • Calculating...',
-          description : _getVehicleDescription(vehicleName),
-          fare : 'Calculating...',
-          initialPassengers : int.tryParse(passengers)!,
-          minPassengers : 1,
-          maxPassengers : int.tryParse(passengers)!,
-          initialFare : baseFare.toInt(),
-          categoryIcon : vehicle.icon,
-          isBase64Image : vehicle.icon.isNotEmpty,
-          apiData : {
-            'base_fare': baseFare,
-            'per_km_charge': perKmCharge,
-            'vehicle_name': vehicleName,
-          },
-        ));
+        options.add(
+          RideOption(
+            id: vehicleId,
+            name: vehicleName,
+            imageAsset: _getVehicleImage(vehicleName),
+            subtitle: '$passengers passengers • Calculating...',
+            description: _getVehicleDescription(vehicleName),
+            fare: 'Calculating...',
+            initialPassengers: int.tryParse(passengers)!,
+            minPassengers: 1,
+            maxPassengers: int.tryParse(passengers)!,
+            initialFare: baseFare.toInt(),
+            categoryIcon: vehicle.icon,
+            isBase64Image: vehicle.icon.isNotEmpty,
+            apiData: {
+              'base_fare': baseFare,
+              'per_km_charge': perKmCharge,
+              'vehicle_name': vehicleName,
+            },
+          ),
+        );
       } else {
         debugPrint('  Unexpected vehicle type: ${vehicle.runtimeType}');
-        throw Exception('Unknown vehicle type in vehicles list: ${vehicle.runtimeType}');
+        throw Exception(
+          'Unknown vehicle type in vehicles list: ${vehicle.runtimeType}',
+        );
       }
     }
 
@@ -387,8 +429,12 @@ class RideBookingController extends BaseController {
 
   void _initializePassengerFareMaps() {
     debugPrint('===== _initializePassengerFareMaps START =====');
-    ridePassengers = {for (final ride in rideOptions) ride.id: RxInt(ride.initialPassengers)};
-    rideFare = {for (final ride in rideOptions) ride.id: RxInt(ride.initialFare)};
+    ridePassengers = {
+      for (final ride in rideOptions) ride.id: RxInt(ride.initialPassengers),
+    };
+    rideFare = {
+      for (final ride in rideOptions) ride.id: RxInt(ride.initialFare),
+    };
 
     // ✅ ADDED: Initialize button state observables
     for (final ride in rideOptions) {
@@ -418,21 +464,26 @@ class RideBookingController extends BaseController {
     final ride = rideOptions.firstWhereOrNull((r) => r.id == rideId);
     if (ride == null) return;
 
-    final currentPassengers = ridePassengers[rideId]?.value ?? ride.minPassengers;
+    final currentPassengers =
+        ridePassengers[rideId]?.value ?? ride.minPassengers;
     final currentFare = rideFare[rideId]?.value ?? 0;
     final minimumFare = _minimumFares[rideId] ?? 0;
     final maxFare = minimumFare * 2;
 
-    isPassengerDecrementDisabled[rideId]?.value = currentPassengers <= ride.minPassengers;
-    isPassengerIncrementDisabled[rideId]?.value = currentPassengers >= ride.maxPassengers;
+    isPassengerDecrementDisabled[rideId]?.value =
+        currentPassengers <= ride.minPassengers;
+    isPassengerIncrementDisabled[rideId]?.value =
+        currentPassengers >= ride.maxPassengers;
     isFareDecrementDisabled[rideId]?.value = currentFare <= minimumFare;
     isFareIncrementDisabled[rideId]?.value = currentFare >= maxFare;
   }
 
   void _updateRequestRideButtonState() {
-    isRequestRideDisabled.value = selectedRideType.value.isEmpty ||
+    isRequestRideDisabled.value =
+        selectedRideType.value.isEmpty ||
         isRequestingRide.value ||
-        isCalculatingFare.value;
+        isCalculatingFare.value ||
+        !isCitySupported.value; // ✅ ADDED: Disable if city not supported
   }
 
   // ======= City & city-data lookup =======
@@ -443,7 +494,8 @@ class RideBookingController extends BaseController {
         if (city is CityModel) {
           return city.cityName.toLowerCase() == cityName.toLowerCase();
         } else if (city is Map<String, dynamic>) {
-          return (city['city_name'] as String?)?.toLowerCase() == cityName.toLowerCase();
+          return (city['city_name'] as String?)?.toLowerCase() ==
+              cityName.toLowerCase();
         }
         return false;
       });
@@ -457,7 +509,7 @@ class RideBookingController extends BaseController {
           'surge_value': city.surgeValue,
           'city_name': city.cityName,
         };
-        debugPrint('===== _getCityData END -> $result =====');
+        debugPrint('===== _getCityData END -> CityModel returned =====');
         return result;
       } else if (city is Map<String, dynamic>) {
         debugPrint('===== _getCityData END -> Map returned =====');
@@ -472,8 +524,13 @@ class RideBookingController extends BaseController {
   }
 
   // ======= Fare calculation per vehicle =======
-  double _calculateFareForVehicle(RideOption vehicle, Map<String, dynamic>? cityData) {
-    debugPrint('\n===== _calculateFareForVehicle START for vehicle=${vehicle.name} =====');
+  double _calculateFareForVehicle(
+    RideOption vehicle,
+    Map<String, dynamic>? cityData,
+  ) {
+    debugPrint(
+      '\n===== _calculateFareForVehicle START for vehicle=${vehicle.name} =====',
+    );
     final apiData = vehicle.apiData;
     if (apiData == null) {
       throw Exception('No API data for vehicle: ${vehicle.name}');
@@ -482,17 +539,22 @@ class RideBookingController extends BaseController {
     final baseFare = (apiData['base_fare'] as double?) ?? 0;
     final perKmCharge = (apiData['per_km_charge'] as double?) ?? 0;
 
-    final cityBaseFare = (cityData?['fare'] as num?)?.toDouble() ?? 0;
-    final surgeMultiplier = (cityData?['is_surged'] == true)
-        ? (cityData?['surge_value'] as num?)?.toDouble() ?? 1.0
-        : 1.0;
+    // ✅ UPDATED: Use provided city data or default
+    final effectiveCityData = cityData ?? _defaultCityData;
+    final cityBaseFare = (effectiveCityData['fare'] as num?)?.toDouble() ?? 0;
+    final surgeMultiplier =
+        (effectiveCityData['is_surged'] == true)
+            ? (effectiveCityData['surge_value'] as num?)?.toDouble() ?? 1.0
+            : 1.0;
 
     final distance = distanceKm.value;
     if (distance <= 0) {
       throw Exception('Invalid distance for fare calculation: $distance');
     }
 
-    debugPrint('  cityBaseFare: $cityBaseFare, baseFare(vehicle): $baseFare, perKm: $perKmCharge');
+    debugPrint(
+      '  cityBaseFare: $cityBaseFare, baseFare(vehicle): $baseFare, perKm: $perKmCharge',
+    );
     debugPrint('  distance: $distance, surge: $surgeMultiplier');
 
     final basePrice = cityBaseFare > 0 ? cityBaseFare : baseFare;
@@ -500,7 +562,8 @@ class RideBookingController extends BaseController {
     final subtotal = basePrice + distancePrice;
     final totalFare = subtotal * surgeMultiplier;
 
-    final minimumFare = baseFare > 0 ? baseFare : vehicle.initialFare.toDouble();
+    final minimumFare =
+        baseFare > 0 ? baseFare : vehicle.initialFare.toDouble();
     final finalFare = totalFare < minimumFare ? minimumFare : totalFare;
 
     debugPrint('  computed basePrice: $basePrice');
@@ -515,12 +578,14 @@ class RideBookingController extends BaseController {
   }
 
   // ======= Calculate fares for all vehicles =======
-  void calculateFaresForAllVehicles() {
+  void calculateFaresForAllVehicles() async {
     debugPrint('\n===== calculateFaresForAllVehicles START =====');
 
     debugPrint('  distanceKm currently: ${distanceKm.value}');
     if (distanceKm.value <= 0.0) {
-      debugPrint('  ⚠️ Cannot calculate fares: distance is ${distanceKm.value}');
+      debugPrint(
+        '  ⚠️ Cannot calculate fares: distance is ${distanceKm.value}',
+      );
       return;
     }
 
@@ -529,11 +594,24 @@ class RideBookingController extends BaseController {
       return;
     }
 
+    // ✅ ADDED: Wait for city data to be loaded
+    if (!isCityDataLoaded.value) {
+      debugPrint('  ⚠️ Waiting for city data before calculating fares');
+      return;
+    }
+
     isCalculatingFare.value = true;
 
     try {
-      final cityData = _getCityData(userCityName.value);
-      debugPrint('  cityData found: ${cityData ?? 'null'}');
+      // ✅ UPDATED: Get city data or use default
+      Map<String, dynamic>? cityData;
+      if (isCitySupported.value) {
+        cityData = _getCityData(userCityName.value);
+        debugPrint('  cityData found: ${cityData ?? 'null'}');
+      } else {
+        debugPrint('  City not supported, using default city data');
+        cityData = _defaultCityData;
+      }
 
       for (final option in rideOptions) {
         debugPrint('  -> calculating for option: ${option.name}');
@@ -543,16 +621,23 @@ class RideBookingController extends BaseController {
 
         if (rideFare.containsKey(option.id)) {
           rideFare[option.id]!.value = calculatedFare.round();
-          debugPrint('    rideFare[${option.id}] updated to ${rideFare[option.id]!.value}');
+          debugPrint(
+            '    rideFare[${option.id}] updated to ${rideFare[option.id]!.value}',
+          );
         }
 
         if (selectedRideType.value == option.id) {
           fareController.text = calculatedFare.round().toString();
-          debugPrint('    fareController.text updated for selected type: ${fareController.text}');
+          debugPrint(
+            '    fareController.text updated for selected type: ${fareController.text}',
+          );
         }
 
         // ✅ UPDATED: Calculate vehicle-specific duration
-        final vehicleDuration = _calculateVehicleDuration(option.name, distanceKm.value);
+        final vehicleDuration = _calculateVehicleDuration(
+          option.name,
+          distanceKm.value,
+        );
         vehicleDurations[option.id] = vehicleDuration;
         final etaText = '$vehicleDuration min';
 
@@ -569,10 +654,15 @@ class RideBookingController extends BaseController {
 
       _updateAllButtonStates(); // ✅ Update button states after fare calculation
 
-      debugPrint('  💰 Successfully calculated fares for ${rideOptions.length} vehicles');
+      debugPrint(
+        '  💰 Successfully calculated fares for ${rideOptions.length} vehicles',
+      );
     } catch (e) {
       debugPrint('  ❌ Error calculating fares: $e');
-      FSnackbar.show(title: 'Error', message: 'Failed to calculate fares: ${e.toString()}');
+      FSnackbar.show(
+        title: 'Error',
+        message: 'Failed to calculate fares: ${e.toString()}',
+      );
     } finally {
       isCalculatingFare.value = false;
       debugPrint('===== calculateFaresForAllVehicles END =====\n');
@@ -605,31 +695,40 @@ class RideBookingController extends BaseController {
       rideType.value = selectedVehicleName;
       fareController.text = selectedVehicleFare.toString();
       selectedPassengers.value = ridePassengers[type]?.value ?? 1;
-      debugPrint('  selectedRideType now: ${selectedRideType.value}, fareController: ${fareController.text}');
+      debugPrint(
+        '  selectedRideType now: ${selectedRideType.value}, fareController: ${fareController.text}',
+      );
     }
     _updateRequestRideButtonState();
   }
 
   // ======= Determine user city (address or coords) =======
   Future<void> _determineUserCity(dynamic input) async {
-    debugPrint('\n===== _determineUserCity START (input=${input.runtimeType}) =====');
+    debugPrint(
+      '\n===== _determineUserCity START (input=${input.runtimeType}) =====',
+    );
     try {
+      String? detectedCity;
+
       if (input is String && input.isNotEmpty) {
         debugPrint('  input is String address: $input');
         final addressLower = input.toLowerCase();
         if (addressLower.contains('lahore')) {
-          userCityName.value = 'Lahore';
+          detectedCity = 'Lahore';
         } else if (addressLower.contains('karachi')) {
-          userCityName.value = 'Karachi';
+          detectedCity = 'Karachi';
         } else if (addressLower.contains('islamabad')) {
-          userCityName.value = 'Islamabad';
+          detectedCity = 'Islamabad';
         } else if (addressLower.contains('multan')) {
-          userCityName.value = 'Multan';
+          detectedCity = 'Multan';
         } else {
           debugPrint('  address fallback -> calling locationFromAddress');
           final locations = await locationFromAddress(input);
           if (locations.isNotEmpty) {
-            await _reverseGeocodeCityFromCoords(LatLng(locations.first.latitude, locations.first.longitude));
+            await _reverseGeocodeCityFromCoords(
+              LatLng(locations.first.latitude, locations.first.longitude),
+            );
+            return;
           } else {
             debugPrint('  locationFromAddress returned empty');
           }
@@ -637,8 +736,16 @@ class RideBookingController extends BaseController {
       } else if (input is LatLng) {
         debugPrint('  input is LatLng: $input -> calling reverse geocode');
         await _reverseGeocodeCityFromCoords(input);
-      } else {
-        debugPrint('  input type not handled: ${input.runtimeType}');
+        return;
+      }
+
+      // ✅ UPDATED: If we detected a city name, fetch data from API
+      if (detectedCity != null) {
+        userCityName.value = detectedCity;
+        debugPrint('  detected city: $detectedCity -> fetching from API');
+
+        // Fetch city data from API before proceeding
+        await _fetchCityDataFromApi(detectedCity);
       }
 
       debugPrint('  final userCityName: ${userCityName.value}');
@@ -652,18 +759,133 @@ class RideBookingController extends BaseController {
   Future<void> _reverseGeocodeCityFromCoords(LatLng coords) async {
     debugPrint('===== _reverseGeocodeCityFromCoords START for $coords =====');
     try {
-      final placemarks = await placemarkFromCoordinates(coords.latitude, coords.longitude);
+      final placemarks = await placemarkFromCoordinates(
+        coords.latitude,
+        coords.longitude,
+      );
       debugPrint('  placemarks length: ${placemarks.length}');
       if (placemarks.isNotEmpty) {
-        final city = placemarks.first.locality ?? placemarks.first.subAdministrativeArea;
+        final city =
+            placemarks.first.locality ?? placemarks.first.subAdministrativeArea;
         final country = placemarks.first.country ?? '';
-        userCityName.value = city?.isNotEmpty == true ? city! : 'Unknown';
-        debugPrint('  reverse geocoded -> city: ${userCityName.value}, country: $country');
+
+        if (city?.isNotEmpty == true) {
+          userCityName.value = city!;
+          debugPrint(
+            '  reverse geocoded -> city: ${userCityName.value}, country: $country',
+          );
+
+          // ✅ UPDATED: Fetch city data from API
+          await _fetchCityDataFromApi(city!);
+        } else {
+          userCityName.value = 'Unknown';
+        }
       }
     } catch (e) {
       debugPrint('  ❌ Reverse geocode failed: $e');
     }
     debugPrint('===== _reverseGeocodeCityFromCoords END =====');
+  }
+
+  // ✅ Fetch city data from API
+  Future<void> _fetchCityDataFromApi(String cityName) async {
+    debugPrint('\n===== _fetchCityDataFromApi START for "$cityName" =====');
+
+    try {
+      await executeWithRetry(() async {
+        final token = StorageService.getAuthToken();
+        if (token == null) {
+          throw Exception("User token not found. Please login again.");
+        }
+        FHttpHelper.setAuthToken(token, useBearer: true);
+
+        final requestBody = {
+          "city_name": cityName,
+        };
+
+        debugPrint('  Calling GET /city/detailsbyName with body: $requestBody');
+
+        // ✅ Use the new GET with body method
+        final response = await FHttpHelper.getWithBody('city/detailsbyName', requestBody);
+        debugPrint('  City API Response: $response');
+
+        // Handle API response
+        if (response['success'] == true && response['data'] != null) {
+          final apiData = response['data'] as Map<String, dynamic>;
+          debugPrint('  ✅ Successfully fetched city data from API');
+
+          try {
+
+            // Create CityModel instance with safe parsing
+            final cityModel = CityModel.fromJson(apiData);
+            debugPrint('  Created CityModel: ${cityModel.cityName}, Fare: ${cityModel.fare}');
+
+            // Update cities list with the new data
+            final existingIndex = cities.indexWhere((city) {
+              if (city is CityModel) {
+                return city.cityName.toLowerCase() == cityName.toLowerCase();
+              } else if (city is Map<String, dynamic>) {
+                return (city['city_name'] as String?)?.toLowerCase() == cityName.toLowerCase();
+              }
+              return false;
+            });
+
+            if (existingIndex != -1) {
+              cities[existingIndex] = cityModel;
+              debugPrint('  ✅ Updated existing city data in cities list');
+            } else {
+              cities.add(cityModel);
+              debugPrint('  ✅ Added new city data to cities list');
+            }
+
+            // ✅ City is supported
+            isCitySupported.value = true;
+            isCityDataLoaded.value = true;
+
+            debugPrint('  ✅ City "$cityName" is supported and data loaded');
+
+            // Trigger fare calculation if we have distance data
+            if (distanceKm.value > 0) {
+              calculateFaresForAllVehicles();
+            }
+
+          } catch (e) {
+            debugPrint('  ❌ Error parsing CityModel: $e');
+            _handleUnsupportedCity(cityName);
+          }
+        } else {
+          // ❌ City not found or not supported
+          debugPrint('  ❌ City "$cityName" not found in API response');
+          _handleUnsupportedCity(cityName);
+        }
+      }, maxRetries: 2);
+    } catch (e) {
+      debugPrint('  ❌ Error fetching city data from API: $e');
+      _handleUnsupportedCity(cityName);
+    }
+
+    debugPrint('===== _fetchCityDataFromApi END =====\n');
+  }
+
+  // ✅ Handle unsupported city
+  void _handleUnsupportedCity(String cityName) {
+    isCitySupported.value = false;
+    isCityDataLoaded.value = true;
+
+    // Show notification to user
+    FSnackbar.show(
+      title: 'Service Notice',
+      message:
+          'We are not operating in $cityName yet. We will be coming soon! Using default pricing.',
+      isError: true,
+    );
+
+    debugPrint('  🚫 City "$cityName" is not supported - using default data');
+
+    // Still calculate fares with default data
+    if (distanceKm.value > 0) {
+      calculateFaresForAllVehicles();
+    }
   }
 
   // ======= Vehicle helpers =======
@@ -705,7 +927,12 @@ class RideBookingController extends BaseController {
     stopCoords.clear();
     for (final stop in stops) {
       if (stop['lat'] != null && stop['lng'] != null) {
-        stopCoords.add(LatLng((stop['lat'] as num).toDouble(), (stop['lng'] as num).toDouble()));
+        stopCoords.add(
+          LatLng(
+            (stop['lat'] as num).toDouble(),
+            (stop['lng'] as num).toDouble(),
+          ),
+        );
       }
     }
     debugPrint('  processed stopCoords count=${stopCoords.length}');
@@ -717,31 +944,51 @@ class RideBookingController extends BaseController {
     debugPrint('===== _preloadMarkerIcons START =====');
     try {
       await executeWithRetry(() async {
-        final pickupData = await _loadAndResizeImage('assets/images/position_marker.png', 90);
+        final pickupData = await _loadAndResizeImage(
+          'assets/images/position_marker.png',
+          90,
+        );
         pickupBitmap = BitmapDescriptor.fromBytes(pickupData);
 
-        final dropoffData = await _loadAndResizeImage('assets/images/place.png', 90);
+        final dropoffData = await _loadAndResizeImage(
+          'assets/images/place.png',
+          90,
+        );
         dropoffBitmap = BitmapDescriptor.fromBytes(dropoffData);
 
-        final stopData = await _loadAndResizeImage('assets/images/place.png', 60);
+        final stopData = await _loadAndResizeImage(
+          'assets/images/place.png',
+          60,
+        );
         stopBitmap = BitmapDescriptor.fromBytes(stopData);
 
         debugPrint('  custom icons loaded');
       });
     } catch (e) {
       debugPrint('  ❌ Error loading marker icons: $e');
-      pickupBitmap = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen);
-      dropoffBitmap = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed);
-      stopBitmap = BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueYellow);
+      pickupBitmap = BitmapDescriptor.defaultMarkerWithHue(
+        BitmapDescriptor.hueGreen,
+      );
+      dropoffBitmap = BitmapDescriptor.defaultMarkerWithHue(
+        BitmapDescriptor.hueRed,
+      );
+      stopBitmap = BitmapDescriptor.defaultMarkerWithHue(
+        BitmapDescriptor.hueYellow,
+      );
     }
     debugPrint('===== _preloadMarkerIcons END =====');
   }
 
   Future<Uint8List> _loadAndResizeImage(String assetPath, int size) async {
     final data = await rootBundle.load(assetPath);
-    final codec = await ui.instantiateImageCodec(data.buffer.asUint8List(), targetWidth: size);
+    final codec = await ui.instantiateImageCodec(
+      data.buffer.asUint8List(),
+      targetWidth: size,
+    );
     final frame = await codec.getNextFrame();
-    final byteData = await frame.image.toByteData(format: ui.ImageByteFormat.png);
+    final byteData = await frame.image.toByteData(
+      format: ui.ImageByteFormat.png,
+    );
     return byteData!.buffer.asUint8List();
   }
 
@@ -757,19 +1004,34 @@ class RideBookingController extends BaseController {
           await _geocodeAddresses();
         }
 
-        debugPrint('  after geocode pickup=$pickupCoords dropoff=$dropoffCoords');
+        debugPrint(
+          '  after geocode pickup=$pickupCoords dropoff=$dropoffCoords',
+        );
 
         if (pickupCoords != null && dropoffCoords != null) {
           await _drawRoute();
           _placeMarkers();
           _fitMarkersInView();
+
+          // ✅ ADDED: Ensure we have city data before calculating fares
+          if (userCityName.value.isNotEmpty &&
+              userCityName.value != 'Unknown') {
+            // Give a small delay to ensure city data is processed
+            await Future.delayed(Duration(milliseconds: 500));
+            calculateFaresForAllVehicles();
+          }
         } else {
-          throw Exception('Could not determine coordinates for route calculation');
+          throw Exception(
+            'Could not determine coordinates for route calculation',
+          );
         }
       }, maxRetries: 2);
     } catch (e) {
       debugPrint('❌ Route calculation failed after retries: $e');
-      FSnackbar.show(title: 'Error', message: 'Unable to calculate route: ${e.toString()}');
+      FSnackbar.show(
+        title: 'Error',
+        message: 'Unable to calculate route: ${e.toString()}',
+      );
     } finally {
       isCalculatingRoute.value = false;
       debugPrint('===== _calculateRouteAndUpdateMap END =====\n');
@@ -783,16 +1045,24 @@ class RideBookingController extends BaseController {
         debugPrint('  geocoding pickup address: ${pickupLocation.value}');
         final pickupLocations = await locationFromAddress(pickupLocation.value);
         if (pickupLocations.isNotEmpty) {
-          pickupCoords = LatLng(pickupLocations.first.latitude, pickupLocations.first.longitude);
+          pickupCoords = LatLng(
+            pickupLocations.first.latitude,
+            pickupLocations.first.longitude,
+          );
           debugPrint('  pickupCoords from geocode: $pickupCoords');
         }
       }
 
       if (dropoffCoords == null && dropoffLocation.value.isNotEmpty) {
         debugPrint('  geocoding dropoff address: ${dropoffLocation.value}');
-        final dropoffLocations = await locationFromAddress(dropoffLocation.value);
+        final dropoffLocations = await locationFromAddress(
+          dropoffLocation.value,
+        );
         if (dropoffLocations.isNotEmpty) {
-          dropoffCoords = LatLng(dropoffLocations.first.latitude, dropoffLocations.first.longitude);
+          dropoffCoords = LatLng(
+            dropoffLocations.first.latitude,
+            dropoffLocations.first.longitude,
+          );
           debugPrint('  dropoffCoords from geocode: $dropoffCoords');
         }
       }
@@ -804,7 +1074,9 @@ class RideBookingController extends BaseController {
           debugPrint('  geocoding stop [$i] address: $address');
           final locations = await locationFromAddress(address);
           if (locations.isNotEmpty) {
-            stopCoords.add(LatLng(locations.first.latitude, locations.first.longitude));
+            stopCoords.add(
+              LatLng(locations.first.latitude, locations.first.longitude),
+            );
             debugPrint('  stopCoords[$i] = ${stopCoords.last}');
           }
         }
@@ -833,7 +1105,11 @@ class RideBookingController extends BaseController {
   Future<void> _drawRouteWithStops() async {
     debugPrint('===== _drawRouteWithStops START =====');
     try {
-      final List<LatLng> allWaypoints = [pickupCoords!, ...stopCoords, dropoffCoords!];
+      final List<LatLng> allWaypoints = [
+        pickupCoords!,
+        ...stopCoords,
+        dropoffCoords!,
+      ];
       double totalDistance = 0.0;
       int totalDuration = 0;
 
@@ -849,14 +1125,18 @@ class RideBookingController extends BaseController {
           totalDistance += routeInfo['distance'];
           totalDuration += (routeInfo['duration'] as int);
 
-          polylines.add(Polyline(
-            polylineId: PolylineId('route_segment_$i'),
-            points: routeInfo['points'],
-            color: FColors.secondaryColor,
-            width: 5,
-          ));
+          polylines.add(
+            Polyline(
+              polylineId: PolylineId('route_segment_$i'),
+              points: routeInfo['points'],
+              color: FColors.secondaryColor,
+              width: 5,
+            ),
+          );
 
-          debugPrint('    segment $i distance=${routeInfo['distance']} duration=${routeInfo['duration']}');
+          debugPrint(
+            '    segment $i distance=${routeInfo['distance']} duration=${routeInfo['duration']}',
+          );
         } else {
           debugPrint('    segment $i returned empty points');
         }
@@ -865,7 +1145,9 @@ class RideBookingController extends BaseController {
       distanceKm.value = totalDistance;
       durationMinutes.value = totalDuration;
 
-      debugPrint('  total route distance: ${distanceKm.value} km, duration: ${durationMinutes.value} min');
+      debugPrint(
+        '  total route distance: ${distanceKm.value} km, duration: ${durationMinutes.value} min',
+      );
 
       calculateFaresForAllVehicles();
     } catch (e) {
@@ -880,21 +1162,28 @@ class RideBookingController extends BaseController {
 
     try {
       await executeWithRetry(() async {
-        final routeInfo = await _getRoutePointsWithDistance(pickupCoords!, dropoffCoords!);
+        final routeInfo = await _getRoutePointsWithDistance(
+          pickupCoords!,
+          dropoffCoords!,
+        );
 
         polylines.clear();
         if (routeInfo['points'].isNotEmpty) {
-          polylines.add(Polyline(
-            polylineId: const PolylineId('route'),
-            points: routeInfo['points'],
-            color: FColors.secondaryColor,
-            width: 5,
-          ));
+          polylines.add(
+            Polyline(
+              polylineId: const PolylineId('route'),
+              points: routeInfo['points'],
+              color: FColors.secondaryColor,
+              width: 5,
+            ),
+          );
 
           distanceKm.value = routeInfo['distance'];
           durationMinutes.value = routeInfo['duration'];
 
-          debugPrint('  route distance: ${distanceKm.value} km, duration: ${durationMinutes.value} min');
+          debugPrint(
+            '  route distance: ${distanceKm.value} km, duration: ${durationMinutes.value} min',
+          );
 
           calculateFaresForAllVehicles();
         } else {
@@ -903,17 +1192,26 @@ class RideBookingController extends BaseController {
       }, maxRetries: 2);
     } catch (e) {
       debugPrint('  ❌ Could not calculate route');
-      FSnackbar.show(title: 'Error', message: 'Unable to calculate route: ${e.toString()}');
+      FSnackbar.show(
+        title: 'Error',
+        message: 'Unable to calculate route: ${e.toString()}',
+      );
     }
 
     debugPrint('===== _drawRouteWithoutStops END =====');
   }
 
-  Future<Map<String, dynamic>> _getRoutePointsWithDistance(LatLng pickup, LatLng dropoff) async {
-    debugPrint('===== _getRoutePointsWithDistance START from $pickup to $dropoff =====');
+  Future<Map<String, dynamic>> _getRoutePointsWithDistance(
+    LatLng pickup,
+    LatLng dropoff,
+  ) async {
+    debugPrint(
+      '===== _getRoutePointsWithDistance START from $pickup to $dropoff =====',
+    );
     const apiKey = "AIzaSyAmN17lAC9v1BSdRB6Q_R75boSy_mXjDe4";
 
-    final url = "https://maps.googleapis.com/maps/api/directions/json?"
+    final url =
+        "https://maps.googleapis.com/maps/api/directions/json?"
         "origin=${pickup.latitude},${pickup.longitude}&"
         "destination=${dropoff.latitude},${dropoff.longitude}&"
         "mode=driving&key=$apiKey";
@@ -936,7 +1234,9 @@ class RideBookingController extends BaseController {
           final distance = (leg['distance']['value'] as num).toDouble() / 1000;
           final duration = (leg['duration']['value'] as num).toDouble() / 60;
 
-          debugPrint('  route leg distance(km): $distance, duration(min): ${duration.round()}');
+          debugPrint(
+            '  route leg distance(km): $distance, duration(min): ${duration.round()}',
+          );
 
           return {
             'points': points,
@@ -958,36 +1258,44 @@ class RideBookingController extends BaseController {
     markers.clear();
 
     if (pickupCoords != null) {
-      markers.add(Marker(
-        markerId: const MarkerId('pickup'),
-        position: pickupCoords!,
-        icon: pickupBitmap!,
-        infoWindow: InfoWindow(title: pickupLocation.value),
-      ));
+      markers.add(
+        Marker(
+          markerId: const MarkerId('pickup'),
+          position: pickupCoords!,
+          icon: pickupBitmap!,
+          infoWindow: InfoWindow(title: pickupLocation.value),
+        ),
+      );
       debugPrint('  placed pickup marker at $pickupCoords');
     }
 
     for (int i = 0; i < stopCoords.length; i++) {
-      markers.add(Marker(
-        markerId: MarkerId('stop_$i'),
-        position: stopCoords[i],
-        icon: stopBitmap!,
-        infoWindow: InfoWindow(title: "Stop ${i + 1}"),
-      ));
+      markers.add(
+        Marker(
+          markerId: MarkerId('stop_$i'),
+          position: stopCoords[i],
+          icon: stopBitmap!,
+          infoWindow: InfoWindow(title: "Stop ${i + 1}"),
+        ),
+      );
       debugPrint('  placed stop marker $i at ${stopCoords[i]}');
     }
 
     if (dropoffCoords != null) {
-      markers.add(Marker(
-        markerId: const MarkerId('dropoff'),
-        position: dropoffCoords!,
-        icon: dropoffBitmap!,
-        infoWindow: InfoWindow(title: dropoffLocation.value),
-      ));
+      markers.add(
+        Marker(
+          markerId: const MarkerId('dropoff'),
+          position: dropoffCoords!,
+          icon: dropoffBitmap!,
+          infoWindow: InfoWindow(title: dropoffLocation.value),
+        ),
+      );
       debugPrint('  placed dropoff marker at $dropoffCoords');
     }
 
-    debugPrint('===== _placeMarkers END, total markers=${markers.length} =====');
+    debugPrint(
+      '===== _placeMarkers END, total markers=${markers.length} =====',
+    );
   }
 
   // ✅ ADDED: Simple method to track bottom sheet size
@@ -1005,9 +1313,7 @@ class RideBookingController extends BaseController {
     }
 
     final bounds = _calculateBounds();
-    mapController?.animateCamera(
-      CameraUpdate.newLatLngBounds(bounds, 50),
-    );
+    mapController?.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
     debugPrint('===== _fitMarkersInView END =====');
   }
 
@@ -1027,7 +1333,10 @@ class RideBookingController extends BaseController {
       if (lng > maxLng) maxLng = lng;
     }
 
-    return LatLngBounds(southwest: LatLng(minLat - 0.01, minLng - 0.01), northeast: LatLng(maxLat + 0.01, maxLng + 0.01));
+    return LatLngBounds(
+      southwest: LatLng(minLat - 0.01, minLng - 0.01),
+      northeast: LatLng(maxLat + 0.01, maxLng + 0.01),
+    );
   }
 
   List<LatLng> _decodePolyline(String encoded) {
@@ -1081,7 +1390,9 @@ class RideBookingController extends BaseController {
       _triggerPassengerAnimation(rideId);
       _updateButtonStates(rideId);
 
-      debugPrint('incrementPassengers: $rideId -> ${ridePassengers[rideId]!.value}');
+      debugPrint(
+        'incrementPassengers: $rideId -> ${ridePassengers[rideId]!.value}',
+      );
     }
   }
 
@@ -1097,7 +1408,9 @@ class RideBookingController extends BaseController {
       _triggerPassengerAnimation(rideId);
       _updateButtonStates(rideId);
 
-      debugPrint('decrementPassengers: $rideId -> ${ridePassengers[rideId]!.value}');
+      debugPrint(
+        'decrementPassengers: $rideId -> ${ridePassengers[rideId]!.value}',
+      );
     }
   }
 
@@ -1149,7 +1462,7 @@ class RideBookingController extends BaseController {
 
   void toggleAutoAccept(bool value) => autoAccept.value = value;
 
-// ✅ UPDATED: Proper auto-accept toggle with storage persistence
+  // ✅ UPDATED: Proper auto-accept toggle with storage persistence
   void onAutoAcceptToggle(bool value) {
     try {
       // Update local state
@@ -1162,15 +1475,18 @@ class RideBookingController extends BaseController {
 
       // Show appropriate feedback
       if (value) {
-        final fareDisplay = selectedRideType.value.isNotEmpty ? selectedVehicleFare.toString() : "matching";
+        final fareDisplay =
+            selectedRideType.value.isNotEmpty
+                ? selectedVehicleFare.toString()
+                : "matching";
         FSnackbar.show(
-            title: 'Auto Accept Enabled',
-            message: "Now Auto-accept Bids for PKR $fareDisplay"
+          title: 'Auto Accept Enabled',
+          message: "Now Auto-accept Bids for PKR $fareDisplay",
         );
       } else {
         FSnackbar.show(
-            title: 'Auto Accept Disabled',
-            message: "Auto-accept Bids Disabled"
+          title: 'Auto Accept Disabled',
+          message: "Auto-accept Bids Disabled",
         );
       }
     } catch (e) {
@@ -1178,13 +1494,13 @@ class RideBookingController extends BaseController {
       // Revert UI state on error
       autoAccept.value = !value;
       FSnackbar.show(
-          title: 'Error',
-          message: 'Failed to update auto-accept setting'
+        title: 'Error',
+        message: 'Failed to update auto-accept setting',
       );
     }
   }
 
-// ✅ ADDED: Getter for dynamic fare display in messages
+  // ✅ ADDED: Getter for dynamic fare display in messages
   String get _autoAcceptFareDisplay {
     if (selectedRideType.value.isEmpty) {
       return "matching";
@@ -1196,20 +1512,40 @@ class RideBookingController extends BaseController {
   Future<void> onRequestRide() async {
     debugPrint('\n===== onRequestRide START =====');
 
+    // ✅ ADDED: Check if city is supported
+    if (!isCitySupported.value) {
+      FSnackbar.show(
+        title: 'Service Unavailable',
+        message:
+            'We are not operating in ${userCityName.value} yet. We will be coming soon!',
+        isError: true,
+      );
+      return;
+    }
+
     if (pickupLocation.value.isEmpty || dropoffLocation.value.isEmpty) {
-      FSnackbar.show(title: 'Error', message: 'Pickup and Drop-off are required.');
+      FSnackbar.show(
+        title: 'Error',
+        message: 'Pickup and Drop-off are required.',
+      );
       debugPrint('  Missing pickup/dropoff, aborting');
       return;
     }
 
     if (pickupCoords == null || dropoffCoords == null) {
-      FSnackbar.show(title: 'Error', message: 'Could not determine coordinates for locations.');
+      FSnackbar.show(
+        title: 'Error',
+        message: 'Could not determine coordinates for locations.',
+      );
       debugPrint('  Missing coords, aborting');
       return;
     }
 
     if (!mapReady.value || isCalculatingFare.value) {
-      FSnackbar.show(title: 'Error', message: 'Route and fare are being prepared.');
+      FSnackbar.show(
+        title: 'Error',
+        message: 'Route and fare are being prepared.',
+      );
       debugPrint('  map not ready or fare calculating, aborting');
       return;
     }
@@ -1237,48 +1573,61 @@ class RideBookingController extends BaseController {
           final rideData = response;
           final rideId = rideData['rideId'];
 
+          FSnackbar.show(
+            title: 'Success',
+            message: 'Ride requested successfully!',
+          );
+
           final passengerId = StorageService.getSignUpResponse()!.userId;
-          // if (passengerId != null) {
-          //   await _pusherManager.subscribeOnce(
-          //     "passenger-$passengerId",
-          //     events: {
-          //       "new-bid": (data) {
-          //         debugPrint("📨 Passenger received new bid: $data");
-          //         try {
-          //           // bids.add(data);
-          //         } catch (e) {
-          //           debugPrint("❌ Error storing bid: $e");
-          //         }
-          //       },
-          //       "nearby-drivers": (data) {
-          //         debugPrint("🗺️ Nearby drivers update: $data");
-          //       },
-          //     },
-          //   );
-          // }
+          if (passengerId != null) {
+            await _pusherManager.subscribeOnce(
+              "passenger-$passengerId",
+              events: {
+                "new-bid": (data) {
+                  debugPrint("📨 Passenger received new bid: $data");
+                  try {
+                    bids.add(data);
+                  } catch (e) {
+                    debugPrint("❌ Error storing bid: $e");
+                  }
+                },
+                "nearby-drivers": (data) {
+                  debugPrint("🗺️ Nearby drivers update: $data");
+                },
+              },
+            );
+          }
 
-          FSnackbar.show(title: 'Success', message: 'Ride requested successfully!');
-
-          Get.toNamed('/available-drivers', arguments: {
-            'rideId': rideId,
-            'rideData': rideData,
-            'pickup': {"lat": pickupCoords?.latitude, "lng": pickupCoords?.longitude, "address": pickupLocation.value},
-            'dropoffs': await _getNotification_dropoffs(),
-            'rideType': selectedVehicleName,
-            'fare': requestBody['requested_rideFare'],
-            'passengers': selectedPassengers.value,
-            'payment': selectedPaymentLabel.value,
-            'pickupLat': pickupCoords?.latitude,
-            'pickupLng': pickupCoords?.longitude,
-            // 'bids': bids,
-          });
+          Get.toNamed(
+            '/available-drivers',
+            arguments: {
+              'rideId': rideId,
+              'rideData': rideData,
+              'pickup': {
+                "lat": pickupCoords?.latitude,
+                "lng": pickupCoords?.longitude,
+                "address": pickupLocation.value,
+              },
+              'dropoffs': await _getNotification_dropoffs(),
+              'rideType': selectedVehicleName,
+              'fare': requestBody['requested_rideFare'],
+              'passengers': selectedPassengers.value,
+              'payment': selectedPaymentLabel.value,
+              'pickupLat': pickupCoords?.latitude,
+              'pickupLng': pickupCoords?.longitude,
+              'bids':bids,
+            },
+          );
         } else {
           throw Exception(response['message'] ?? 'Failed to request ride');
         }
       }, maxRetries: 2);
     } catch (e) {
       debugPrint('  onRequestRide error: $e');
-      FSnackbar.show(title: 'Error', message: 'Failed to request ride: ${e.toString()}');
+      FSnackbar.show(
+        title: 'Error',
+        message: 'Failed to request ride: ${e.toString()}',
+      );
     } finally {
       isLoading.value = false;
       isRequestingRide.value = false;
@@ -1291,9 +1640,7 @@ class RideBookingController extends BaseController {
     if (mapController == null || markers.isEmpty) return;
 
     final bounds = _calculateBounds();
-    mapController?.animateCamera(
-      CameraUpdate.newLatLngBounds(bounds, 50),
-    );
+    mapController?.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
   }
 
   Future<Map<String, dynamic>> _prepareRideRequestBody() async {
@@ -1319,22 +1666,24 @@ class RideBookingController extends BaseController {
     }
 
     // ✅ CORRECTED: Proper dropoffs format
-    final formattedDropoffs = dropoffs.asMap().entries.map((entry) {
-      final index = entry.key;
-      final dropoff = entry.value;
-      return {
-        "lat": dropoff["lat"],
-        "lng": dropoff["lng"],
-        "stop_order": index + 1,
-        "address": dropoff["address"],
-      };
-    }).toList();
+    final formattedDropoffs =
+        dropoffs.asMap().entries.map((entry) {
+          final index = entry.key;
+          final dropoff = entry.value;
+          return {
+            "lat": dropoff["lat"],
+            "lng": dropoff["lng"],
+            "stop_order": index + 1,
+            "address": dropoff["address"],
+          };
+        }).toList();
 
     // ✅ CORRECTED: Proper fare structure
     final formattedFare = {
       "baseFare": fareBreakdown['base_fare'] ?? 0,
       "distanceCharges": fareBreakdown['distance_charge'] ?? 0,
-      "surgeCharges": (fareBreakdown['total_fare'] ?? 0) -
+      "surgeCharges":
+          (fareBreakdown['total_fare'] ?? 0) -
           (fareBreakdown['base_fare'] ?? 0) -
           (fareBreakdown['distance_charge'] ?? 0),
       "discount": 0,
@@ -1352,24 +1701,31 @@ class RideBookingController extends BaseController {
 
     // ✅ CORRECTED: Complete request body matching the required format
     final requestBody = {
-      "country_name": country, // ✅ ADDED
+      "country_name": country,
+      // ✅ ADDED
       "pickup_loc": {
         "lat": pickupCoords!.latitude,
         "lng": pickupCoords!.longitude,
         "address": pickupLocation.value,
         "city": city,
       },
-      "dropoffs": formattedDropoffs, // ✅ CORRECTED format
+      "dropoffs": formattedDropoffs,
+      // ✅ CORRECTED format
       "distance": distanceKm.value,
       "vehicle_type": selectedVehicleName,
-      "requested_rideFare": requestedRideFare, // ✅ Using parsed fare
-      "fare": formattedFare, // ✅ CORRECTED fare structure
+      "requested_rideFare": requestedRideFare,
+      // ✅ Using parsed fare
+      "fare": formattedFare,
+      // ✅ CORRECTED fare structure
       "payment_type": selectedPaymentBackendValue,
-      "passengers_no": selectedPassengers.value.toString(), // ✅ Ensure string format
-      "request_datetime": selectedDate.value != null && selectedTime.value != null
-          ? _formatDateTime(selectedDate.value!, selectedTime.value!)
-          : DateTime.now().toIso8601String(),
-      "ride_type": "Instant ride", // ✅ ADDED
+      "passengers_no": selectedPassengers.value.toString(),
+      // ✅ Ensure string format
+      "request_datetime":
+          selectedDate.value != null && selectedTime.value != null
+              ? _formatDateTime(selectedDate.value!, selectedTime.value!)
+              : DateTime.now().toIso8601String(),
+      "ride_type": "Instant ride",
+      // ✅ ADDED
       "comments": comment.value,
     };
 
@@ -1379,15 +1735,23 @@ class RideBookingController extends BaseController {
     return requestBody;
   }
 
-  Future<Map<String, String>> _getLocationDetailsFromCoords(LatLng coords) async {
+  Future<Map<String, String>> _getLocationDetailsFromCoords(
+    LatLng coords,
+  ) async {
     try {
-      final placemarks = await placemarkFromCoordinates(coords.latitude, coords.longitude);
+      final placemarks = await placemarkFromCoordinates(
+        coords.latitude,
+        coords.longitude,
+      );
 
       if (placemarks.isNotEmpty) {
         final placemark = placemarks.first;
         return {
           'country': placemark.country ?? 'Pakistan',
-          'city': placemark.locality ?? placemark.subAdministrativeArea ?? 'Unknown',
+          'city':
+              placemark.locality ??
+              placemark.subAdministrativeArea ??
+              'Unknown',
         };
       }
     } catch (e) {
@@ -1403,18 +1767,28 @@ class RideBookingController extends BaseController {
     debugPrint(formattedJson);
   }
 
-  Future<void> _sendPushNotificationToDrivers(Map<String, dynamic> rideData, double amount) async {
+  Future<void> _sendPushNotificationToDrivers(
+    Map<String, dynamic> rideData,
+    double amount,
+  ) async {
     debugPrint('===== _sendPushNotificationToDrivers START =====');
     try {
       final notificationBody = {
         "rideId": rideData['rideId'],
-        "pickup": {"lat": pickupCoords!.latitude, "lng": pickupCoords!.longitude, "address": pickupLocation.value},
+        "pickup": {
+          "lat": pickupCoords!.latitude,
+          "lng": pickupCoords!.longitude,
+          "address": pickupLocation.value,
+        },
         "dropoffs": await _getNotification_dropoffs(),
         "amount": amount,
         "vehicle_type": selectedVehicleName,
       };
 
-      final response = await FHttpHelper.post('ride/push-notification', notificationBody);
+      final response = await FHttpHelper.post(
+        'ride/push-notification',
+        notificationBody,
+      );
       debugPrint('  Push notification response: $response');
     } catch (e) {
       debugPrint('  ❌ Error sending push notification: $e');
@@ -1427,13 +1801,25 @@ class RideBookingController extends BaseController {
   }
 
   void setPaymentMethod(String method) {
-    final paymentMap = {"Cash Payment": "cash", "Easypaisa": "easypaisa", "JazzCash": "jazzcash", "Debit/Credit Card": "card", "DoorCabs Wallet": "cash"};
+    final paymentMap = {
+      "Cash Payment": "cash",
+      "Easypaisa": "easypaisa",
+      "JazzCash": "jazzcash",
+      "Debit/Credit Card": "card",
+      "DoorCabs Wallet": "cash",
+    };
     selectedPaymentLabel.value = method;
     debugPrint('Payment selected: $method -> ${paymentMap[method]}');
   }
 
   String get selectedPaymentBackendValue {
-    final paymentMap = {"Cash Payment": "cash", "Easypaisa": "easypaisa", "JazzCash": "jazzcash", "Debit/Credit Card": "card", "DoorCabs Wallet": "cash"};
+    final paymentMap = {
+      "Cash Payment": "cash",
+      "Easypaisa": "easypaisa",
+      "JazzCash": "jazzcash",
+      "Debit/Credit Card": "card",
+      "DoorCabs Wallet": "cash",
+    };
     return paymentMap[selectedPaymentLabel.value] ?? "cash";
   }
 
@@ -1443,7 +1829,9 @@ class RideBookingController extends BaseController {
 
   void setComment(String newComment) {
     comment.value = newComment;
-    debugPrint('Comment saved: ${newComment.isNotEmpty ? newComment : "No comment"}');
+    debugPrint(
+      'Comment saved: ${newComment.isNotEmpty ? newComment : "No comment"}',
+    );
   }
 
   void clearComment() {

@@ -15,6 +15,7 @@ import '../../../../utils/theme/custom_theme/text_theme.dart';
 import '../../../shared/controllers/base_controller.dart';
 import '../../../shared/services/enhanced_pusher_manager.dart';
 import '../../../../utils/http/http_client.dart';
+import '../../../shared/services/pusher_background_service.dart';
 import '../models/ride_info.dart';
 
 class GoToPickupController extends BaseController {
@@ -69,6 +70,15 @@ class GoToPickupController extends BaseController {
     _placeStaticMarkersFromRideInfo();
     _subscribeToRideIfNeeded();
     _getCurrentLocation();
+    _startRideBackgroundService();
+  }
+
+  Future<void> _startRideBackgroundService() async {
+    final driverId = StorageService.getSignUpResponse()?.userId;
+    if (driverId != null && _rideId != null) {
+      await PusherBackgroundService().startBackgroundMode(driverId, rideId: _rideId);
+      print("🚗 Ride background service started for ride: $_rideId");
+    }
   }
 
   @override
@@ -77,6 +87,12 @@ class GoToPickupController extends BaseController {
       _pusherManager.unsubscribeSafely('ride-$_rideId');
       _subscribedToRideChannel = false;
     }
+
+    // ✅ ADD: Stop background service when ride ends
+    if (rideStarted.value) {
+      PusherBackgroundService().stopBackgroundMode();
+    }
+
     _mapController?.dispose();
     super.onClose();
   }
@@ -669,6 +685,9 @@ class GoToPickupController extends BaseController {
         final response = await FHttpHelper.post('ride/driver-ended/$_rideId', body);
         print("Driver Ended Api Response: $response");
         showSuccess('Ride completed successfully');
+
+        // ✅ ADD: Stop background service before navigation
+        await PusherBackgroundService().stopBackgroundMode();
 
         Get.offAllNamed('/rate', arguments: {
           'userId': passengerId.value,

@@ -14,8 +14,8 @@ class RideTypeController extends BaseController { // ✅ CHANGED: Extend BaseCon
   var services = <RideTypeScreenModel>[].obs;
 
   /// Cities list
-  final cities = <CityModel>[].obs;
-  var isLoadingCities = true.obs;
+  // final cities = <CityModel>[].obs;
+  // var isLoadingCities = true.obs;
 
   /// User location
   final userLocation = Rx<UserLocation?>(null);
@@ -35,9 +35,6 @@ class RideTypeController extends BaseController { // ✅ CHANGED: Extend BaseCon
 
   }
 
-
-
-
   /// ✅ UPDATED: Use BaseController's executeWithRetry
   Future<void> loadAllData() async {
     try {
@@ -48,7 +45,7 @@ class RideTypeController extends BaseController { // ✅ CHANGED: Extend BaseCon
       await executeWithRetry(() async {
         await Future.wait([
           fetchServices(),
-          _fetchCities(),
+          // _fetchCities(),
           _getUserLocation(),
         ], eagerError: true);
 
@@ -60,7 +57,7 @@ class RideTypeController extends BaseController { // ✅ CHANGED: Extend BaseCon
         if (kDebugMode) {
           print('[RideTypeController] All data loaded successfully');
           print('[RideTypeController] Services: ${services.length}');
-          print('[RideTypeController] Cities: ${cities.length}');
+          // print('[RideTypeController] Cities: ${cities.length}');
           print('[RideTypeController] User Location: ${userLocation.value?.address}');
         }
       });
@@ -199,44 +196,44 @@ class RideTypeController extends BaseController { // ✅ CHANGED: Extend BaseCon
   }
 
   /// Fetch cities
-  Future<void> _fetchCities() async {
-    try {
-      isLoadingCities(true);
-
-      final token = StorageService.getAuthToken();
-
-      if (token == null) {
-        print("Error" + "User token not found. Please login again.");
-        return;
-      }
-
-      FHttpHelper.setAuthToken(token, useBearer: true);
-
-      final res = await FHttpHelper.get("city/list-cities");
-
-      print("Cities list API Response in RideTypeController : $res");
-
-      if (res['success'] != true) {
-        throw Exception('Cities API returned success: false');
-      }
-
-      final data = (res["data"] is List) ? (res["data"] as List) : const [];
-
-      if (data.isEmpty) {
-        print("[RideTypeController] Cities API returned empty data");
-        return;
-      }
-
-      final apiCities = data.map((e) => CityModel.fromJson(e)).toList();
-      cities.assignAll(apiCities);
-
-      print("[RideTypeController] Cities API Response: ${data.length} cities received");
-    } catch (e) {
-      throw Exception('Failed to load cities: $e');
-    } finally {
-      isLoadingCities(false);
-    }
-  }
+  // Future<void> _fetchCities() async {
+  //   try {
+  //     isLoadingCities(true);
+  //
+  //     final token = StorageService.getAuthToken();
+  //
+  //     if (token == null) {
+  //       print("Error" + "User token not found. Please login again.");
+  //       return;
+  //     }
+  //
+  //     FHttpHelper.setAuthToken(token, useBearer: true);
+  //
+  //     final res = await FHttpHelper.get("city/list-cities");
+  //
+  //     print("Cities list API Response in RideTypeController : $res");
+  //
+  //     if (res['success'] != true) {
+  //       throw Exception('Cities API returned success: false');
+  //     }
+  //
+  //     final data = (res["data"] is List) ? (res["data"] as List) : const [];
+  //
+  //     if (data.isEmpty) {
+  //       print("[RideTypeController] Cities API returned empty data");
+  //       return;
+  //     }
+  //
+  //     final apiCities = data.map((e) => CityModel.fromJson(e)).toList();
+  //     cities.assignAll(apiCities);
+  //
+  //     print("[RideTypeController] Cities API Response: ${data.length} cities received");
+  //   } catch (e) {
+  //     throw Exception('Failed to load cities: $e');
+  //   } finally {
+  //     isLoadingCities(false);
+  //   }
+  // }
 
   /// Default services fallback (when API fails)
   List<RideTypeScreenModel> getDefaultServices() {
@@ -337,7 +334,7 @@ class RideTypeController extends BaseController { // ✅ CHANGED: Extend BaseCon
   /// Ready to navigate when all data is available
   bool get isReadyForNavigation {
     return services.isNotEmpty &&
-        cities.isNotEmpty &&
+        // cities.isNotEmpty &&
         userLocation.value != null &&
         areAllDataLoaded.value;
   }

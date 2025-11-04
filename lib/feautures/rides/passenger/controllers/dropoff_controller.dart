@@ -44,7 +44,7 @@ class DropOffController extends BaseController {
   // Store passed data from RideTypeScreen
   final Rx<UserLocation?> userLocation = Rx<UserLocation?>(null);
   final RxList<dynamic> vehicles = <dynamic>[].obs;
-  final RxList<dynamic> cities = <dynamic>[].obs;
+  // final RxList<dynamic> cities = <dynamic>[].obs;
   final Rx<dynamic> service = Rx<dynamic>(null);
 
   @override
@@ -61,9 +61,9 @@ class DropOffController extends BaseController {
     if (args?['vehicles'] is List) {
       vehicles.assignAll(args!['vehicles'] as List);
     }
-    if (args?['cities'] is List) {
-      cities.assignAll(args!['cities'] as List);
-    }
+    // if (args?['cities'] is List) {
+    //   cities.assignAll(args!['cities'] as List);
+    // }
     if (args?['service'] != null) {
       service.value = args!['service'];
     }
@@ -485,7 +485,7 @@ class DropOffController extends BaseController {
       'dropoff': dropCtrl.text.trim(),
       'stops': stops.map((e) => e.toJson()).toList(),
       'vehicles': vehicles.toList(),
-      'cities': cities.toList(),
+      // 'cities': cities.toList(),
       'service': service.value,
       'userLocation': userLocation.value?.toJson(),
       'userCurrentAddress': userLocation.value?.address,

@@ -57,6 +57,11 @@ dependencies:
   geolocator: ^12.0.0
   geocoding: ^4.0.0
   location: ^8.0.1
+
+
+  flutter_background_service: ^5.1.0
+  android_alarm_manager_plus: ^5.0.0
+  shared_preferences: ^2.5.3
   workmanager: ^0.9.0+3
 
   # Google Places Autocomplete

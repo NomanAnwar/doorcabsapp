@@ -5,6 +5,7 @@ import 'package:doorcab/utils/http/http_client.dart';
 import 'package:get/get.dart';
 import '../../../shared/controllers/base_controller.dart';
 import '../../../shared/services/driver_location_service.dart';
+import '../../../shared/services/pusher_background_service.dart';
 import '../../../shared/services/pusher_beams.dart';
 import '../../../shared/services/enhanced_pusher_manager.dart';
 import '../models/request_model.dart';
@@ -139,6 +140,9 @@ class RideRequestListController extends BaseController {
       await executeWithRetry(() async {
         await _driverLocationService.start();
         print("📍 Location service started");
+
+        // ✅ ADD: Start background service
+        await PusherBackgroundService().startBackgroundMode(driverId);
         await _subscribeToChannels(driverId);
       });
     } catch (e) {
@@ -156,6 +160,9 @@ class RideRequestListController extends BaseController {
         print("📍 Location service paused");
         await _unsubscribeFromChannels();
         _clearAllRequests();
+
+        // ✅ ADD: Stop background service
+        await PusherBackgroundService().stopBackgroundMode();
       });
     } catch (e) {
       print('❌ Error going offline: $e');

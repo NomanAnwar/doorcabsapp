@@ -12,6 +12,7 @@ import '../../../../common/widgets/snakbar/snackbar.dart';
 import '../../../../utils/http/http_client.dart';
 import '../../../shared/controllers/base_controller.dart';
 import '../../../shared/services/enhanced_pusher_manager.dart';
+import '../../../shared/services/pusher_background_service.dart';
 import '../../../shared/services/storage_service.dart';
 
 class RideRequestDetailController extends BaseController {
@@ -598,6 +599,8 @@ class RideRequestDetailController extends BaseController {
                 "bid-ignored": (data) => _handleBidResponse(data, "bid-ignored"),
               },
             ));
+
+            await PusherBackgroundService().startBackgroundMode(driverId, rideId: rideId);
           } else {
             print("⚠️ driverId not found in submit-bids response");
           }
