@@ -40,7 +40,7 @@ class DriverLocationService {
     _isOnline = true;
     int i = 0;
     // Foreground real-time updates (every 5s)
-    _foregroundTimer = Timer.periodic(const Duration(seconds: 1), (_) async {
+    _foregroundTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
       await _sendCurrentLocation(i);
       i++;
     });

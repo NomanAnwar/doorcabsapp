@@ -572,18 +572,19 @@ class GoOnlineScreen extends StatelessWidget {
                                           children: [
                                             Text(
                                               "Unlock Your Next Tasks",
-                                              style: FTextTheme.lightTextTheme.titleLarge!.copyWith(
-                                                fontSize: FTextTheme.lightTextTheme.titleLarge!.fontSize! *
+                                              style: FTextTheme.lightTextTheme.titleMedium!.copyWith(
+                                                fontSize: FTextTheme.lightTextTheme.titleMedium!.fontSize! *
                                                     screenWidth /
                                                     baseWidth,
-                                                color: Colors.black87,
+                                                color: FColors.black,
+                                                fontWeight: FontWeight.w500
                                               ),
                                             ),
                                             SizedBox(height: sh(2)),
                                             Text(
                                               "70/100 Point",
-                                              style: FTextTheme.lightTextTheme.bodyMedium!.copyWith(
-                                                fontSize: FTextTheme.lightTextTheme.bodyMedium!.fontSize! *
+                                              style: FTextTheme.lightTextTheme.bodySmall!.copyWith(
+                                                fontSize: FTextTheme.lightTextTheme.bodySmall!.fontSize! *
                                                     screenWidth /
                                                     baseWidth,
                                                 color: Colors.black54,
@@ -595,8 +596,8 @@ class GoOnlineScreen extends StatelessWidget {
                                     ),
                                     Text(
                                       "until 20/30",
-                                      style: FTextTheme.lightTextTheme.bodyMedium!.copyWith(
-                                        fontSize: FTextTheme.lightTextTheme.bodyMedium!.fontSize! *
+                                      style: FTextTheme.lightTextTheme.bodySmall!.copyWith(
+                                        fontSize: FTextTheme.lightTextTheme.bodySmall!.fontSize! *
                                             screenWidth /
                                             baseWidth,
                                         color: Colors.black87,
@@ -637,11 +638,12 @@ class GoOnlineScreen extends StatelessWidget {
                                         left: sw(50),
                                         child: Text(
                                           "Earnings Goal",
-                                          style: FTextTheme.lightTextTheme.titleLarge!.copyWith(
-                                            fontSize: FTextTheme.lightTextTheme.titleLarge!.fontSize! *
+                                          style: FTextTheme.lightTextTheme.titleMedium!.copyWith(
+                                            fontSize: FTextTheme.lightTextTheme.titleMedium!.fontSize! *
                                                 screenWidth /
                                                 baseWidth,
-                                            color: Colors.black87,
+                                            color: FColors.black,
+                                            fontWeight: FontWeight.w500
                                           ),
                                         ),
                                       ),
@@ -650,8 +652,8 @@ class GoOnlineScreen extends StatelessWidget {
                                         left: sw(50),
                                         child: Text(
                                           "1000/5000",
-                                          style: FTextTheme.lightTextTheme.bodyMedium!.copyWith(
-                                            fontSize: FTextTheme.lightTextTheme.bodyMedium!.fontSize! *
+                                          style: FTextTheme.lightTextTheme.bodySmall!.copyWith(
+                                            fontSize: FTextTheme.lightTextTheme.bodySmall!.fontSize! *
                                                 screenWidth /
                                                 baseWidth,
                                             color: Colors.black54,
@@ -663,8 +665,8 @@ class GoOnlineScreen extends StatelessWidget {
                                         right: sw(10),
                                         child: Text(
                                           "Ends Sunday",
-                                          style: FTextTheme.lightTextTheme.bodyMedium!.copyWith(
-                                            fontSize: FTextTheme.lightTextTheme.bodyMedium!.fontSize! *
+                                          style: FTextTheme.lightTextTheme.bodySmall!.copyWith(
+                                            fontSize: FTextTheme.lightTextTheme.bodySmall!.fontSize! *
                                                 screenWidth /
                                                 baseWidth,
                                             color: Colors.black87,

@@ -165,7 +165,7 @@ class RideRequestListScreen extends StatelessWidget {
                     right: 0,
                     child: Container(
                       width: double.infinity,
-                      height: sh(64),
+                      height: sh(70),
                       padding: EdgeInsets.symmetric(horizontal: sw(10)),
                       decoration: BoxDecoration(
                         color: Colors.white,
@@ -267,8 +267,8 @@ class RideRequestListScreen extends StatelessWidget {
         }
       },
       child: Container(
-        width: sw(90),
-        height: sh(65),
+        width: sw(100),
+        height: sh(70),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
