@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 import 'dart:ui' as ui;
 import 'package:doorcab/feautures/shared/services/storage_service.dart';
 import 'package:flutter/material.dart';
@@ -16,6 +17,7 @@ import '../../../shared/controllers/base_controller.dart';
 import '../../../shared/services/enhanced_pusher_manager.dart';
 import '../../../../utils/http/http_client.dart';
 import '../../../shared/services/pusher_background_service.dart';
+import '../helper/google_maps_helper.dart';
 import '../models/ride_info.dart';
 
 class GoToPickupController extends BaseController {
@@ -26,10 +28,19 @@ class GoToPickupController extends BaseController {
 
   GoogleMapController? _mapController;
 
+  // Track current navigation state
+  final RxString currentNavigationTarget = 'pickup'.obs; // 'pickup', 'stop', 'dropoff'
+  final RxInt currentStopIndex = 0.obs;
+
+  // 🔄 GPS Location Tracking
+  late StreamSubscription<Position> _positionStream;
+  bool _isLocationTracking = false;
+
   // 🔄 InDrive Animation Control
   LatLng? _lastDriverPosition;
   bool _isCameraFollowing = true;
   bool _isAnimating = false;
+  Timer? _animationTimer;
 
   // Icons
   BitmapDescriptor? _driverIcon;
@@ -69,8 +80,207 @@ class GoToPickupController extends BaseController {
     await _loadMarkerIcons();
     _placeStaticMarkersFromRideInfo();
     _subscribeToRideIfNeeded();
-    _getCurrentLocation();
+    await _getCurrentLocation();
+    _startLocationTracking(); // Start GPS tracking instead of Pusher
     _startRideBackgroundService();
+  }
+
+  /// ===================== 📍 GPS LOCATION TRACKING =====================
+  Future<void> _startLocationTracking() async {
+    try {
+      // Check location permissions
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        showError('Location services are disabled. Please enable them.');
+        return;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          showError('Location permissions are denied');
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        showError('Location permissions are permanently denied, we cannot request permissions.');
+        return;
+      }
+
+      // Start listening to location updates
+      _positionStream = Geolocator.getPositionStream(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.bestForNavigation,
+          distanceFilter: 3, // Update every 5 meters
+        ),
+      ).listen(
+            (Position position) {
+          _handleNewLocation(position);
+        },
+        onError: (error) {
+          print('❌ Location stream error: $error');
+        },
+      );
+
+      _isLocationTracking = true;
+      print("📍 GPS location tracking started");
+
+    } catch (e) {
+      print('❌ Error starting location tracking: $e');
+      showError('Failed to start location tracking');
+    }
+  }
+
+  void _handleNewLocation(Position position) {
+    final newPos = LatLng(position.latitude, position.longitude);
+    print("📍 New GPS position: $newPos");
+
+    // Update current position
+    currentPosition.value = newPos;
+
+    // ✅ SMOOTH ANIMATION: Slide driver marker from previous to new position
+    if (_lastDriverPosition == null) {
+      _lastDriverPosition = newPos;
+      _updateDriverMarker(newPos);
+    } else {
+      // 🧭 Smooth sliding animation between positions
+      _animateDriverSmoothly(_lastDriverPosition!, newPos);
+    }
+    _lastDriverPosition = newPos;
+
+    // ✅ GOOGLE MAPS STYLE: Show driver + upcoming route section only
+    _updateCameraForNavigation(newPos);
+
+    // ✅ Update routes based on current state
+    _updateRoutesForCurrentState(newPos);
+  }
+
+  /// ===================== 🗺️ GOOGLE MAPS STYLE CAMERA =====================
+  void _updateCameraForNavigation(LatLng driverPosition) {
+    if (_mapController == null) return;
+
+    // ✅ Google Maps behavior: Show driver at zoom level 16 (like Google Maps navigation)
+    const double zoomLevel = 17.0; // Perfect for seeing turns and streets clearly
+
+    // ✅ Smooth camera follow (like Google Maps)
+    _mapController!.animateCamera(
+      CameraUpdate.newLatLngZoom(driverPosition, zoomLevel),
+    );
+  }
+
+  void _updateRoutesForCurrentState(LatLng driverPosition) {
+    final dropoffs = rideInfo?.dropoffs ?? [];
+
+    if (!rideStarted.value) {
+      // ✅ Driver to Pickup route - show full route but camera focuses on driver
+      if (rideInfo?.pickupLat != null && rideInfo?.pickupLng != null) {
+        final pickupPos = LatLng(rideInfo!.pickupLat!, rideInfo!.pickupLng!);
+        _updateRouteToDestination(driverPosition, pickupPos);
+      }
+    } else {
+      // ✅ Driver to Dropoffs route - show full route but camera focuses on driver
+      if (dropoffs.isNotEmpty) {
+        final currentStopIndex = this.currentStopIndex.value;
+        if (currentStopIndex < dropoffs.length) {
+          final stop = dropoffs[currentStopIndex];
+          final stopPos = LatLng(
+            (stop['lat'] as num).toDouble(),
+            (stop['lng'] as num).toDouble(),
+          );
+          _updateRouteToDestination(driverPosition, stopPos);
+        }
+      }
+    }
+  }
+
+  Future<void> _updateRouteToDestination(LatLng from, LatLng to) async {
+    try {
+      final routePoints = await _fetchRoutePolylineWithRetry(from, to);
+      if (routePoints.isNotEmpty) {
+        _setPolyline(routePoints);
+      }
+    } catch (e) {
+      print('❌ Error updating route: $e');
+    }
+  }
+
+  /// ===================== 🧭 SMOOTH DRIVER MARKER ANIMATION =====================
+  void _animateDriverSmoothly(LatLng from, LatLng to) {
+    if (_isAnimating) {
+      return; // Skip if already animating
+    }
+
+    _isAnimating = true;
+    const int totalSteps = 5; // Steps for smoother animation
+    int currentStep = 0;
+
+    // Cancel any existing animation
+    _animationTimer?.cancel();
+
+    _animationTimer = Timer.periodic(const Duration(milliseconds: 40), (timer) {
+      currentStep++;
+
+      if (currentStep > totalSteps) {
+        timer.cancel();
+        _isAnimating = false;
+        _updateDriverMarker(to); // Final position
+        return;
+      }
+
+      // Calculate intermediate position with easing for smoother movement
+      final progress = currentStep / totalSteps;
+      final easedProgress = _easeInOutCubic(progress);
+
+      final lat = from.latitude + (to.latitude - from.latitude) * easedProgress;
+      final lng = from.longitude + (to.longitude - from.longitude) * easedProgress;
+      final intermediate = LatLng(lat, lng);
+
+      _updateDriverMarker(intermediate);
+    });
+  }
+
+  // Easing function for smooth animation
+  double _easeInOutCubic(double x) {
+    return x < 0.5 ? 4 * x * x * x : 1 - pow(-2 * x + 2, 3) / 2;
+  }
+
+  void _updateDriverMarker(LatLng position) {
+    // Calculate bearing for proper rotation
+    double bearing = 0.0;
+    if (_lastDriverPosition != null && position != _lastDriverPosition) {
+      bearing = _calculateBearing(_lastDriverPosition!, position);
+    }
+
+    driverMarkers["driver"] = Marker(
+      markerId: const MarkerId("driver"),
+      position: position,
+      rotation: bearing, // Smooth rotation based on movement direction
+      zIndex: 2,
+      flat: true,
+      anchor: const Offset(0.5, 0.5),
+      icon: _driverIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+    );
+    driverMarkers.refresh();
+  }
+
+  double _calculateBearing(LatLng from, LatLng to) {
+    final lat1 = from.latitude * pi / 180;
+    final lon1 = from.longitude * pi / 180;
+    final lat2 = to.latitude * pi / 180;
+    final lon2 = to.longitude * pi / 180;
+
+    final dLon = lon2 - lon1;
+
+    final y = sin(dLon) * cos(lat2);
+    final x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(dLon);
+
+    double bearing = atan2(y, x);
+    bearing = bearing * 180 / pi;
+    bearing = (bearing + 360) % 360;
+
+    return bearing;
   }
 
   Future<void> _startRideBackgroundService() async {
@@ -83,12 +293,17 @@ class GoToPickupController extends BaseController {
 
   @override
   void onClose() {
+    // Stop GPS location tracking
+    _positionStream.cancel();
+    _isLocationTracking = false;
+    _animationTimer?.cancel();
+
     if (_subscribedToRideChannel && _rideId != null) {
       _pusherManager.unsubscribeSafely('ride-$_rideId');
       _subscribedToRideChannel = false;
     }
 
-    // ✅ ADD: Stop background service when ride ends
+    // Stop background service when ride ends
     if (rideStarted.value) {
       PusherBackgroundService().stopBackgroundMode();
     }
@@ -124,6 +339,9 @@ class GoToPickupController extends BaseController {
     passengerId.value = rideInfo!.passengerId;
     passengerName.value = rideInfo?.passengerName ?? passengerName.value;
     pickupAddress.value = rideInfo?.pickupAddress ?? pickupAddress.value;
+    dropoffAddress.value = (rideInfo?.dropoffs?.isNotEmpty ?? false)
+        ? (rideInfo!.dropoffs!.last['address'] ?? '')
+        : '';
     phone.value = rideInfo?.phone ?? phone.value;
     passengerProfileUrl.value = rideInfo?.passengerProfileImage ?? '';
     passengerRating.value = rideInfo?.passengerRating ?? '0';
@@ -134,7 +352,7 @@ class GoToPickupController extends BaseController {
     fare.value = (rideInfo?.fare != null) ? rideInfo!.fare!.toInt() : fare.value;
   }
 
-  /// ===================== 🔔 DRIVER LOCATION SUBSCRIPTION =====================
+  /// ===================== 🔔 PUSHER SUBSCRIPTION =====================
   Future<void> _subscribeToRideChannel() async {
     if (_rideId == null) return;
     if (_subscribedToRideChannel) return;
@@ -148,57 +366,10 @@ class GoToPickupController extends BaseController {
               print("✅ Successfully subscribed to ride-$_rideId");
             },
 
-            'driver-location': (data) async {
-              print("🚗 DRIVER LOCATION EVENT: $data");
-
-              double lat = double.tryParse(data['lat'].toString()) ?? 0.0;
-              double lng = double.tryParse(data['lng'].toString()) ?? 0.0;
-
-              if (lat == 0.0 || lng == 0.0) {
-                print("❌ INVALID DRIVER COORDINATES");
-                return;
-              }
-
-              final newPos = LatLng(lat, lng);
-              print("📍 New driver position: $newPos");
-
-              // ✅ FIXED: InDrive-style smooth animation
-              if (_lastDriverPosition == null) {
-                _lastDriverPosition = newPos;
-                _updateDriverMarker(newPos);
-              } else {
-                // 🧭 Smooth animation between positions
-                _animateDriverMarker(_lastDriverPosition!, newPos);
-              }
-              _lastDriverPosition = newPos;
-
-              final dropoffs = rideInfo?.dropoffs ?? [];
-
-              if (!rideStarted.value) {
-                // ✅ Driver to Pickup route - Google Maps style
-                if (rideInfo?.pickupLat != null && rideInfo?.pickupLng != null) {
-                  final pickupPos = LatLng(rideInfo!.pickupLat!, rideInfo!.pickupLng!);
-                  await _showRouteLikeGoogleMaps(newPos, pickupPos);
-                }
-              } else {
-                // ✅ Driver to Dropoffs route - Google Maps style
-                if (dropoffs.isNotEmpty) {
-                  final firstDropoff = dropoffs.first;
-                  final dropoffPos = LatLng(
-                    (firstDropoff['lat'] as num).toDouble(),
-                    (firstDropoff['lng'] as num).toDouble(),
-                  );
-                  await _showRouteLikeGoogleMaps(newPos, dropoffPos);
-                }
-              }
-
-              // ✅ InDrive-style camera following
-              if (_isCameraFollowing && _mapController != null) {
-                await _mapController!.animateCamera(
-                  CameraUpdate.newLatLng(newPos),
-                );
-              }
-            },
+            // COMMENTED OUT: Driver location now comes from GPS
+            // 'driver-location': (data) async {
+            //   // This is now handled by GPS tracking
+            // },
 
             "new-message": (data) {
               print("💬 New message received: $data");
@@ -222,81 +393,156 @@ class GoToPickupController extends BaseController {
     }
   }
 
-  /// ===================== 🧭 SMOOTH DRIVER MARKER MOVEMENT =====================
-  Future<void> _animateDriverMarker(LatLng from, LatLng to) async {
-    if (_isAnimating) return;
-    _isAnimating = true;
+  Future<void> _subscribeToRideIfNeeded() async {
+    if (_rideId != null) {
+      await _subscribeToRideChannel();
+    }
+  }
 
-    const int steps = 30;
-    const Duration stepDuration = Duration(milliseconds: 50);
-
-    for (int i = 1; i <= steps; i++) {
-      await Future.delayed(stepDuration);
-      final lat = from.latitude + (to.latitude - from.latitude) * (i / steps);
-      final lng = from.longitude + (to.longitude - from.longitude) * (i / steps);
-      final intermediate = LatLng(lat, lng);
-
-      _updateDriverMarker(intermediate);
+  // Method to navigate to pickup point
+  Future<void> navigateToPickup() async {
+    if (rideInfo?.pickupLat == null || rideInfo?.pickupLng == null) {
+      showError('Pickup location not available');
+      return;
     }
 
-    _isAnimating = false;
+    try {
+      // Use current driver location if available, otherwise just navigate to pickup
+      if (currentPosition.value != null) {
+        await GoogleMapsHelper.openGoogleMapsWithRoute(
+          originLat: currentPosition.value!.latitude,
+          originLng: currentPosition.value!.longitude,
+          destLat: rideInfo!.pickupLat!,
+          destLng: rideInfo!.pickupLng!,
+          originName: "My Location",
+          destName: "Pickup Location",
+        );
+      } else {
+        await GoogleMapsHelper.openGoogleMapsWithNavigation(
+          destinationLat: rideInfo!.pickupLat!,
+          destinationLng: rideInfo!.pickupLng!,
+          destinationName: "Pickup Location",
+        );
+      }
+
+      currentNavigationTarget.value = 'pickup';
+      update(); // Update GetBuilder
+    } catch (e) {
+      print('Error navigating to pickup: $e');
+      showError('Failed to open Google Maps');
+    }
   }
 
-  void _updateDriverMarker(LatLng position) {
-    driverMarkers["driver"] = Marker(
-      markerId: const MarkerId("driver"),
-      position: position,
-      rotation: _calculateBearing(_lastDriverPosition, position),
-      zIndex: 2,
-      flat: true,
-      anchor: const Offset(0.5, 0.5),
-      icon: _driverIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
-    );
-    driverMarkers.refresh();
+  // Method to navigate to current stop/dropoff
+  Future<void> navigateToCurrentStop() async {
+    final dropoffs = rideInfo?.dropoffs ?? [];
+
+    if (dropoffs.isEmpty) {
+      showError('No dropoff location available');
+      return;
+    }
+
+    // If ride hasn't started, navigate to first stop
+    if (!rideStarted.value) {
+      await navigateToFirstStop();
+      return;
+    }
+
+    // Navigate to current stop based on index
+    if (currentStopIndex.value < dropoffs.length) {
+      final stop = dropoffs[currentStopIndex.value];
+      final stopLat = (stop['lat'] as num).toDouble();
+      final stopLng = (stop['lng'] as num).toDouble();
+      final stopName = currentStopIndex.value == dropoffs.length - 1 ? "Dropoff" : "Stop ${currentStopIndex.value + 1}";
+
+      try {
+        if (currentPosition.value != null) {
+          await GoogleMapsHelper.openGoogleMapsWithRoute(
+            originLat: currentPosition.value!.latitude,
+            originLng: currentPosition.value!.longitude,
+            destLat: stopLat,
+            destLng: stopLng,
+            originName: "My Location",
+            destName: stopName,
+          );
+        } else {
+          await GoogleMapsHelper.openGoogleMapsWithNavigation(
+            destinationLat: stopLat,
+            destinationLng: stopLng,
+            destinationName: stopName,
+          );
+        }
+
+        currentNavigationTarget.value = currentStopIndex.value == dropoffs.length - 1 ? 'dropoff' : 'stop';
+        update(); // Update GetBuilder
+      } catch (e) {
+        print('Error navigating to stop: $e');
+        showError('Failed to open Google Maps');
+      }
+    }
   }
 
-  double _calculateBearing(LatLng? from, LatLng to) {
-    if (from == null) return 0.0;
-    return Geolocator.bearingBetween(
-      from.latitude,
-      from.longitude,
-      to.latitude,
-      to.longitude,
-    );
+  // Helper method to navigate to first stop
+  Future<void> navigateToFirstStop() async {
+    final dropoffs = rideInfo?.dropoffs ?? [];
+    if (dropoffs.isNotEmpty) {
+      currentStopIndex.value = 0;
+      await navigateToCurrentStop();
+    }
+  }
+
+  // Method to get appropriate button text
+  String getNavigationButtonText() {
+    if (!rideStarted.value) {
+      return 'Navigate to Pickup';
+    } else {
+      final dropoffs = rideInfo?.dropoffs ?? [];
+      if (currentStopIndex.value < dropoffs.length) {
+        if (currentStopIndex.value == dropoffs.length - 1) {
+          return 'Navigate to Dropoff';
+        } else {
+          return 'Navigate to Stop ${currentStopIndex.value + 1}';
+        }
+      } else {
+        return 'Navigate';
+      }
+    }
+  }
+
+  // Method to update navigation UI
+  void updateNavigationUI() {
+    update(); // This will trigger GetBuilder to rebuild
+  }
+
+  // Method to handle when driver arrives at a stop
+  void markStopArrived() {
+    final dropoffs = rideInfo?.dropoffs ?? [];
+
+    if (currentStopIndex.value < dropoffs.length - 1) {
+      // Move to next stop
+      currentStopIndex.value++;
+      showSuccess('Moving to next stop');
+      updateNavigationUI();
+    } else {
+      // All stops completed
+      showSuccess('All stops completed');
+    }
   }
 
   /// ===================== 🗺️ GOOGLE MAPS-STYLE ROUTE DISPLAY =====================
   Future<void> _showRouteLikeGoogleMaps(LatLng origin, LatLng destination) async {
     try {
-      // Step 1: Show close-up of starting point (Google Maps behavior)
-      if (_mapController != null) {
-        await _mapController!.animateCamera(
-          CameraUpdate.newCameraPosition(
-            CameraPosition(
-              target: origin,
-              zoom: 17.0, // Close-up view
-              bearing: 0,
-              tilt: 0,
-            ),
-          ),
-          duration: Duration(milliseconds: 800),
-        );
-      }
-
-      // Step 2: Fetch detailed route information
+      // Step 1: Fetch detailed route information
       final routeInfo = await _fetchDetailedRoute(origin, destination);
       final polylinePoints = routeInfo['polyline'] as List<LatLng>;
 
-      // Step 3: Set the polyline
+      // Step 2: Set the polyline (show full route)
       _setPolyline(polylinePoints);
 
-      // Step 4: Show route overview after a brief delay (like Google Maps)
-      await Future.delayed(Duration(milliseconds: 1000));
+      // Step 3: Zoom to show driver area (not entire route)
+      _updateCameraForNavigation(origin);
 
-      // Step 5: Zoom out to show entire route
-      await _fitMapToBoundsLikeGoogleMaps(polylinePoints);
-
-      // Step 6: Update UI with route info
+      // Step 4: Update UI with route info
       estimatedDistance.value = routeInfo['distance'].toString();
       estimatedArrivalTime.value = routeInfo['duration'].toString();
 
@@ -305,7 +551,7 @@ class GoToPickupController extends BaseController {
       // Fallback to basic route display
       final polyPoints = await _fetchRoutePolylineWithRetry(origin, destination);
       _setPolyline(polyPoints);
-      _fitMapToBoundsLikeGoogleMaps(polyPoints);
+      _updateCameraForNavigation(origin);
     }
   }
 
@@ -334,53 +580,7 @@ class GoToPickupController extends BaseController {
     };
   }
 
-  Future<void> _fitMapToBoundsLikeGoogleMaps(List<LatLng> routePoints) async {
-    if (_mapController == null || routePoints.isEmpty) return;
-
-    final bounds = _boundsFromLatLngList(routePoints);
-    if (bounds == null) return;
-
-    final distance = Geolocator.distanceBetween(
-      bounds.southwest.latitude, bounds.southwest.longitude,
-      bounds.northeast.latitude, bounds.northeast.longitude,
-    );
-
-    // ✅ Google Maps-style zoom logic
-    double zoomLevel = _calculateOptimalZoom(distance, routePoints.length);
-    int animationDuration = _calculateAnimationDuration(distance);
-
-    final centerLat = (bounds.northeast.latitude + bounds.southwest.latitude) / 2;
-    final centerLng = (bounds.northeast.longitude + bounds.southwest.longitude) / 2;
-
-    await _mapController!.animateCamera(
-      CameraUpdate.newCameraPosition(
-        CameraPosition(
-          target: LatLng(centerLat, centerLng),
-          zoom: zoomLevel,
-        ),
-      ),
-      duration: Duration(milliseconds: animationDuration),
-    );
-  }
-
-  double _calculateOptimalZoom(double distance, int pointCount) {
-    // ✅ Smart zoom calculation based on distance and route complexity
-    if (distance < 1000) return 17.0; // Very close - street detail
-    if (distance < 5000) return 14.0; // Neighborhood level
-    if (distance < 20000) return 12.0; // City level
-    if (distance < 50000) return 10.0; // Regional level
-    return 8.0; // Long distance - overview
-  }
-
-  int _calculateAnimationDuration(double distance) {
-    // ✅ Smooth animations - longer distances get slower animations
-    if (distance < 1000) return 500;
-    if (distance < 5000) return 800;
-    if (distance < 20000) return 1200;
-    return 1500;
-  }
-
-  // ---------------- YOUR ORIGINAL ROUTE + MAP LOGIC (UPDATED) ----------------
+  // ---------------- ROUTE + MAP LOGIC ----------------
   Future<List<LatLng>> _fetchRoutePolylineWithRetry(LatLng o, LatLng d) async {
     try {
       return await executeWithRetryAndReturn(() => _fetchRoutePolyline(o, d), maxRetries: 2);
@@ -595,7 +795,8 @@ class GoToPickupController extends BaseController {
         : null;
 
     if (driver != null && pickup != null) {
-      await _fitMapToBoundsLikeGoogleMaps([driver, pickup]);
+      // ✅ Show both driver and pickup initially, then let navigation take over
+      await _mapController!.animateCamera(CameraUpdate.newLatLngZoom(driver, 14));
     } else if (driver != null) {
       await _mapController!.animateCamera(CameraUpdate.newLatLngZoom(driver, 14));
     } else if (pickup != null) {
@@ -603,7 +804,7 @@ class GoToPickupController extends BaseController {
     }
   }
 
-  // ----------------- YOUR ORIGINAL API METHODS (UNCHANGED) -----------------
+  // ----------------- API METHODS -----------------
   Future<void> callPhone() async {
     final uri = Uri(scheme: 'tel', path: phone.value);
     if (await canLaunchUrl(uri)) {
@@ -643,6 +844,11 @@ class GoToPickupController extends BaseController {
         rideStarted.value = true;
         showSuccess('Ride started');
 
+        // ✅ Update navigation state
+        currentStopIndex.value = 0;
+        currentNavigationTarget.value = 'stop';
+        updateNavigationUI();
+
         // ✅ Rebuild route for dropoffs only when ride starts
         if (currentPosition.value != null) {
           final dropoffs = rideInfo?.dropoffs ?? [];
@@ -656,7 +862,6 @@ class GoToPickupController extends BaseController {
             }
             final multiStopRoute = await _buildRouteThroughPointsWithRetry(routePoints);
             _setPolyline(multiStopRoute);
-            await _fitMapToBoundsLikeGoogleMaps(routePoints);
           }
         }
       });
@@ -704,13 +909,7 @@ class GoToPickupController extends BaseController {
     }
   }
 
-  Future<void> _subscribeToRideIfNeeded() async {
-    if (_rideId != null) {
-      await _subscribeToRideChannel();
-    }
-  }
-
-  // ----------------- YOUR ORIGINAL CANCELLATION METHODS (UNCHANGED) -----------------
+  // ----------------- CANCELLATION METHODS -----------------
   Future<void> showCancelReasons(BuildContext context) async {
     final screenWidth = Get.width;
     final screenHeight = Get.height;

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:doorcab/feautures/shared/screens/app_drawer.dart';
 import 'package:doorcab/utils/constants/colors.dart';
 import 'package:doorcab/utils/theme/custom_theme/text_theme.dart';
 import 'package:flutter/material.dart';
@@ -27,7 +28,7 @@ class RideHomeScreen extends StatelessWidget {
     double sh(double h) => h * screenHeight / baseHeight;
 
     return Scaffold(
-      drawer: const PassengerDrawer(),
+      drawer: const AppDrawer(),
       body: Stack(
         children: [
           /// Map - Fixed at the top (not scrollable)

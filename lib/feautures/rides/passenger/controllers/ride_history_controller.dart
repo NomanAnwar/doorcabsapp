@@ -1,47 +1,109 @@
 import 'package:get/get.dart';
-import '../models/driver_model.dart';
+import '../models/ride_model.dart';
 
 class RideHistoryController extends GetxController {
-  final rides = <Map<String, dynamic>>[].obs;
+  var rides = <RideModel>[].obs;
+  var selectedFilter = "All".obs;
 
   @override
   void onInit() {
     super.onInit();
-    rides.assignAll(List.generate(8, (i) {
-      final fare = 250 + i * 10;
-      return {
-        'id': i,
-        'title': i % 2 == 0 ? 'Door Comfort' : 'Door Bike',
-        'time': '11:${(i + 1).toString().padLeft(2, '0')} PM',
-        'date': 'Sunday, August ${10 - i}',
-        'fare': fare,
-        'status': i % 3 == 0 ? 'Canceled' : 'Completed',
-        'driver': DriverModel(
-          id: i,
-          name: 'Malik shahid',
-          car: 'Suzuki Alto',
-          avatar: 'assets/images/profile_img_sample.png',
-          phone: '03244227502',
-          rating: 4.9,
-          totalRatings: 120,
-          category: 'AC Ride',
-          eta: 2,
-          distance: 0.65,
-          fare: fare,
-          pickup: 'Model Town Link Rd Zainab Tower',
-          dropoff: 'Township, Lahore',
-
-          // ✅ New required fields (dummy coordinates for now)
-          pickupLat: 31.5204,
-          pickupLng: 74.3587,
-          dropoffLat: 31.4500,
-          dropoffLng: 74.4000,
-        ).toMap(),
-      };
-    }));
+    fetchRides();
   }
 
-  void openDetail(Map<String, dynamic> ride) {
-    Get.toNamed('/ride-detail', arguments: ride);
+  void setFilter(String filter) {
+    selectedFilter.value = filter;
+  }
+
+  void fetchRides() {
+    rides.assignAll([
+
+      RideModel(
+        date: "Sunday, August 10",
+        time: "11:25 PM",
+        location: "Service Ln 63 Home",
+        rideType: "Door Comfort",
+        fare: 250,
+        status: "Completed",
+        iconPath: "assets/images/car.png",
+      ),
+      RideModel(
+        date: "Tuesday, August 10",
+        time: "07:50 AM",
+        location: "Service Ln 63 Home",
+        rideType: "Door Bike",
+        fare: 133,
+        status: "Completed",
+        iconPath: "assets/images/bike.png",
+      ),
+      RideModel(
+        date: "Tuesday, August 10",
+        time: "11:00 PM",
+        location: "Service Ln 63 Home",
+        rideType: "Door Comfort",
+        fare: 0,
+        status: "Canceled",
+        iconPath: "assets/images/car.png",
+      ),
+
+
+      RideModel(
+        date: "Tuesday, August 05",
+        time: "07:50 AM",
+        location: "Service Ln 63 Home",
+        rideType: "Door Bike",
+        fare: 133,
+        status: "Completed",
+        iconPath: "assets/images/bike.png",
+      ),
+      RideModel(
+        date: "Tuesday, August 05",
+        time: "02:50 PM",
+        location: "Service Ln 63 Home",
+        rideType: "Delivery",
+        fare: 275,
+        status: "Completed",
+        iconPath: "assets/images/delivery.png",
+      ),
+
+
+      RideModel(
+        date: "Tuesday, August 05",
+        time: "07:50 AM",
+        location: "Service Ln 63 Home",
+        rideType: "Door Bike",
+        fare: 133,
+        status: "Completed",
+        iconPath: "assets/images/bike.png",
+      ),
+      RideModel(
+        date: "Tuesday, August 05",
+        time: "02:50 PM",
+        location: "Service Ln 63 Home",
+        rideType: "Delivery",
+        fare: 275,
+        status: "Completed",
+        iconPath: "assets/images/delivery.png",
+      ),
+
+      RideModel(
+        date: "Tuesday, August 05",
+        time: "07:50 AM",
+        location: "Service Ln 63 Home",
+        rideType: "Door Bike",
+        fare: 133,
+        status: "Completed",
+        iconPath: "assets/images/bike.png",
+      ),
+      RideModel(
+        date: "Tuesday, August 05",
+        time: "02:50 PM",
+        location: "Service Ln 63 Home",
+        rideType: "Delivery",
+        fare: 275,
+        status: "Completed",
+        iconPath: "assets/images/delivery.png",
+      ),
+    ]);
   }
 }

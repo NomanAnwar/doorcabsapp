@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:doorcab/feautures/rides/driver/screens/reuseable_widgets/drawer.dart';
 import 'package:doorcab/feautures/rides/passenger/screens/reusable_widgets/passengers_chips.dart';
 import 'package:doorcab/feautures/rides/passenger/screens/reusable_widgets/ride_request_location_field.dart';
+import 'package:doorcab/feautures/shared/screens/app_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -28,7 +29,7 @@ class RideRequestScreen extends StatelessWidget {
     double sh(double h) => h * screenHeight / baseHeight;
 
     return Scaffold(
-      drawer: PassengerDrawer(),
+      drawer: AppDrawer(),
       backgroundColor: Colors.white,
       body: Stack(
         children: [

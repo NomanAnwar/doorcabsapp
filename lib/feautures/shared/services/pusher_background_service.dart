@@ -91,6 +91,7 @@ class PusherBackgroundService {
             "bid-accepted": (data) => _handleBackgroundEvent('bid-accepted', data, service),
             "bid-rejected": (data) => _handleBackgroundEvent('bid-rejected', data, service),
             "bid-ignored": (data) => _handleBackgroundEvent('bid-ignored', data, service),
+            "ride-closed": (data) => _handleBackgroundEvent('ride-closed', data, service),
           },
         );
       }

@@ -60,6 +60,8 @@ class RideBookingController extends BaseController {
   var isCalculatingFare = false.obs;
   var userCityName = ''.obs;
 
+
+
   // ✅ ADDED: Track if city data is loaded and if city is supported
   var isCityDataLoaded = false.obs;
   var isCitySupported = true.obs;
@@ -97,7 +99,7 @@ class RideBookingController extends BaseController {
   final Map<String, RxBool> passengerAnimations = <String, RxBool>{}.obs;
   final Map<String, RxBool> fareAnimations = <String, RxBool>{}.obs;
 
-  final bids = <Map<String, dynamic>>[].obs;
+  // final bids = <Map<String, dynamic>>[].obs;
 
   // Marker icons
   BitmapDescriptor? pickupBitmap;
@@ -1578,25 +1580,25 @@ class RideBookingController extends BaseController {
             message: 'Ride requested successfully!',
           );
 
-          final passengerId = StorageService.getSignUpResponse()!.userId;
-          if (passengerId != null) {
-            await _pusherManager.subscribeOnce(
-              "passenger-$passengerId",
-              events: {
-                "new-bid": (data) {
-                  debugPrint("📨 Passenger received new bid: $data");
-                  try {
-                    bids.add(data);
-                  } catch (e) {
-                    debugPrint("❌ Error storing bid: $e");
-                  }
-                },
-                "nearby-drivers": (data) {
-                  debugPrint("🗺️ Nearby drivers update: $data");
-                },
-              },
-            );
-          }
+          // final passengerId = StorageService.getSignUpResponse()!.userId;
+          // if (passengerId != null) {
+          //   await _pusherManager.subscribeOnce(
+          //     "passenger-$passengerId",
+          //     events: {
+          //       "new-bid": (data) {
+          //         debugPrint("📨 Passenger received new bid: $data");
+          //         try {
+          //           bids.add(data);
+          //         } catch (e) {
+          //           debugPrint("❌ Error storing bid: $e");
+          //         }
+          //       },
+          //       "nearby-drivers": (data) {
+          //         debugPrint("🗺️ Nearby drivers update: $data");
+          //       },
+          //     },
+          //   );
+          // }
 
           Get.toNamed(
             '/available-drivers',
@@ -1615,7 +1617,7 @@ class RideBookingController extends BaseController {
               'payment': selectedPaymentLabel.value,
               'pickupLat': pickupCoords?.latitude,
               'pickupLng': pickupCoords?.longitude,
-              'bids':bids,
+              // 'bids':bids,
             },
           );
         } else {

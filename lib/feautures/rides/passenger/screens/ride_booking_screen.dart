@@ -5,7 +5,9 @@ import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_svg/svg.dart';
 import '../../../../utils/constants/colors.dart';
+import '../../../../utils/system_ui_mixin.dart';
 import '../../../../utils/theme/custom_theme/text_theme.dart';
+import '../../../shared/screens/app_drawer.dart';
 import '../controllers/ride_booking_controller.dart';
 import '../models/ride_option_model.dart';
 
@@ -14,6 +16,7 @@ class RideBookingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
 
@@ -608,7 +611,7 @@ class RideBookingScreen extends StatelessWidget {
 
     return Scaffold(
       key: controller.scaffoldKey,
-      drawer: PassengerDrawer(),
+      drawer: AppDrawer(),
       // ✅ ADDED: Hide system navigation bar
       body: AnnotatedRegion<SystemUiOverlayStyle>(
         value: SystemUiOverlayStyle(
@@ -917,7 +920,7 @@ class RideBookingScreen extends StatelessWidget {
                               physics: ClampingScrollPhysics(),
                               children: [
                                 ...controller.rideOptions.map(rideItem).toList(),
-                                // SizedBox(height: sh(120)), // Space for bottom actions
+                                SizedBox(height: sh(120)), // Space for bottom actions
                               ],
                             );
                           },

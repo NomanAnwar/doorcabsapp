@@ -4,9 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../../utils/constants/text_strings.dart';
+import '../../../../utils/system_ui_mixin.dart';
 import '../controllers/map_selection_controller.dart';
 
-class MapSelectionScreen extends StatelessWidget {
+class MapSelectionScreen extends StatelessWidget{
   const MapSelectionScreen({super.key});
 
   @override
@@ -20,6 +21,7 @@ class MapSelectionScreen extends StatelessWidget {
     const baseHeight = 956.0;
     double sw(double w) => w * screenWidth / baseWidth;
     double sh(double h) => h * screenHeight / baseHeight;
+
 
     return Scaffold(
       body: Obx(() {

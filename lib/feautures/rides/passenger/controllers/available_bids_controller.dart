@@ -545,11 +545,11 @@ class AvailableBidsController extends BaseController {
 
           print("⏱️ Timer ended for bid ${bid['bidId']}. Auto-rejecting.");
 
-          if (bid['isProcessing'] is RxBool) {
-            (bid['isProcessing'] as RxBool).value = true;
-          } else {
-            bid['isProcessing'] = true.obs;
-          }
+          // if (bid['isProcessing'] is RxBool) {
+          //   (bid['isProcessing'] as RxBool).value = true;
+          // } else {
+          //   bid['isProcessing'] = true.obs;
+          // }
 
           bids.removeWhere((b) => b['bidId'] == bid['bidId']);
           rejectBid(bid);

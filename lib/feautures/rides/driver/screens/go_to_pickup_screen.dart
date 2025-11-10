@@ -1,3 +1,4 @@
+import 'package:doorcab/feautures/shared/screens/app_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -27,7 +28,7 @@ class GoToPickupScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      drawer: const DriverDrawer(),
+      drawer: const AppDrawer(),
       body: SizedBox(
         width: screenWidth,
         height: screenHeight,
@@ -70,6 +71,70 @@ class GoToPickupScreen extends StatelessWidget {
                   indoorViewEnabled: false,
                 );
               }),
+            ),
+
+            Positioned(
+              top: sh(535) - sw(80), // Position above the passenger info card
+              right: sw(20),
+              child: GestureDetector(
+                onTap: () {
+                  if (!c.rideStarted.value) {
+                    // Navigate to pickup
+                    c.navigateToPickup();
+                  } else {
+                    // Navigate to current stop/dropoff
+                    c.navigateToCurrentStop();
+                  }
+                },
+                child: Container(
+                  width: sw(50),
+                  height: sw(50),
+                  decoration: BoxDecoration(
+                    color: FColors.secondaryColor,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.3),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    Icons.navigation,
+                    color: Colors.white,
+                    size: sw(24),
+                  ),
+                ),
+              ),
+            ),
+
+            /// Optional: Navigation Info Text (shows current target)
+            Positioned(
+              top: sh(535) - sw(120),
+              right: sw(20),
+              child: Obx(() => Container(
+                padding: EdgeInsets.symmetric(horizontal: sw(12), vertical: sh(6)),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(sw(20)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Text(
+                  c.getNavigationButtonText(),
+                  style: FTextTheme.lightTextTheme.bodySmall!.copyWith(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black,
+                  ),
+                ),
+              )),
             ),
 
             /// Back Button

@@ -23,6 +23,9 @@ class RideRequestDetailController extends BaseController {
   // Ride request model
   late final RequestModel request;
 
+  Timer? _bidTimeoutTimer; // Add this
+  final RxBool isBidTimeout = false.obs;
+
   final RxString passengerName = "".obs;
   final RxDouble passengerRating = 0.0.obs;
   final RxString pickupAddress = "".obs;
@@ -56,9 +59,13 @@ class RideRequestDetailController extends BaseController {
   // keep your API key as in your code
   static const String apiKey = "AIzaSyAmN17lAC9v1BSdRB6Q_R75boSy_mXjDe4";
 
+  bool _hasSubscribedToRideClosed = false;
+
   @override
   void onInit() {
     super.onInit();
+
+    _subscribeToRideClosed();
 
     // Add a safety check to ensure we have a valid request
     if (Get.arguments?['request'] == null) {
@@ -100,6 +107,35 @@ class RideRequestDetailController extends BaseController {
     _setMapData();
 
     // REMOVED: _startOfferCountdown();
+  }
+
+  /// Start 30-second timeout timer
+  void _startBidTimeoutTimer() {
+    _bidTimeoutTimer?.cancel(); // Cancel any existing timer
+
+    _bidTimeoutTimer = Timer(Duration(seconds: 30), () {
+      if (isBidSubmitted.value && bidStatus.value == "submitted") {
+        print("⏰ Bid response timeout - no response received in 30 seconds");
+        isBidTimeout.value = true;
+
+        // Allow user to interact again
+        isBidSubmitted.value = false;
+        isLoading.value = false;
+
+        FSnackbar.show(
+          title: "Timeout",
+          message: "No response received. You can now interact with the screen again.",
+          isError: true,
+        );
+      }
+    });
+  }
+
+  /// Cancel timeout timer
+  void _cancelBidTimeoutTimer() {
+    _bidTimeoutTimer?.cancel();
+    _bidTimeoutTimer = null;
+    isBidTimeout.value = false;
   }
 
   /// NEW: fetch route & markers from Google Directions API (handles stops/waypoints)
@@ -394,7 +430,7 @@ class RideRequestDetailController extends BaseController {
     final bounds = LatLngBounds(southwest: southwest, northeast: northeast);
 
     try {
-      await mapController!.animateCamera(CameraUpdate.newLatLngBounds(bounds, 60));
+      await mapController!.animateCamera(CameraUpdate.newLatLngBounds(bounds, 20));
     } catch (e) {
       // If animateCamera with bounds fails (sometimes on small devices), fallback to center+zoom
       final center = LatLng((minLat + maxLat) / 2, (minLng + maxLng) / 2);
@@ -405,9 +441,117 @@ class RideRequestDetailController extends BaseController {
   // REMOVED: _startOfferCountdown() method
 
 
+  Future<void> _subscribeToRideClosed() async {
+    if (_hasSubscribedToRideClosed) return;
+
+    try {
+      final driverId = StorageService.getSignUpResponse()?.userId;
+      if (driverId != null) {
+        await _pusherManager.subscribeOnce(
+          "driver-$driverId",
+          events: {
+            "ride-closed": (data) => _handleRideClosed(data),
+          },
+        );
+        _hasSubscribedToRideClosed = true;
+        print("✅ Detail screen subscribed to ride-closed events");
+      }
+    } catch (e) {
+      print("❌ Error subscribing to ride-closed in detail: $e");
+    }
+  }
+
+  // ✅ UPDATED: Handle ride-closed event
+  // void _handleRideClosed(Map<String, dynamic> eventData) {
+  //   print("🚫 ride-closed event received in detail controller: $eventData");
+  //
+  //   try {
+  //     final rideId = eventData['rideId']?.toString() ?? "";
+  //     final message = eventData['message']?.toString() ?? "Ride is no longer available";
+  //
+  //     if (rideId == request.id) {
+  //       print("🗑️ Current ride $rideId was closed, navigating back");
+  //
+  //       // Stop any ongoing processes
+  //       isLoading.value = false;
+  //       isBidSubmitted.value = false;
+  //
+  //       // ✅ DEBUG: Print current route info
+  //       print("🔍 Current route: ${Get.currentRoute}");
+  //       print("🔍 Can pop: ${Navigator.of(Get.context!).canPop()}");
+  //
+  //       // Show notification
+  //       // FSnackbar.show(
+  //       //   title: "Ride Closed",
+  //       //   message: message,
+  //       //   isError: true,
+  //       // );
+  //
+  //       // ✅ RELIABLE: Check if we can navigate and use multiple attempts
+  //       // Future.delayed(Duration(milliseconds: 800), () {
+  //         if (Get.isDialogOpen == true) {
+  //           Get.back(); // Close any dialogs first
+  //         }
+  //
+  //         if (Navigator.of(Get.context!).canPop()) {
+  //           Get.back();
+  //           print("✅ Navigation via Get.back() successful");
+  //         } else {
+  //           // Force navigation
+  //           Get.offAllNamed('/ride-request-list');
+  //           print("✅ Navigation via offAllNamed successful");
+  //         }
+  //       // });
+  //
+  //     } else {
+  //       print("ℹ️ ride-closed event for different ride: $rideId (current: ${request.id})");
+  //     }
+  //   } catch (e, s) {
+  //     print("❌ Error handling ride-closed in detail controller: $e");
+  //     print(s);
+  //   }
+  // }
+
+  void _handleRideClosed(Map<String, dynamic> eventData) {
+    print("🚫 ride-closed event received in detail controller: $eventData");
+
+    try {
+      final rideId = eventData['rideId']?.toString() ?? "";
+      final message = eventData['message']?.toString() ?? "Ride is no longer available";
+
+      if (rideId == request.id) {
+        print("🗑️ Current ride $rideId was closed, navigating back");
+
+        isLoading.value = false;
+        isBidSubmitted.value = false;
+
+        // ✅ FIX: Use Flutter's Navigator directly
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Navigator.of(Get.context!).popUntil((route) => route.isFirst);
+        });
+
+        // Show notification
+        FSnackbar.show(
+          title: "Ride Closed",
+          message: message,
+          isError: true,
+        );
+
+      } else {
+        print("ℹ️ ride-closed event for different ride: $rideId (current: ${request.id})");
+      }
+    } catch (e, s) {
+      print("❌ Error handling ride-closed in detail controller: $e");
+      print(s);
+    }
+  }
+
+
   // ✅ UPDATED: Handle bid responses
   void _handleBidResponse(Map<String, dynamic> data, String eventType) {
     print("🎯 Bid $eventType received: $data");
+
+    _cancelBidTimeoutTimer();
 
     // Hide loading
     isLoading.value = false;
@@ -545,6 +689,7 @@ class RideRequestDetailController extends BaseController {
   // }
 
   // ✅ UPDATED: Now stays on screen and waits for events
+
   Future<void> acceptRide(String rideId, double fareOffered) async {
     try {
       // ✅ VALIDATION: Check if fare is at least original amount
@@ -557,6 +702,7 @@ class RideRequestDetailController extends BaseController {
       isLoading.value = true;
       isBidSubmitted.value = true;
       bidStatus.value = "submitted";
+      isBidTimeout.value = false;
 
       await executeWithRetry(() async {
         // ✅ Ensure auth token is set
@@ -575,6 +721,8 @@ class RideRequestDetailController extends BaseController {
         print("🚀 Ride bid response: $response");
 
         if (response['message'] == "Bid submitted") {
+
+
           final bid = response['bid'];
           String? driverId;
           if (bid != null) {
@@ -597,6 +745,7 @@ class RideRequestDetailController extends BaseController {
                 "bid-accepted": (data) => _handleBidResponse(data, "bid-accepted"),
                 "bid-rejected": (data) => _handleBidResponse(data, "bid-rejected"),
                 "bid-ignored": (data) => _handleBidResponse(data, "bid-ignored"),
+                "ride-closed": (data) => _handleRideClosed(data),
               },
             ));
 
@@ -631,7 +780,8 @@ class RideRequestDetailController extends BaseController {
             await Future.wait(subs);
           }
 
-          showSuccess("Your bid of PKR $fareOffered was submitted successfully! Waiting for response...");
+          _startBidTimeoutTimer();
+          FSnackbar.show(title: 'Bid Submitted', message: "Your bid of PKR $fareOffered was submitted successfully! Waiting for response...");
 
           // REMOVED: Get.back(result: 'accepted'); - Now we stay on screen
 
@@ -644,6 +794,7 @@ class RideRequestDetailController extends BaseController {
       showError("Failed to submit ride bid. Please try again.");
       isLoading.value = false;
       isBidSubmitted.value = false;
+      _cancelBidTimeoutTimer();
     }
     // Note: We don't set isLoading to false here because we're waiting for events
   }
@@ -723,6 +874,14 @@ class RideRequestDetailController extends BaseController {
 
   @override
   void onClose() {
+
+    // if (_hasSubscribedToRideClosed) {
+    //   final driverId = StorageService.getSignUpResponse()?.userId;
+    //   if (driverId != null) {
+    //     _pusherManager.unsubscribeSafely("driver-$driverId");
+    //   }
+    // }
+    _cancelBidTimeoutTimer();
     offerController.dispose();
     mapController = null;
     super.onClose();

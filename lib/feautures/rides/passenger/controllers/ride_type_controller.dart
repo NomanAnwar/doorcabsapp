@@ -37,6 +37,8 @@ class RideTypeController extends BaseController { // ✅ CHANGED: Extend BaseCon
 
   /// ✅ UPDATED: Use BaseController's executeWithRetry
   Future<void> loadAllData() async {
+
+    print("User profile data : "+ StorageService.getProfile().toString());
     try {
       isLoading.value = true;
       error.value = '';

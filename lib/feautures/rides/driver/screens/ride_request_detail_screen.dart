@@ -61,9 +61,7 @@ class RideRequestDetailScreen extends StatelessWidget {
                             size: sw(24),
                           ),
                           onPressed:
-                              c.isBidSubmitted.value
-                                  ? null
-                                  : () => c.closeScreen(),
+                          (c.isBidSubmitted.value && !c.isBidTimeout.value) ? null : () => c.closeScreen(),
                         ),
                       ),
 
@@ -464,14 +462,14 @@ class RideRequestDetailScreen extends StatelessWidget {
                                   ),
                                 ),
                                 onPressed:
-                                    !c.isAcceptButtonEnabled
-                                        ? null
-                                        : () {
-                                          c.acceptRide(
-                                            c.request.id,
-                                            c.fare.value.toDouble(),
-                                          );
-                                        },
+                                (!c.isAcceptButtonEnabled || (c.isBidSubmitted.value && !c.isBidTimeout.value))
+                                    ? null
+                                    : () {
+                                  c.acceptRide(
+                                    c.request.id,
+                                    c.fare.value.toDouble(),
+                                  );
+                                },
                                 child: Text(
                                   "Accept",
                                   style: FTextTheme.lightTextTheme.titleSmall!
@@ -589,7 +587,7 @@ class RideRequestDetailScreen extends StatelessWidget {
                               ),
                             ),
                             onPressed:
-                                c.isBidSubmitted.value
+                            (c.isBidSubmitted.value && !c.isBidTimeout.value)
                                     ? null
                                     : () => c.closeScreen(),
                             child: Text(

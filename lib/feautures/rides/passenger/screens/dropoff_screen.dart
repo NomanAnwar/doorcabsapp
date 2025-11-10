@@ -4,6 +4,7 @@ import 'package:doorcab/utils/theme/custom_theme/text_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
+import '../../../../utils/system_ui_mixin.dart';
 import '../controllers/dropoff_controller.dart';
 
 class DropOffScreen extends StatelessWidget {
@@ -11,6 +12,8 @@ class DropOffScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
+
     const apiKey = String.fromEnvironment(
       'MAPS_API_KEY',
       defaultValue: 'AIzaSyAmN17lAC9v1BSdRB6Q_R75boSy_mXjDe4',
@@ -26,6 +29,7 @@ class DropOffScreen extends StatelessWidget {
 
     double sw(double w) => w * screenWidth / baseWidth;
     double sh(double h) => h * screenHeight / baseHeight;
+
 
     return Scaffold(
       resizeToAvoidBottomInset: false,

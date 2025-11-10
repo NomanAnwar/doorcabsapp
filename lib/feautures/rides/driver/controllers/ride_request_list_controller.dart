@@ -186,6 +186,36 @@ class RideRequestListController extends BaseController {
     }
   }
 
+  // ✅ NEW: Handle ride-closed event
+  void _handleRideClosed(Map<String, dynamic> eventData) {
+    print("🚫 ride-closed event received in ride list controller: $eventData");
+
+    try {
+      final rideId = eventData['rideId']?.toString() ?? "";
+      final message = eventData['message']?.toString() ?? "Ride is no longer available";
+
+      if (rideId.isNotEmpty) {
+        // Remove the request from the list
+        final removed = requests.any((r) => r.id == rideId);
+        requests.removeWhere((r) => r.id == rideId);
+
+        print("🗑️ Removed request $rideId from list due to ride-closed event");
+
+        // Show notification to user
+        // if (removed) {
+          // FSnackbar.show(
+          //   title: "Ride Closed",
+          //   message: message,
+          //   isError: true,
+          // );
+        // }
+      }
+    } catch (e, s) {
+      print("❌ Error handling ride-closed: $e");
+      print(s);
+    }
+  }
+
   Future<void> _subscribeToChannels(String driverId) async {
     final privateChannel = "private-driver-$driverId";
     final driverChannel = "driver-$driverId";
@@ -219,6 +249,10 @@ class RideRequestListController extends BaseController {
               },
               "bid-rejected": (eventData) {
                 FSnackbar.show(title: "Bid Rejected", message: "Offer best fare to passenger.");
+              },
+              // ✅ ADD: ride-closed event
+              "ride-closed": (eventData) {
+                _handleRideClosed(eventData);
               },
             },
           );

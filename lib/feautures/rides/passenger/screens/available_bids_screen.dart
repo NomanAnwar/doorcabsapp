@@ -4,6 +4,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import '../../../../common/widgets/buttons/f_primary_button.dart';
 import '../../../../utils/constants/colors.dart';
+import '../../../../utils/system_ui_mixin.dart';
 import '../../../../utils/theme/custom_theme/text_theme.dart';
 import '../controllers/available_bids_controller.dart';
 
@@ -57,14 +58,16 @@ class AvailableBidsScreen extends StatelessWidget {
                       left: sw(10),
                       right: sw(10),
                       bottom: sh(332),
-                      child: Obx(() => ListView.builder(
-                        padding: EdgeInsets.zero,
-                        itemCount: c.bids.length,
-                        itemBuilder: (_, i) {
-                          final bid = c.bids[i];
-                          return _buildBidItem(bid, c, sw, sh);
-                        },
-                      )),
+                      child: Obx(
+                        () => ListView.builder(
+                          padding: EdgeInsets.zero,
+                          itemCount: c.bids.length,
+                          itemBuilder: (_, i) {
+                            final bid = c.bids[i];
+                            return _buildBidItem(bid, c, sw, sh);
+                          },
+                        ),
+                      ),
                     ),
 
                     /// Bottom container
@@ -76,12 +79,11 @@ class AvailableBidsScreen extends StatelessWidget {
                         height: sh(332),
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.vertical(top: Radius.circular(sw(14))),
+                          borderRadius: BorderRadius.vertical(
+                            top: Radius.circular(sw(14)),
+                          ),
                           boxShadow: [
-                            BoxShadow(
-                                color: Colors.black26,
-                                blurRadius: sw(6)
-                            )
+                            BoxShadow(color: Colors.black26, blurRadius: sw(6)),
                           ],
                         ),
                         child: Stack(
@@ -91,18 +93,23 @@ class AvailableBidsScreen extends StatelessWidget {
                               top: sh(21),
                               left: sw(15),
                               width: sw(203),
-                              child: Obx(() => Text(
-                                "${c.viewingDrivers.value} drivers are viewing your request",
-                                style: FTextTheme.lightTextTheme.labelSmall!
-                                    .copyWith(
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: FTextTheme.lightTextTheme
-                                      .labelSmall!.fontSize! *
-                                      screenWidth /
-                                      baseWidth,
+                              child: Obx(
+                                () => Text(
+                                  "${c.viewingDrivers.value} drivers are viewing your request",
+                                  style: FTextTheme.lightTextTheme.labelSmall!
+                                      .copyWith(
+                                        fontWeight: FontWeight.w500,
+                                        fontSize:
+                                            FTextTheme
+                                                .lightTextTheme
+                                                .labelSmall!
+                                                .fontSize! *
+                                            screenWidth /
+                                            baseWidth,
+                                      ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                overflow: TextOverflow.ellipsis,
-                              )),
+                              ),
                             ),
 
                             /// Driver avatars row - ✅ UPDATED: Use dynamic avatars from events
@@ -111,20 +118,25 @@ class AvailableBidsScreen extends StatelessWidget {
                               left: sw(291),
                               width: sw(108),
                               height: sh(24),
-                              child: Obx(() => ListView.separated(
-                                scrollDirection: Axis.horizontal,
-                                itemCount: c.driverAvatars.take(6).length,
-                                separatorBuilder: (_, __) => SizedBox(width: sw(2)),
-                                itemBuilder: (_, index) {
-                                  final avatar = c.driverAvatars[index];
-                                  return CircleAvatar(
-                                    radius: sw(12),
-                                    backgroundImage: avatar.startsWith('http')
-                                        ? NetworkImage(avatar) as ImageProvider
-                                        : AssetImage(avatar),
-                                  );
-                                },
-                              )),
+                              child: Obx(
+                                () => ListView.separated(
+                                  scrollDirection: Axis.horizontal,
+                                  itemCount: c.driverAvatars.take(6).length,
+                                  separatorBuilder:
+                                      (_, __) => SizedBox(width: sw(2)),
+                                  itemBuilder: (_, index) {
+                                    final avatar = c.driverAvatars[index];
+                                    return CircleAvatar(
+                                      radius: sw(12),
+                                      backgroundImage:
+                                          avatar.startsWith('http')
+                                              ? NetworkImage(avatar)
+                                                  as ImageProvider
+                                              : AssetImage(avatar),
+                                    );
+                                  },
+                                ),
+                              ),
                             ),
 
                             /// Grey sub-container
@@ -146,14 +158,19 @@ class AvailableBidsScreen extends StatelessWidget {
                                       left: sw(15),
                                       child: Text(
                                         "Accept an offer from a driver",
-                                        style: FTextTheme.lightTextTheme.titleSmall!
+                                        style: FTextTheme
+                                            .lightTextTheme
+                                            .titleSmall!
                                             .copyWith(
-                                          fontWeight: FontWeight.w500,
-                                          fontSize: FTextTheme.lightTextTheme
-                                              .titleSmall!.fontSize! *
-                                              screenWidth /
-                                              baseWidth,
-                                        ),
+                                              fontWeight: FontWeight.w500,
+                                              fontSize:
+                                                  FTextTheme
+                                                      .lightTextTheme
+                                                      .titleSmall!
+                                                      .fontSize! *
+                                                  screenWidth /
+                                                  baseWidth,
+                                            ),
                                       ),
                                     ),
 
@@ -161,13 +178,15 @@ class AvailableBidsScreen extends StatelessWidget {
                                     Positioned(
                                       top: sh(25),
                                       right: sw(22),
-                                      child: Obx(() => Text(
-                                        "${c.remainingSeconds.value}s",
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: sw(16),
+                                      child: Obx(
+                                        () => Text(
+                                          "${c.remainingSeconds.value}s",
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: sw(16),
+                                          ),
                                         ),
-                                      )),
+                                      ),
                                     ),
 
                                     /// Progress bar
@@ -175,11 +194,13 @@ class AvailableBidsScreen extends StatelessWidget {
                                       top: sh(51),
                                       left: sw(15),
                                       right: sw(15),
-                                      child: Obx(() => LinearProgressIndicator(
-                                        value: c.remainingSeconds.value / 60,
-                                        color: FColors.primaryColor,
-                                        backgroundColor: FColors.chipBg,
-                                      )),
+                                      child: Obx(
+                                        () => LinearProgressIndicator(
+                                          value: c.remainingSeconds.value / 60,
+                                          color: FColors.primaryColor,
+                                          backgroundColor: FColors.chipBg,
+                                        ),
+                                      ),
                                     ),
 
                                     /// Black container (Auto accept) - ✅ UPDATED: Use dynamic fare
@@ -193,10 +214,13 @@ class AvailableBidsScreen extends StatelessWidget {
                                           color: FColors.chipBg,
                                         ),
                                         child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
                                           children: [
                                             Padding(
-                                              padding: EdgeInsets.only(left: sw(14)),
+                                              padding: EdgeInsets.only(
+                                                left: sw(14),
+                                              ),
                                               child: SvgPicture.asset(
                                                 'assets/images/forward.svg',
                                                 width: sw(34),
@@ -206,31 +230,46 @@ class AvailableBidsScreen extends StatelessWidget {
                                             Container(
                                               width: sw(300),
                                               height: sh(42),
-                                              child: Obx(() => Text(
-                                                "Auto Accept the nearest driver for PKR ${c.currentFare.value}",
-                                                maxLines: 2,
-                                                style: FTextTheme.darkTextTheme.titleSmall!
-                                                    .copyWith(
-                                                  fontWeight: FontWeight.w500,
-                                                  fontSize: FTextTheme.darkTextTheme
-                                                      .titleSmall!.fontSize! *
-                                                      screenWidth /
-                                                      baseWidth,
+                                              child: Obx(
+                                                () => Text(
+                                                  "Auto Accept the nearest driver for PKR ${c.currentFare.value}",
+                                                  maxLines: 2,
+                                                  style: FTextTheme
+                                                      .darkTextTheme
+                                                      .titleSmall!
+                                                      .copyWith(
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                        fontSize:
+                                                            FTextTheme
+                                                                .darkTextTheme
+                                                                .titleSmall!
+                                                                .fontSize! *
+                                                            screenWidth /
+                                                            baseWidth,
+                                                      ),
                                                 ),
-                                              )),
+                                              ),
                                             ),
                                             Padding(
-                                              padding: EdgeInsets.only(right: sw(14)),
-                                              child: Obx(() => Transform.scale(
-                                                scale: 0.8,
-                                                child: Switch(
-                                                  padding: EdgeInsets.zero,
-                                                  activeColor: FColors.primaryColor,
-                                                  inactiveTrackColor: FColors.white,
-                                                  value: c.autoAccept.value,
-                                                  onChanged: c.onAutoAcceptToggle,
+                                              padding: EdgeInsets.only(
+                                                right: sw(14),
+                                              ),
+                                              child: Obx(
+                                                () => Transform.scale(
+                                                  scale: 0.8,
+                                                  child: Switch(
+                                                    padding: EdgeInsets.zero,
+                                                    activeColor:
+                                                        FColors.primaryColor,
+                                                    inactiveTrackColor:
+                                                        FColors.white,
+                                                    value: c.autoAccept.value,
+                                                    onChanged:
+                                                        c.onAutoAcceptToggle,
+                                                  ),
                                                 ),
-                                              )),
+                                              ),
                                             ),
                                           ],
                                         ),
@@ -245,17 +284,23 @@ class AvailableBidsScreen extends StatelessWidget {
                                       height: sh(48),
                                       child: FPrimaryButton(
                                         text: "Cancel Request",
-                                        onPressed: c.handleBackPress, // ✅ Use cancellation flow
+                                        onPressed: c.handleBackPress,
+                                        // ✅ Use cancellation flow
                                         backgroundColor: FColors.chipBg,
                                         designBorderRadius: sw(12),
-                                        textStyle: FTextTheme.darkTextTheme.titleSmall!
+                                        textStyle: FTextTheme
+                                            .darkTextTheme
+                                            .titleSmall!
                                             .copyWith(
-                                          fontWeight: FontWeight.w500,
-                                          fontSize: FTextTheme.darkTextTheme
-                                              .titleSmall!.fontSize! *
-                                              screenWidth /
-                                              baseWidth,
-                                        ),
+                                              fontWeight: FontWeight.w500,
+                                              fontSize:
+                                                  FTextTheme
+                                                      .darkTextTheme
+                                                      .titleSmall!
+                                                      .fontSize! *
+                                                  screenWidth /
+                                                  baseWidth,
+                                            ),
                                       ),
                                     ),
                                   ],
@@ -272,58 +317,71 @@ class AvailableBidsScreen extends StatelessWidget {
             ),
 
             /// Loading overlay for cancellation
-            Obx(() => c.isCancellingRide.value
-                ? Container(
-              color: Colors.black.withOpacity(0.5),
-              width: double.infinity,
-              height: double.infinity,
-              child: Center(
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: sw(30), vertical: sh(20)),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(sw(16)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
-                        blurRadius: sw(10),
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SizedBox(
-                        width: sw(40),
-                        height: sw(40),
-                        child: CircularProgressIndicator(
-                          strokeWidth: 3,
-                          valueColor: AlwaysStoppedAnimation<Color>(FColors.primaryColor),
+            Obx(
+              () =>
+                  c.isCancellingRide.value
+                      ? Container(
+                        color: Colors.black.withOpacity(0.5),
+                        width: double.infinity,
+                        height: double.infinity,
+                        child: Center(
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: sw(30),
+                              vertical: sh(20),
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(sw(16)),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.2),
+                                  blurRadius: sw(10),
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                SizedBox(
+                                  width: sw(40),
+                                  height: sw(40),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 3,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      FColors.primaryColor,
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(height: sh(16)),
+                                Text(
+                                  'Cancelling ride...',
+                                  style: TextStyle(
+                                    fontSize: sw(16),
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
-                      ),
-                      SizedBox(height: sh(16)),
-                      Text(
-                        'Cancelling ride...',
-                        style: TextStyle(
-                          fontSize: sw(16),
-                          fontWeight: FontWeight.w500,
-                          color: Colors.black87,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            )
-                : const SizedBox.shrink()),
+                      )
+                      : const SizedBox.shrink(),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildBidItem(Map<String, dynamic> bid, AvailableBidsController c, double Function(double) sw, double Function(double) sh) {
+  Widget _buildBidItem(
+    Map<String, dynamic> bid,
+    AvailableBidsController c,
+    double Function(double) sw,
+    double Function(double) sh,
+  ) {
     return Container(
       margin: EdgeInsets.symmetric(vertical: sh(8)),
       width: sw(420),
@@ -331,12 +389,7 @@ class AvailableBidsScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: FColors.phoneInputField,
         borderRadius: BorderRadius.circular(sw(12)),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black12,
-              blurRadius: sw(4)
-          )
-        ],
+        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: sw(4))],
       ),
       child: Stack(
         children: [
@@ -349,15 +402,22 @@ class AvailableBidsScreen extends StatelessWidget {
               backgroundColor: Colors.grey.shade200,
               child: ClipOval(
                 child: CachedNetworkImage(
-                  imageUrl: (bid['driver']['profileImage'] != null &&
-                      bid['driver']['profileImage'].toString().isNotEmpty)
-                      ? bid['driver']['profileImage'].toString()
-                      : "https://via.placeholder.com/150",
+                  imageUrl:
+                      (bid['driver']['profileImage'] != null &&
+                              bid['driver']['profileImage']
+                                  .toString()
+                                  .isNotEmpty)
+                          ? bid['driver']['profileImage'].toString()
+                          : "https://via.placeholder.com/150",
                   fit: BoxFit.cover,
                   width: sw(64),
                   height: sh(64),
-                  placeholder: (_, __) => Image.asset("assets/images/profile_img_sample.png"),
-                  errorWidget: (_, __, ___) => Image.asset("assets/images/profile_img_sample.png"),
+                  placeholder:
+                      (_, __) =>
+                          Image.asset("assets/images/profile_img_sample.png"),
+                  errorWidget:
+                      (_, __, ___) =>
+                          Image.asset("assets/images/profile_img_sample.png"),
                 ),
               ),
             ),
@@ -380,7 +440,8 @@ class AvailableBidsScreen extends StatelessWidget {
                 Icon(Icons.star, color: Colors.amber, size: sw(14)),
                 SizedBox(width: sw(5)),
                 Text(
-                  (bid['driver']['avgRating'] == null || bid['driver']['avgRating'].toString().isEmpty)
+                  (bid['driver']['avgRating'] == null ||
+                          bid['driver']['avgRating'].toString().isEmpty)
                       ? '0'
                       : bid['driver']['avgRating'].toString(),
                   style: FTextTheme.lightTextTheme.bodyLarge!.copyWith(
@@ -389,7 +450,8 @@ class AvailableBidsScreen extends StatelessWidget {
                 ),
                 SizedBox(width: sw(4)),
                 Text(
-                  (bid['driver']?['total_ratings'] == null || bid['driver']['total_ratings'].toString().isEmpty)
+                  (bid['driver']?['total_ratings'] == null ||
+                          bid['driver']['total_ratings'].toString().isEmpty)
                       ? '(0)'
                       : "(${bid['driver']['total_ratings']})",
                   style: FTextTheme.lightTextTheme.bodyLarge!.copyWith(
@@ -417,7 +479,8 @@ class AvailableBidsScreen extends StatelessWidget {
             top: sh(23),
             left: sw(104),
             child: Text(
-              ("${bid['driver']?['name']?['firstName'] ?? ''} ${bid['driver']?['name']?['lastName'] ?? ''}").toUpperCase(),
+              ("${bid['driver']?['name']?['firstName'] ?? ''} ${bid['driver']?['name']?['lastName'] ?? ''}")
+                  .toUpperCase(),
               style: FTextTheme.lightTextTheme.bodyLarge,
             ),
           ),
@@ -429,7 +492,7 @@ class AvailableBidsScreen extends StatelessWidget {
             child: Text(
               "${bid['driver']?['vehicleType'] ?? ''}, ${bid['driver']?['vehicle'] ?? ''}",
               style: FTextTheme.lightTextTheme.bodyLarge!.copyWith(
-                  fontSize: 10
+                fontSize: 10,
               ),
             ),
           ),
@@ -442,13 +505,12 @@ class AvailableBidsScreen extends StatelessWidget {
               children: [
                 Text(
                   "PKR ",
-                  style: FTextTheme.lightTextTheme.titleSmall!.copyWith(
-                  ),
+                  style: FTextTheme.lightTextTheme.titleSmall!.copyWith(),
                 ),
                 Text(
                   "${bid['fareOffered']}",
                   style: FTextTheme.lightTextTheme.displaySmall!.copyWith(
-                      fontWeight: FontWeight.w600
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
@@ -460,7 +522,8 @@ class AvailableBidsScreen extends StatelessWidget {
             top: sh(12),
             right: sw(25),
             child: Row(
-              mainAxisSize: MainAxisSize.min, // ✅ keeps Row only as wide as needed
+              mainAxisSize: MainAxisSize.min,
+              // ✅ keeps Row only as wide as needed
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Text(
@@ -483,72 +546,182 @@ class AvailableBidsScreen extends StatelessWidget {
           ),
 
           /// Accept button with progress
+          // Positioned(
+          //   top: sh(34),
+          //   right: sw(10),
+          //   width: sw(133),
+          //   height: sh(37),
+          //   child: Obx(() {
+          //     double progress = 0.0;
+          //     int secondsLeft = 0;
+          //     if (bid.containsKey('timer')) {
+          //       try {
+          //         secondsLeft = (bid['timer'] as RxInt).value;
+          //         progress = ((20 - secondsLeft) / 20).clamp(0.0, 1.0);
+          //       } catch (_) {
+          //         progress = 0.0;
+          //       }
+          //     } else if (bid.containsKey('progress')) {
+          //       final p = bid['progress'];
+          //       if (p is RxDouble) {
+          //         progress = (p.value).clamp(0.0, 1.0);
+          //       } else if (p is double) {
+          //         progress = p.clamp(0.0, 1.0);
+          //       }
+          //     }
+          //
+          //     final overlayColor = bid.containsKey('progressColor')
+          //         ? FColors.secondaryColor
+          //         : FColors.rideTypeBg;
+          //
+          //     return GestureDetector(
+          //       onTap: () => c.acceptBid(bid),
+          //       child: ClipRRect(
+          //         borderRadius: BorderRadius.circular(sw(8)),
+          //         child: Stack(
+          //           fit: StackFit.passthrough,
+          //           children: [
+          //             // base background
+          //             Container(
+          //               width: double.infinity,
+          //               height: double.infinity,
+          //               color: FColors.primaryColor,
+          //             ),
+          //
+          //             // colored filling progress
+          //             FractionallySizedBox(
+          //               alignment: Alignment.centerLeft,
+          //               widthFactor: progress,
+          //               child: Container(
+          //                 height: double.infinity,
+          //                 color: overlayColor,
+          //               ),
+          //             ),
+          //
+          //             // label on top
+          //             Center(
+          //               child: Text(
+          //                 "Accept",
+          //                 style: FTextTheme.lightTextTheme.titleMedium?.copyWith(
+          //                   color: Colors.white,
+          //                 ),
+          //               ),
+          //             ),
+          //           ],
+          //         ),
+          //       ),
+          //     );
+          //   }),
+          // ),
           Positioned(
             top: sh(34),
             right: sw(10),
             width: sw(133),
             height: sh(37),
-            child: Obx(() {
-              double progress = 0.0;
-              int secondsLeft = 0;
-              if (bid.containsKey('timer')) {
-                try {
-                  secondsLeft = (bid['timer'] as RxInt).value;
-                  progress = ((20 - secondsLeft) / 20).clamp(0.0, 1.0);
-                } catch (_) {
-                  progress = 0.0;
-                }
-              } else if (bid.containsKey('progress')) {
-                final p = bid['progress'];
-                if (p is RxDouble) {
-                  progress = (p.value).clamp(0.0, 1.0);
-                } else if (p is double) {
-                  progress = p.clamp(0.0, 1.0);
-                }
-              }
+            child: Builder(
+              builder: (context) {
+                // ✅ Find the exact reactive bid from controller
+                final existingBid = c.bids.firstWhereOrNull(
+                  (b) => b['bidId'] == bid['bidId'],
+                );
+                if (existingBid == null) return const SizedBox();
 
-              final overlayColor = bid.containsKey('progressColor')
-                  ? FColors.secondaryColor
-                  : FColors.rideTypeBg;
+                // Extract Rx values once
+                final rxTimer = existingBid['timer'];
+                final rxProcessing = existingBid['isProcessing'];
 
-              return GestureDetector(
-                onTap: () => c.acceptBid(bid),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(sw(8)),
-                  child: Stack(
-                    fit: StackFit.passthrough,
-                    children: [
-                      // base background
-                      Container(
-                        width: double.infinity,
-                        height: double.infinity,
-                        color: FColors.primaryColor,
-                      ),
+                // ✅ Only wrap reactive parts in Obx
+                return Obx(() {
+                  double progress = 0.0;
+                  int secondsLeft = 0;
+                  bool isProcessing = false;
 
-                      // colored filling progress
-                      FractionallySizedBox(
-                        alignment: Alignment.centerLeft,
-                        widthFactor: progress,
-                        child: Container(
-                          height: double.infinity,
-                          color: overlayColor,
-                        ),
-                      ),
+                  try {
+                    if (rxTimer is RxInt) {
+                      secondsLeft = rxTimer.value;
+                      progress = ((10 - secondsLeft) / 10).clamp(0.0, 1.0);
+                    }
 
-                      // label on top
-                      Center(
-                        child: Text(
-                          "Accept",
-                          style: FTextTheme.lightTextTheme.titleMedium?.copyWith(
-                            color: Colors.white,
+                    if (rxProcessing is RxBool) {
+                      isProcessing = rxProcessing.value;
+                    }
+                  } catch (e) {
+                    print("⚠️ Error reading bid state: $e");
+                    isProcessing = true;
+                  }
+
+                  final overlayColor =
+                      secondsLeft <= 5
+                          ? FColors.secondaryColor
+                          : FColors.rideTypeBg;
+
+                  return GestureDetector(
+                    onTap:
+                        isProcessing
+                            ? null
+                            : () {
+                              if (c.bids.any(
+                                (b) => b['bidId'] == bid['bidId'],
+                              )) {
+                                c.acceptBid(bid);
+                              }
+                            },
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(sw(8)),
+                      child: Stack(
+                        fit: StackFit.passthrough,
+                        children: [
+                          // Base background
+                          Container(
+                            width: double.infinity,
+                            height: double.infinity,
+                            color:
+                                isProcessing
+                                    ? Colors.grey
+                                    : FColors.primaryColor,
                           ),
-                        ),
+
+                          // Progress overlay (only if not processing)
+                          if (!isProcessing)
+                            FractionallySizedBox(
+                              alignment: Alignment.centerLeft,
+                              widthFactor: progress,
+                              child: Container(
+                                height: double.infinity,
+                                color: overlayColor,
+                              ),
+                            ),
+
+                          // Center content
+                          Center(
+                            child:
+                                isProcessing
+                                    ? SizedBox(
+                                      width: sw(20),
+                                      height: sw(20),
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              Colors.white,
+                                            ),
+                                      ),
+                                    )
+                                    : Text(
+                                      "Accept",
+                                      style: FTextTheme
+                                          .lightTextTheme
+                                          .titleMedium
+                                          ?.copyWith(color: Colors.white),
+                                    ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-              );
-            }),
+                    ),
+                  );
+                });
+              },
+            ),
           ),
 
           /// Reject button
@@ -567,8 +740,7 @@ class AvailableBidsScreen extends StatelessWidget {
               ),
               child: Text(
                 "Reject",
-                style: FTextTheme.darkTextTheme.titleMedium?.copyWith(
-                ),
+                style: FTextTheme.darkTextTheme.titleMedium?.copyWith(),
               ),
             ),
           ),

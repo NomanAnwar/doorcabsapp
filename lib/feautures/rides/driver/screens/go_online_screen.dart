@@ -1,5 +1,9 @@
 import 'package:doorcab/common/widgets/snakbar/snackbar.dart';
+import 'package:doorcab/feautures/rides/driver/screens/performance_screen.dart';
 import 'package:doorcab/feautures/rides/driver/screens/reuseable_widgets/drawer.dart';
+import 'package:doorcab/feautures/rides/driver/screens/reuseable_widgets/driver_bottom_nav.dart';
+import 'package:doorcab/feautures/rides/driver/screens/ride_request_list_screen.dart';
+import 'package:doorcab/feautures/shared/screens/app_drawer.dart';
 import 'package:doorcab/utils/constants/colors.dart';
 import 'package:doorcab/utils/theme/custom_theme/text_theme.dart';
 import 'package:flutter/material.dart';
@@ -7,6 +11,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:slide_to_act/slide_to_act.dart';
+import '../../../shared/screens/wallet_screen.dart';
 import '../controllers/go_online_controller.dart';
 
 class GoOnlineScreen extends StatelessWidget {
@@ -27,8 +32,8 @@ class GoOnlineScreen extends StatelessWidget {
     double sh(double h) => h * screenHeight / baseHeight;
 
     return Scaffold(
-      key: controller.scaffoldKey,
-      drawer: DriverDrawer(),
+      // key: controller.scaffoldKey,
+      drawer: AppDrawer(),
       body: Obx(() => Stack( // WRAP WITH Obx
         children: [
           /// Main UI
@@ -200,25 +205,32 @@ class GoOnlineScreen extends StatelessWidget {
                 Positioned(
                   top: sh(55),
                   left: sw(382),
-                  child: GestureDetector(
-                    onTap: () {
-                      controller.scaffoldKey.currentState?.openDrawer();
-                    },
-                    child: Container(
-                      width: sw(39),
-                      height: sh(39),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(sw(8)),
-                      ),
-                      child: Center(
-                        child: SvgPicture.asset(
-                          "assets/images/Menu.svg",
-                          width: sw(40),
-                          height: sh(40),
+                  child: Builder(
+                    builder: (context) {
+                      return GestureDetector(
+                        onTap: () {
+                          // controller.scaffoldKey.currentState?.openDrawer();
+                          Scaffold.of(context).openDrawer();
+                          // Get.to(() => AppDrawer());
+
+                        },
+                        child: Container(
+                          width: sw(39),
+                          height: sh(39),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(sw(8)),
+                          ),
+                          child: Center(
+                            child: SvgPicture.asset(
+                              "assets/images/Menu.svg",
+                              width: sw(40),
+                              height: sh(40),
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
+                      );
+                    }
                   ),
                 ),
 
@@ -392,67 +404,80 @@ class GoOnlineScreen extends StatelessWidget {
                 ),
 
                 /// Custom Bottom Navigation Bar
+                ///
+
+                /// Custom Bottom Navigation Bar
                 Positioned(
                   bottom: 0,
                   left: 0,
                   right: 0,
-                  child: Container(
-                    width: double.infinity,
-                    height: sh(70),
-                    padding: EdgeInsets.symmetric(horizontal: sw(10)),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: sw(10),
-                          offset: const Offset(0, -2),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _buildBottomNavItem(
-                          icon: "assets/images/bottom_car.svg",
-                          label: "Requests List",
-                          isActive: true,
-                          sw: sw,
-                          sh: sh,
-                          screenWidth: screenWidth,
-                          baseWidth: baseWidth,
-                        ),
-                        _buildBottomNavItem(
-                          icon: "assets/images/bottom_sh.svg",
-                          label: "Schedule Ride",
-                          isActive: false,
-                          sw: sw,
-                          sh: sh,
-                          screenWidth: screenWidth,
-                          baseWidth: baseWidth,
-                        ),
-                        _buildBottomNavItem(
-                          icon: "assets/images/bottom_perf.svg",
-                          label: "Performance",
-                          isActive: false,
-                          sw: sw,
-                          sh: sh,
-                          screenWidth: screenWidth,
-                          baseWidth: baseWidth,
-                        ),
-                        _buildBottomNavItem(
-                          icon: "assets/images/bottom_wallet.svg",
-                          label: "Wallet",
-                          isActive: false,
-                          sw: sw,
-                          sh: sh,
-                          screenWidth: screenWidth,
-                          baseWidth: baseWidth,
-                        ),
-                      ],
-                    ),
+                  child: DriverBottomNav(
+                    currentIndex: 0, // Home is active
+                    isRequestsListActive: false,
                   ),
                 ),
+
+                // Positioned(
+                //   bottom: 0,
+                //   left: 0,
+                //   right: 0,
+                //   child: Container(
+                //     width: double.infinity,
+                //     height: sh(70),
+                //     padding: EdgeInsets.symmetric(horizontal: sw(10)),
+                //     decoration: BoxDecoration(
+                //       color: Colors.white,
+                //       boxShadow: [
+                //         BoxShadow(
+                //           color: Colors.black.withOpacity(0.1),
+                //           blurRadius: sw(10),
+                //           offset: const Offset(0, -2),
+                //         ),
+                //       ],
+                //     ),
+                //     child: Row(
+                //       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                //       children: [
+                //         _buildBottomNavItem(
+                //           icon: "assets/images/bottom_car.svg",
+                //           label: "Requests List",
+                //           isActive: true,
+                //           sw: sw,
+                //           sh: sh,
+                //           screenWidth: screenWidth,
+                //           baseWidth: baseWidth,
+                //         ),
+                //         _buildBottomNavItem(
+                //           icon: "assets/images/bottom_sh.svg",
+                //           label: "Schedule Ride",
+                //           isActive: false,
+                //           sw: sw,
+                //           sh: sh,
+                //           screenWidth: screenWidth,
+                //           baseWidth: baseWidth,
+                //         ),
+                //         _buildBottomNavItem(
+                //           icon: "assets/images/bottom_perf.svg",
+                //           label: "Performance",
+                //           isActive: false,
+                //           sw: sw,
+                //           sh: sh,
+                //           screenWidth: screenWidth,
+                //           baseWidth: baseWidth,
+                //         ),
+                //         _buildBottomNavItem(
+                //           icon: "assets/images/bottom_wallet.svg",
+                //           label: "Wallet",
+                //           isActive: false,
+                //           sw: sw,
+                //           sh: sh,
+                //           screenWidth: screenWidth,
+                //           baseWidth: baseWidth,
+                //         ),
+                //       ],
+                //     ),
+                //   ),
+                // ),
 
                 /// Bottom Sheet
                 Obx(() {
@@ -818,54 +843,54 @@ class GoOnlineScreen extends StatelessWidget {
   }
 
   /// Bottom Navigation Item Widget
-  Widget _buildBottomNavItem({
-    required String icon,
-    required String label,
-    required bool isActive,
-    required double Function(double) sw,
-    required double Function(double) sh,
-    required double screenWidth,
-    required double baseWidth,
-  }) {
-    return GestureDetector(
-      onTap: () {
-        // Add navigation logic here
-        if (label == "Requests List") {
-          // Get.to(() => RequestsListScreen());
-        } else if (label == "Schedule Ride") {
-          // Get.to(() => ScheduleRideScreen());
-        } else if (label == "Performance") {
-          // Get.to(() => PerformanceScreen());
-        } else if (label == "Wallet") {
-          // Get.to(() => WalletScreen());
-        }
-      },
-      child: Container(
-        width: sw(100),
-        height: sh(70),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SvgPicture.asset(
-              icon,
-              width: sw(24),
-              height: sh(24),
-              color: isActive ? const Color(0xFF003566) : Colors.grey,
-            ),
-            SizedBox(height: sh(4)),
-            Text(
-              label,
-              style: FTextTheme.lightTextTheme.labelSmall!.copyWith(
-                fontSize: FTextTheme.lightTextTheme.labelSmall!.fontSize! *
-                    screenWidth /
-                    baseWidth,
-                fontWeight: FontWeight.w500,
-                color: isActive ? const Color(0xFF003566) : Colors.grey,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  // Widget _buildBottomNavItem({
+  //   required String icon,
+  //   required String label,
+  //   required bool isActive,
+  //   required double Function(double) sw,
+  //   required double Function(double) sh,
+  //   required double screenWidth,
+  //   required double baseWidth,
+  // }) {
+  //   return GestureDetector(
+  //     onTap: () {
+  //       // Add navigation logic here
+  //       if (label == "Requests List") {
+  //         Get.to(() => RideRequestListScreen());
+  //       } else if (label == "Schedule Ride") {
+  //         // Get.to(() => ScheduleRideScreen());
+  //       } else if (label == "Performance") {
+  //         Get.to(() => PerformanceScreen());
+  //       } else if (label == "Wallet") {
+  //         Get.to(() => WalletScreen());
+  //       }
+  //     },
+  //     child: Container(
+  //       width: sw(100),
+  //       height: sh(70),
+  //       child: Column(
+  //         mainAxisAlignment: MainAxisAlignment.center,
+  //         children: [
+  //           SvgPicture.asset(
+  //             icon,
+  //             width: sw(24),
+  //             height: sh(24),
+  //             color: isActive ? const Color(0xFF003566) : Colors.grey,
+  //           ),
+  //           SizedBox(height: sh(4)),
+  //           Text(
+  //             label,
+  //             style: FTextTheme.lightTextTheme.labelSmall!.copyWith(
+  //               fontSize: FTextTheme.lightTextTheme.labelSmall!.fontSize! *
+  //                   screenWidth /
+  //                   baseWidth,
+  //               fontWeight: FontWeight.w500,
+  //               color: isActive ? const Color(0xFF003566) : Colors.grey,
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
 }

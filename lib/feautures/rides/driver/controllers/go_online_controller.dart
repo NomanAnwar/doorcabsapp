@@ -24,7 +24,7 @@ class GoOnlineController extends BaseController {
   bool _hasReceivedFirstRequest = false;
 
   BitmapDescriptor? customMarker;
-  final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
+  // final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
 
   var flagPosition = Rx<LatLng?>(null);
   var isFlagSet = false.obs;
@@ -357,7 +357,7 @@ class GoOnlineController extends BaseController {
           _unsubscribeFromChannels();
 
           // Navigate to RideRequestListScreen with the request
-          Get.toNamed('/ride-request-list', arguments: {
+          Get.offNamed('/ride-request-list', arguments: {
             'initialRequest': request,
             'isFromGoOnline': true
           });

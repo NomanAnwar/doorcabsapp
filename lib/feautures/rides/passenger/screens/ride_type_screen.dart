@@ -1,15 +1,16 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:doorcab/feautures/shared/screens/app_drawer.dart';
 import 'package:doorcab/utils/constants/colors.dart';
 import 'package:doorcab/utils/theme/custom_theme/text_theme.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../driver/screens/reuseable_widgets/drawer.dart';
+import '../../../../utils/system_ui_mixin.dart';
 import '../controllers/ride_type_controller.dart';
 import '../models/ride_type_screen_model.dart';
 
-class RideTypeScreen extends StatelessWidget {
+class RideTypeScreen extends StatelessWidget{
   final RideTypeController controller = Get.put(RideTypeController());
 
   RideTypeScreen({super.key});
@@ -683,6 +684,8 @@ class RideTypeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
+
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
 
@@ -692,8 +695,10 @@ class RideTypeScreen extends StatelessWidget {
     double sw(num w) => w * screenWidth / baseWidth;
     double sh(num h) => h * screenHeight / baseHeight;
 
+
+
     return Scaffold(
-      drawer: const PassengerDrawer(),
+      drawer: const AppDrawer(),
       backgroundColor: const Color(0xFFFFC300),
       body: Obx(() {
         // ✅ SHOW LOADING until both APIs complete

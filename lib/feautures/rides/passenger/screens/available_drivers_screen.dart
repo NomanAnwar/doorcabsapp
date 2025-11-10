@@ -1,10 +1,12 @@
 import 'package:doorcab/common/widgets/buttons/f_primary_button.dart';
 import 'package:doorcab/feautures/rides/driver/screens/reuseable_widgets/drawer.dart';
+import 'package:doorcab/feautures/shared/screens/app_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../../utils/constants/colors.dart';
+import '../../../../utils/system_ui_mixin.dart';
 import '../../../../utils/theme/custom_theme/text_theme.dart';
 import '../controllers/available_drivers_controller.dart';
 
@@ -25,10 +27,12 @@ class AvailableDriversScreen extends StatelessWidget {
     double sw(double w) => w * screenWidth / baseWidth;
     double sh(double h) => h * screenHeight / baseHeight;
 
+
+
     return Scaffold(
       key: c.scaffoldKey,
       backgroundColor: Colors.white,
-      drawer: PassengerDrawer(),
+      drawer: AppDrawer(),
       body: WillPopScope(
         onWillPop: () async {
           c.handleBackPress();

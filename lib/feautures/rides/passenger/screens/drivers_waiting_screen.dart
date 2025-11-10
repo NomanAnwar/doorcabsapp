@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../../utils/system_ui_mixin.dart';
 import '../../../../utils/theme/custom_theme/text_theme.dart';
+import '../../../shared/screens/app_drawer.dart';
 import '../../driver/screens/reuseable_widgets/drawer.dart';
 import '../controllers/drivers_waiting_controller.dart';
 
@@ -34,12 +36,13 @@ class DriversWaitingScreen extends StatelessWidget {
     double sw(double w) => w * screenWidth / baseWidth;
     double sh(double h) => h * screenHeight / baseHeight;
 
-    final driverPhone = driverArg['phone']?.toString() ?? '03244227502';
+    final driverPhone = driverArg['phone']?.toString() ?? '';
+
 
     return Scaffold(
       key: c.scaffoldKey,
       backgroundColor: Colors.white,
-      drawer: PassengerDrawer(),
+      drawer: AppDrawer(),
       body: SingleChildScrollView(
         child: SizedBox(
           height: screenHeight,
@@ -47,6 +50,38 @@ class DriversWaitingScreen extends StatelessWidget {
           child: Obx(() => Stack(
             children: [
               /// Map background (from top to 510)
+              // Positioned(
+              //   top: 0,
+              //   left: 0,
+              //   right: 0,
+              //   height: c.updateView.value ? sh(450) : sh(510),
+              //   child: Obx(() {
+              //     if (c.currentPosition.value == null) {
+              //       return Center(
+              //         child: CircularProgressIndicator(strokeWidth: sw(2)),
+              //       );
+              //     }
+              //     return GoogleMap(
+              //       initialCameraPosition: CameraPosition(
+              //         target: c.currentPosition.value!,
+              //         zoom: 14,
+              //       ),
+              //       onMapCreated: c.onMapCreated,
+              //       markers: c.driverMarkers.values.toSet(),
+              //       polylines:
+              //       c.polylines.value, // --- FIX: added to show polyline
+              //
+              //       myLocationButtonEnabled: false,
+              //       zoomControlsEnabled: false,
+              //       mapToolbarEnabled: false,
+              //       compassEnabled: false,
+              //       trafficEnabled: false,
+              //       buildingsEnabled: true,
+              //       indoorViewEnabled: false,
+              //     );
+              //   }),
+              // ),
+
               Positioned(
                 top: 0,
                 left: 0,
@@ -55,19 +90,25 @@ class DriversWaitingScreen extends StatelessWidget {
                 child: Obx(() {
                   if (c.currentPosition.value == null) {
                     return Center(
-                      child: CircularProgressIndicator(strokeWidth: sw(2)),
+                      child: CircularProgressIndicator(
+                        strokeWidth: sw(2),
+                        color: FColors.secondaryColor,
+                      ),
                     );
                   }
-                  return GoogleMap(
-                    initialCameraPosition: CameraPosition(
-                      target: c.currentPosition.value!,
-                      zoom: 14,
-                    ),
-                    onMapCreated: c.onMapCreated,
-                    markers: c.driverMarkers.values.toSet(),
-                    polylines:
-                    c.polylines.value, // --- FIX: added to show polyline
 
+                  // ✅ UPDATED: Use currentPosition for initial camera
+                  final initial = CameraPosition(
+                    target: c.currentPosition.value ?? const LatLng(0, 0),
+                    zoom: 14,
+                  );
+
+                  // ✅ UPDATED: Use new observables from controller
+                  return GoogleMap(
+                    initialCameraPosition: initial,
+                    onMapCreated: c.onMapCreated,
+                    markers: c.driverMarkers.values.toSet(), // ✅ UPDATED: Use driverMarkers
+                    polylines: c.polylines.toSet(), // ✅ UPDATED: Use polylines (Set<Polyline>)
                     myLocationButtonEnabled: false,
                     zoomControlsEnabled: false,
                     mapToolbarEnabled: false,
@@ -77,6 +118,17 @@ class DriversWaitingScreen extends StatelessWidget {
                     indoorViewEnabled: false,
                   );
                 }),
+              ),
+
+              Positioned(
+                top: sh(370), // adjust so it sits inside the map area
+                right: sw(16),
+                child: FloatingActionButton(
+                  backgroundColor: Colors.white,
+                  elevation: 4,
+                  onPressed: () => c.recenterCamera(),
+                  child: Icon(Icons.my_location, color: Colors.blueAccent),
+                ),
               ),
 
               /// Back button (top 39 left 33)
@@ -271,13 +323,26 @@ class DriversWaitingScreen extends StatelessWidget {
               Positioned(
                 top: c.updateView.value ? sh(505) : sh(570),
                 left: sw(113),
-                child: Text(
-                  (c.rideInfo.value?.driver?['vehicle'] ?? "N/A"),
-                  style: FTextTheme.lightTextTheme.bodyLarge!.copyWith(
-                      fontSize: 10
-                  ),
+                child: Row(
+                  children: [
+                    Text(
+                      (c.rideInfo.value?.driver?['vehicle'] ?? "N/A"),
+                      style: FTextTheme.lightTextTheme.bodyLarge!.copyWith(
+                        fontSize: 10,
+                      ),
+                    ),
+                    const SizedBox(width: 8), // space between model and plate
+                    Text(
+                      (c.rideInfo.value?.driver?['vehiclePlate'] ?? "N/A"),
+                      style: FTextTheme.lightTextTheme.bodyLarge!.copyWith(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
               ),
+
 
 
               /// Ride type

@@ -1,10 +1,14 @@
+import 'package:doorcab/feautures/rides/driver/screens/performance_screen.dart';
 import 'package:doorcab/feautures/rides/driver/screens/reuseable_widgets/drawer.dart';
+import 'package:doorcab/feautures/rides/driver/screens/reuseable_widgets/driver_bottom_nav.dart';
 import 'package:doorcab/feautures/rides/driver/screens/reuseable_widgets/request_card.dart';
+import 'package:doorcab/feautures/shared/screens/app_drawer.dart';
 import 'package:doorcab/utils/constants/colors.dart';
 import 'package:doorcab/utils/theme/custom_theme/text_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
+import '../../../shared/screens/wallet_screen.dart';
 import '../controllers/ride_request_list_controller.dart';
 
 class RideRequestListScreen extends StatelessWidget {
@@ -25,7 +29,7 @@ class RideRequestListScreen extends StatelessWidget {
     double sh(double h) => h * screenHeight / baseHeight;
 
     return Scaffold(
-      drawer: const DriverDrawer(),
+      drawer: const AppDrawer(),
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Obx(() => Stack(
@@ -159,67 +163,79 @@ class RideRequestListScreen extends StatelessWidget {
                   ),
 
                   /// Custom Bottom Navigation Bar
+
+                  /// Custom Bottom Navigation Bar
                   Positioned(
                     bottom: 0,
                     left: 0,
                     right: 0,
-                    child: Container(
-                      width: double.infinity,
-                      height: sh(70),
-                      padding: EdgeInsets.symmetric(horizontal: sw(10)),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: sw(10),
-                            offset: const Offset(0, -2),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          _buildBottomNavItem(
-                            icon: "assets/images/bottom_car.svg",
-                            label: "Requests List",
-                            isActive: true,
-                            sw: sw,
-                            sh: sh,
-                            screenWidth: screenWidth,
-                            baseWidth: baseWidth,
-                          ),
-                          _buildBottomNavItem(
-                            icon: "assets/images/bottom_sh.svg",
-                            label: "Schedule Ride",
-                            isActive: false,
-                            sw: sw,
-                            sh: sh,
-                            screenWidth: screenWidth,
-                            baseWidth: baseWidth,
-                          ),
-                          _buildBottomNavItem(
-                            icon: "assets/images/bottom_perf.svg",
-                            label: "Performance",
-                            isActive: false,
-                            sw: sw,
-                            sh: sh,
-                            screenWidth: screenWidth,
-                            baseWidth: baseWidth,
-                          ),
-                          _buildBottomNavItem(
-                            icon: "assets/images/bottom_wallet.svg",
-                            label: "Wallet",
-                            isActive: false,
-                            sw: sw,
-                            sh: sh,
-                            screenWidth: screenWidth,
-                            baseWidth: baseWidth,
-                          ),
-                        ],
-                      ),
+                    child: DriverBottomNav(
+                      currentIndex: 0, // Home is active
+                      isRequestsListActive: true,
                     ),
                   ),
+
+                  // Positioned(
+                  //   bottom: 0,
+                  //   left: 0,
+                  //   right: 0,
+                  //   child: Container(
+                  //     width: double.infinity,
+                  //     height: sh(70),
+                  //     padding: EdgeInsets.symmetric(horizontal: sw(10)),
+                  //     decoration: BoxDecoration(
+                  //       color: Colors.white,
+                  //       boxShadow: [
+                  //         BoxShadow(
+                  //           color: Colors.black.withOpacity(0.1),
+                  //           blurRadius: sw(10),
+                  //           offset: const Offset(0, -2),
+                  //         ),
+                  //       ],
+                  //     ),
+                  //     child: Row(
+                  //       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  //       children: [
+                  //         _buildBottomNavItem(
+                  //           icon: "assets/images/bottom_car.svg",
+                  //           label: "Requests List",
+                  //           isActive: true,
+                  //           sw: sw,
+                  //           sh: sh,
+                  //           screenWidth: screenWidth,
+                  //           baseWidth: baseWidth,
+                  //         ),
+                  //         _buildBottomNavItem(
+                  //           icon: "assets/images/bottom_sh.svg",
+                  //           label: "Schedule Ride",
+                  //           isActive: false,
+                  //           sw: sw,
+                  //           sh: sh,
+                  //           screenWidth: screenWidth,
+                  //           baseWidth: baseWidth,
+                  //         ),
+                  //         _buildBottomNavItem(
+                  //           icon: "assets/images/bottom_perf.svg",
+                  //           label: "Performance",
+                  //           isActive: false,
+                  //           sw: sw,
+                  //           sh: sh,
+                  //           screenWidth: screenWidth,
+                  //           baseWidth: baseWidth,
+                  //         ),
+                  //         _buildBottomNavItem(
+                  //           icon: "assets/images/bottom_wallet.svg",
+                  //           label: "Wallet",
+                  //           isActive: false,
+                  //           sw: sw,
+                  //           sh: sh,
+                  //           screenWidth: screenWidth,
+                  //           baseWidth: baseWidth,
+                  //         ),
+                  //       ],
+                  //     ),
+                  //   ),
+                  // ),
                 ],
               ),
             ),
@@ -244,54 +260,54 @@ class RideRequestListScreen extends StatelessWidget {
   }
 
   /// Bottom Navigation Item Widget
-  Widget _buildBottomNavItem({
-    required String icon,
-    required String label,
-    required bool isActive,
-    required double Function(double) sw,
-    required double Function(double) sh,
-    required double screenWidth,
-    required double baseWidth,
-  }) {
-    return GestureDetector(
-      onTap: () {
-        // Add navigation logic here
-        if (label == "Requests List") {
-          // Get.to(() => RequestsListScreen());
-        } else if (label == "Schedule Ride") {
-          // Get.to(() => ScheduleRideScreen());
-        } else if (label == "Performance") {
-          // Get.to(() => PerformanceScreen());
-        } else if (label == "Wallet") {
-          // Get.to(() => WalletScreen());
-        }
-      },
-      child: Container(
-        width: sw(100),
-        height: sh(70),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SvgPicture.asset(
-              icon,
-              width: sw(24),
-              height: sh(24),
-              color: isActive ? const Color(0xFF003566) : Colors.grey,
-            ),
-            SizedBox(height: sh(4)),
-            Text(
-              label,
-              style: FTextTheme.lightTextTheme.labelSmall!.copyWith(
-                fontSize: FTextTheme.lightTextTheme.labelSmall!.fontSize! *
-                    screenWidth /
-                    baseWidth,
-                fontWeight: FontWeight.w500,
-                color: isActive ? const Color(0xFF003566) : Colors.grey,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  // Widget _buildBottomNavItem({
+  //   required String icon,
+  //   required String label,
+  //   required bool isActive,
+  //   required double Function(double) sw,
+  //   required double Function(double) sh,
+  //   required double screenWidth,
+  //   required double baseWidth,
+  // }) {
+  //   return GestureDetector(
+  //     onTap: () {
+  //       // Add navigation logic here
+  //       if (label == "Requests List") {
+  //         Get.to(() => RideRequestListScreen());
+  //       } else if (label == "Schedule Ride") {
+  //         // Get.to(() => ScheduleRideScreen());
+  //       } else if (label == "Performance") {
+  //         Get.to(() => PerformanceScreen());
+  //       } else if (label == "Wallet") {
+  //         Get.to(() => WalletScreen());
+  //       }
+  //     },
+  //     child: Container(
+  //       width: sw(100),
+  //       height: sh(70),
+  //       child: Column(
+  //         mainAxisAlignment: MainAxisAlignment.center,
+  //         children: [
+  //           SvgPicture.asset(
+  //             icon,
+  //             width: sw(24),
+  //             height: sh(24),
+  //             color: isActive ? const Color(0xFF003566) : Colors.grey,
+  //           ),
+  //           SizedBox(height: sh(4)),
+  //           Text(
+  //             label,
+  //             style: FTextTheme.lightTextTheme.labelSmall!.copyWith(
+  //               fontSize: FTextTheme.lightTextTheme.labelSmall!.fontSize! *
+  //                   screenWidth /
+  //                   baseWidth,
+  //               fontWeight: FontWeight.w500,
+  //               color: isActive ? const Color(0xFF003566) : Colors.grey,
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
 }
