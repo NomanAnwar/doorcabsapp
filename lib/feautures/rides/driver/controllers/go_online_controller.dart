@@ -12,6 +12,7 @@ import '../../../../utils/http/http_client.dart';
 import '../../../shared/controllers/base_controller.dart';
 import '../../../shared/services/pusher_background_service.dart';
 import '../models/request_model.dart';
+import '../screens/ride_request_list_screen.dart';
 
 class GoOnlineController extends BaseController {
   var isOnline = false.obs;
@@ -35,7 +36,7 @@ class GoOnlineController extends BaseController {
   var currentBearing = 0.0.obs;
 
   // ADD THESE FOR EARNINGS
-  var totalEarnings = 0.obs;
+  var totalEarnings = 0.0.obs;
   var isEarningsVisible = true.obs;
   var isLoadingEarnings = false.obs;
   var isLoadingToggle = false.obs;
@@ -44,19 +45,139 @@ class GoOnlineController extends BaseController {
   @override
   void onInit() {
     super.onInit();
+
+    _subscribedChannels.clear();
     _loadCustomMarker().then((_) {
       getCurrentLocation();
     });
     _restoreOnlineStatus();
     _fetchEarnings(); // ADD THIS to fetch earnings on screen start
     _startBackgroundService();
+
+    _checkActiveRides();
+
+  }
+
+// ✅ UPDATED METHOD: Check for active rides with data normalization
+  Future<void> _checkActiveRides() async {
+    try {
+      await executeWithRetry(() async {
+        final driverId = StorageService.getSignUpResponse()?.userId;
+        if (driverId == null) {
+          print("❌ Driver ID not found");
+          return;
+        }
+
+        final token = StorageService.getAuthToken();
+        if (token == null) {
+          print("❌ User token not found for active rides API");
+          return;
+        }
+
+        FHttpHelper.setAuthToken(token, useBearer: true);
+        final response = await FHttpHelper.get("driver/active-rides/$driverId");
+        print("🔍 Active rides API response: $response");
+
+        if (response != null && response['rideData'] != null) {
+          final rideData = response['rideData'];
+          final rideId = rideData['rideId']?.toString();
+
+          if (rideId != null) {
+            print("✅ Active ride found: $rideId");
+
+            // ✅ NORMALIZE THE DATA BEFORE SENDING
+            final normalizedRideData = _normalizeRideData(rideData);
+            print("🔄 Normalized ride data: $normalizedRideData");
+
+            // Show snackbar with ride ID
+            FSnackbar.show(
+                title: "Getting You To Active Ride Of Yours",
+                message: "Ride ID: $rideId"
+            );
+
+            _unsubscribeFromChannels();
+
+            // Navigate to GoToPickupScreen with the NORMALIZED ride data
+            Future.delayed(Duration(milliseconds: 500), () {
+              Get.offAllNamed('/go-to-pickup', arguments: {
+                "rideData": normalizedRideData
+              });
+            });
+          }
+        } else {
+          print("ℹ️ No active rides found for driver");
+        }
+      });
+    } catch (e, s) {
+      print("❌ Error checking active rides: $e\n$s");
+      // Don't show error to user as this is a background check
+    }
+  }
+
+// ✅ ADD: Data normalization method
+  Map<String, dynamic> _normalizeRideData(Map<String, dynamic> rideData) {
+    // Create a copy to avoid modifying the original
+    final normalized = Map<String, dynamic>.from(rideData);
+
+    // 1. Fix time and distance formats (remove duplicates)
+    if (normalized['estimated_arrival_time'] != null) {
+      final arrivalTime = normalized['estimated_arrival_time'].toString();
+      normalized['estimated_arrival_time'] = arrivalTime.replaceAll(' min min', ' min');
+    }
+
+    if (normalized['estimated_drop_time'] != null) {
+      final dropTime = normalized['estimated_drop_time'].toString();
+      normalized['estimated_drop_time'] = dropTime.replaceAll(' mins min', ' min');
+    }
+
+    if (normalized['estimated_distance'] != null) {
+      final distance = normalized['estimated_distance'].toString();
+      normalized['estimated_distance'] = distance.replaceAll(' km km', ' km');
+    }
+
+    // 2. Normalize passenger data
+    if (normalized['passenger'] != null) {
+      final passenger = Map<String, dynamic>.from(normalized['passenger']);
+
+      // Convert nested name object to string
+      if (passenger['name'] is Map) {
+        final nameMap = passenger['name'] as Map;
+        final firstName = nameMap['firstName']?.toString() ?? '';
+        final lastName = nameMap['lastName']?.toString() ?? '';
+        passenger['name'] = '$firstName $lastName'.trim();
+      }
+
+      // Fix passengers count (199 is likely incorrect, set to 1)
+      if (passenger['passengers'] != null && passenger['passengers'] == 199) {
+        passenger['passengers'] = 1;
+      }
+
+      normalized['passenger'] = passenger;
+    }
+
+    // 3. Ensure consistent data types
+    if (normalized['fare'] != null) {
+      normalized['fare'] = normalized['fare'] is int
+          ? normalized['fare']
+          : int.tryParse(normalized['fare'].toString()) ?? 0;
+    }
+
+    print("🎯 Data normalization completed:");
+    print("   - Time formats fixed");
+    print("   - Passenger name converted to string");
+    print("   - Passengers count normalized to 1");
+
+    return normalized;
   }
 
   Future<void> _startBackgroundService() async {
     if (isOnline.value) {
       final driverId = StorageService.getSignUpResponse()?.userId;
       if (driverId != null) {
-        await PusherBackgroundService().startBackgroundMode(driverId);
+        await PusherBackgroundService().startBackgroundMode(
+          driverId,
+          userType: 'driver', // ✅ ADD THIS LINE
+        );
         print("🚗 Driver background service started");
       }
     }
@@ -98,9 +219,13 @@ class GoOnlineController extends BaseController {
         print("💰 Earnings API response: $response");
 
         if (response != null && response['totalEarnings'] != null) {
-          totalEarnings.value = response['totalEarnings'] is int
+          // totalEarnings.value = response['totalEarnings'] is int
+          //     ? response['totalEarnings']
+          //     : int.tryParse(response['totalEarnings'].toString()) ?? 0;
+          totalEarnings.value = response['totalEarnings'] is double
               ? response['totalEarnings']
-              : int.tryParse(response['totalEarnings'].toString()) ?? 0;
+              : double.tryParse(response['totalEarnings'].toString()) ?? 0.0;
+
           print("✅ Earnings fetched: PKR ${totalEarnings.value}");
         } else {
           print("⚠️ No earnings data found in response");
@@ -130,7 +255,7 @@ class GoOnlineController extends BaseController {
     if (!isEarningsVisible.value) {
       return "PKR ***";
     }
-    return "PKR ${totalEarnings.value}";
+    return "PKR ${totalEarnings.value.toInt()}";
   }
 
   // ADD THIS METHOD TO GET EYE ICON PATH
@@ -287,7 +412,7 @@ class GoOnlineController extends BaseController {
         _hasReceivedFirstRequest = false;
 
         // ✅ ADD: Stop background service
-        await PusherBackgroundService().stopBackgroundMode();
+        PusherBackgroundService().stopBackgroundMode();
         FSnackbar.show(title: "Offline", message: response['message'] ?? "You are now offline", isError: true);
       }
 
@@ -313,14 +438,14 @@ class GoOnlineController extends BaseController {
             privateChannel,
             events: {
               "ride-request": (data) {
-                // FSnackbar.show(title: "Ride Request", message: "New Ride Request is here.");
+                // FSnackbar.show(title: "Event ride-request", message: "New Ride Request is here.");
                 _handleNewRideRequest(data);
               },
             },
           );
           _subscribedChannels.add(privateChannel);
           print("✅ GoOnlineController subscribed to: $privateChannel");
-          // FSnackbar.show(title: 'Request request', message: '$privateChannel');
+          // FSnackbar.show(title: 'Subscribed to', message: '$privateChannel');
         }
       });
     } catch (e) {
@@ -357,7 +482,12 @@ class GoOnlineController extends BaseController {
           _unsubscribeFromChannels();
 
           // Navigate to RideRequestListScreen with the request
-          Get.offNamed('/ride-request-list', arguments: {
+          // Get.offNamed('/ride-request-list', arguments: {
+          //   'initialRequest': request,
+          //   'isFromGoOnline': true
+          // });
+
+          Get.offAll(() => RideRequestListScreen(), arguments: {
             'initialRequest': request,
             'isFromGoOnline': true
           });

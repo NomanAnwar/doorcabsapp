@@ -5,7 +5,6 @@ import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_svg/svg.dart';
 import '../../../../utils/constants/colors.dart';
-import '../../../../utils/system_ui_mixin.dart';
 import '../../../../utils/theme/custom_theme/text_theme.dart';
 import '../../../shared/screens/app_drawer.dart';
 import '../controllers/ride_booking_controller.dart';
@@ -16,7 +15,6 @@ class RideBookingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
 
@@ -44,9 +42,7 @@ class RideBookingScreen extends StatelessWidget {
     double getMapHeight() {
       final bottomSheetPixelHeight = screenHeight * bottomSheetHeight.value;
       final locationCardHeight = sh(0);
-      // final locationCardHeight = sh(25);
       final bottomActionsHeight = sh(0) + MediaQuery.of(context).padding.bottom;
-      // final bottomActionsHeight = sh(132) + MediaQuery.of(context).padding.bottom;
 
       final availableHeight = screenHeight - locationCardHeight - bottomSheetPixelHeight - bottomActionsHeight;
       final newHeight = availableHeight.clamp(sh(200), screenHeight);
@@ -59,12 +55,6 @@ class RideBookingScreen extends StatelessWidget {
       });
 
       return newHeight;
-    }
-
-    // ✅ ADDED: Calculate map top position based on location card
-    double getMapTop() {
-      // return sh(50) + sh(106); // Location card top + location card height
-      return sh(106); // Location card top + location card height
     }
 
     Widget rideItem(RideOption option) {
@@ -80,10 +70,17 @@ class RideBookingScreen extends StatelessWidget {
       if (!selected) {
         // Collapsed (not selected)
         return GestureDetector(
-          onTap: () => controller.selectRideType(option.id),
+          onTap: () {
+            // ✅ ADDED: Only allow interaction when fares are calculated
+            if (!controller.isCalculatingFare.value &&
+                controller.isCityDataLoaded.value &&
+                controller.distanceKm.value > 0) {
+              controller.selectRideType(option.id);
+            }
+          },
           child: Container(
             width: sw(419),
-            height: sh(80),
+            height: sh(90),
             margin: EdgeInsets.symmetric(vertical: sh(8), horizontal: sw(8)),
             decoration: BoxDecoration(
               color: FColors.white,
@@ -196,7 +193,7 @@ class RideBookingScreen extends StatelessWidget {
       // Selected: Expanded view
       return Container(
         width: sw(419),
-        height: sh(195),
+        height: sh(210),
         decoration: BoxDecoration(
           color: Color(0xFFF2F2F2),
           borderRadius: BorderRadius.circular(sw(14)),
@@ -204,10 +201,17 @@ class RideBookingScreen extends StatelessWidget {
         child: Column(
           children: [
             GestureDetector(
-              onTap: () => controller.selectRideType(option.id),
+              onTap: () {
+                // ✅ ADDED: Only allow interaction when fares are calculated
+                if (!controller.isCalculatingFare.value &&
+                    controller.isCityDataLoaded.value &&
+                    controller.distanceKm.value > 0) {
+                  controller.selectRideType(option.id);
+                }
+              },
               child: Container(
                 width: sw(400),
-                height: sh(75),
+                height: sh(85),
                 margin: EdgeInsets.all(sh(8)),
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -609,6 +613,71 @@ class RideBookingScreen extends StatelessWidget {
       );
     }
 
+    // ✅ ADDED: Main loading overlay that shows until everything is ready
+    Widget _buildMainLoadingOverlay() {
+      return Container(
+        color: Colors.black.withOpacity(0.7),
+        width: double.infinity,
+        height: double.infinity,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: sw(60),
+              height: sw(60),
+              child: CircularProgressIndicator(
+                strokeWidth: 4,
+                valueColor: AlwaysStoppedAnimation<Color>(FColors.secondaryColor),
+              ),
+            ),
+            SizedBox(height: sh(20)),
+            Obx(() {
+              String statusMessage = "Preparing your ride...";
+              if (controller.isCalculatingRoute.value) {
+                statusMessage = "Calculating route...";
+              } else if (controller.isCalculatingFare.value) {
+                statusMessage = "Calculating fares...";
+              } else if (!controller.isCityDataLoaded.value) {
+                statusMessage = "Loading city data...";
+              } else if (controller.distanceKm.value <= 0) {
+                statusMessage = "Getting distance...";
+              }
+              return Text(
+                statusMessage,
+                style: TextStyle(
+                  fontSize: sw(16),
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white,
+                ),
+              );
+            }),
+            SizedBox(height: sh(10)),
+            Obx(() {
+              if (controller.geocodeRetryCount.value > 0) {
+                return Text(
+                  "Retrying... (${controller.geocodeRetryCount.value})",
+                  style: TextStyle(
+                    fontSize: sw(12),
+                    color: Colors.white70,
+                  ),
+                );
+              }
+              return SizedBox();
+            }),
+          ],
+        ),
+      );
+    }
+
+    // ✅ ADDED: Check if everything is loaded and ready
+    bool isEverythingReady() {
+      return controller.isCityDataLoaded.value &&
+          !controller.isCalculatingRoute.value &&
+          !controller.isCalculatingFare.value &&
+          controller.distanceKm.value > 0 &&
+          controller.rideOptions.isNotEmpty;
+    }
+
     return Scaffold(
       key: controller.scaffoldKey,
       drawer: AppDrawer(),
@@ -624,7 +693,7 @@ class RideBookingScreen extends StatelessWidget {
           children: [
             // ✅ UPDATED: Dynamic Map Container that adjusts height based on bottom sheet
             Obx(() => Positioned(
-              top: getMapTop(), // Start below location card
+              top: 0, // Start below location card
               left: 0,
               right: 0,
               height: getMapHeight(), // Dynamic height based on bottom sheet
@@ -655,8 +724,8 @@ class RideBookingScreen extends StatelessWidget {
 
                     // Back Arrow - Positioned relative to map container
                     Positioned(
-                      top: sh(70), // Adjusted position within map container
-                      left: sw(15),
+                      top: sh(115), // Adjusted position within map container
+                      left: sw(23),
                       child: GestureDetector(
                         onTap: () => Get.back(),
                         child: Container(
@@ -666,10 +735,11 @@ class RideBookingScreen extends StatelessWidget {
                             color: FColors.secondaryColor,
                             borderRadius: BorderRadius.circular(sw(20)),
                           ),
-                          child: Icon(Icons.arrow_back, size: sw(30), color: FColors.white,),
+                          child: Icon(Icons.arrow_back, size: sw(28), color: FColors.white,),
                         ),
                       ),
                     ),
+
 
                     // ✅ ADDED: Loading indicator while calculating fares
                     Obx(() => controller.isCalculatingFare.value
@@ -717,9 +787,9 @@ class RideBookingScreen extends StatelessWidget {
 
             // Location Card - Fixed position at top (UNCHANGED)
             Positioned(
-              top: sh(60),
-              left: sw(10),
-              right: sw(10),
+              top: sh(5),
+              left: sw(5),
+              right: sw(5),
               child: Container(
                 width: screenWidth,
                 height: sh(106),
@@ -856,7 +926,8 @@ class RideBookingScreen extends StatelessWidget {
             ),
 
             // ✅ UPDATED: Bottom sheet for ride options (swipeable) - UNCHANGED
-            DraggableScrollableSheet(
+            Obx(() => isEverythingReady()
+                ? DraggableScrollableSheet(
               controller: bottomSheetController,
               initialChildSize: 0.45, // 45% of screen height initially
               minChildSize: 0.25, // Minimum 25% when collapsed
@@ -930,10 +1001,12 @@ class RideBookingScreen extends StatelessWidget {
                   ),
                 );
               },
-            ),
+            )
+                : SizedBox.shrink()),
 
             // ✅ UPDATED: Bottom Actions - Fixed position above navigation bar - UNCHANGED
-            Positioned(
+            Obx(() => isEverythingReady()
+                ? Positioned(
               bottom: 0,
               left: 0,
               right: 0,
@@ -978,10 +1051,7 @@ class RideBookingScreen extends StatelessWidget {
                               .copyWith(
                             fontWeight: FontWeight.w400,
                             fontSize:
-                            FTextTheme
-                                .lightTextTheme
-                                .labelSmall!
-                                .fontSize! *
+                            10 *
                                 screenWidth /
                                 baseWidth,
                           ),
@@ -1100,7 +1170,13 @@ class RideBookingScreen extends StatelessWidget {
                   ],
                 ),
               ),
-            ),
+            )
+                : SizedBox.shrink()),
+
+            // ✅ ADDED: Main loading overlay that blocks everything until ready
+            Obx(() => !isEverythingReady()
+                ? _buildMainLoadingOverlay()
+                : SizedBox.shrink()),
 
             // Overlay loading indicators - ONLY FOR API REQUEST - UNCHANGED
             Obx(() => controller.isRequestingRide.value

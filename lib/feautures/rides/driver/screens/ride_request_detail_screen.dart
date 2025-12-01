@@ -50,9 +50,41 @@ class RideRequestDetailScreen extends StatelessWidget {
                   width: double.infinity,
                   child: Stack(
                     children: [
+
+                      /// Map
+                      Positioned(
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        height: sh(490),
+                        child: Obx(() {
+                          if (c.currentPosition.value == null) {
+                            return Center(
+                              child: CircularProgressIndicator(
+                                color: FColors.secondaryColor,
+                              ),
+                            );
+                          }
+                          return GoogleMap(
+                            onMapCreated: c.onMapCreated,
+                            initialCameraPosition: CameraPosition(
+                              target: c.currentPosition.value!,
+                              zoom: 14,
+                            ),
+                            myLocationButtonEnabled: true,
+                            markers: c.markers.value,
+                            polylines:
+                            c.routePolyline.value != null
+                                ? {c.routePolyline.value!}
+                                : {},
+                          );
+                        }),
+                      ),
+
+
                       /// Back arrow
                       Positioned(
-                        top: sh(39),
+                        top: sh(23),
                         left: sw(33),
                         child: IconButton(
                           icon: Icon(
@@ -76,39 +108,9 @@ class RideRequestDetailScreen extends StatelessWidget {
                         ),
                       ),
 
-                      /// Map
-                      Positioned(
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        height: sh(450),
-                        child: Obx(() {
-                          if (c.currentPosition.value == null) {
-                            return Center(
-                              child: CircularProgressIndicator(
-                                color: FColors.secondaryColor,
-                              ),
-                            );
-                          }
-                          return GoogleMap(
-                            onMapCreated: c.onMapCreated,
-                            initialCameraPosition: CameraPosition(
-                              target: c.currentPosition.value!,
-                              zoom: 14,
-                            ),
-                            myLocationButtonEnabled: true,
-                            markers: c.markers.value,
-                            polylines:
-                                c.routePolyline.value != null
-                                    ? {c.routePolyline.value!}
-                                    : {},
-                          );
-                        }),
-                      ),
-
                       /// Passenger detail card
                       Positioned(
-                        top: sh(456),
+                        top: sh(506),
                         left: sw(10),
                         child: Container(
                           width: sw(420),
@@ -391,7 +393,7 @@ class RideRequestDetailScreen extends StatelessWidget {
 
                       /// Fare & Accept buttons
                       Positioned(
-                        top: sh(617),
+                        top: sh(667),
                         left: sw(28),
                         right: sw(28),
                         child: Row(
@@ -492,7 +494,7 @@ class RideRequestDetailScreen extends StatelessWidget {
                       /// Quick fare buttons
                       if (!c.isBidSubmitted.value)
                         Positioned(
-                          top: sh(687),
+                          top: sh(735),
                           left: sw(59),
                           child: Obx(
                             () => Row(
@@ -531,7 +533,7 @@ class RideRequestDetailScreen extends StatelessWidget {
                       /// Offer amount input - FIXED: Added keyboard padding
                       if (!c.isBidSubmitted.value)
                         Positioned(
-                          top: sh(750),
+                          top: sh(790),
                           left: sw(19),
                           child: Container(
                             width: sw(393),

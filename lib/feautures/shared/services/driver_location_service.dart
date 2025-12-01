@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:doorcab/feautures/shared/services/storage_service.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:workmanager/workmanager.dart';
+import '../../../common/widgets/snakbar/snackbar.dart';
 import '../../../utils/http/http_client.dart';
 
 class DriverLocationService {
@@ -111,7 +112,7 @@ class DriverLocationService {
       await FHttpHelper.post("driver/redis-drivers", body);
       print("📍 Location sent $i: $body");
       // if(i == 0) {
-      //   FSnackbar.show(title: "Location", message: "Driver Location sent");
+      //   FSnackbar.show(title: "Location", message: "Driver Location sent $body");
       // }
     } catch (e) {
       print("❌ Failed to send location: $e");

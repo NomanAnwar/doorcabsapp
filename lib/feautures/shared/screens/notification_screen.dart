@@ -27,161 +27,212 @@ class NotificationScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Column(
-          children: [
-            /// -------------------- APP BAR SECTION --------------------
-            Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: sw(20),
-                vertical: sh(12),
-              ),
-              child: Align(
-                alignment: Alignment.centerLeft,
+      body: Obx(() {
+        final userRole = StorageService.getRole();
+        final notifications = controller.notifications;
+        final isLoading = controller.isLoading.value;
+
+        return SizedBox(
+          height: screenHeight,
+          width: screenWidth,
+          child: Stack(
+            children: [
+              /// Back Button
+              Positioned(
+                top: sh(23),
+                left: sw(23),
                 child: GestureDetector(
                   onTap: () => Get.back(),
                   child: SvgPicture.asset(
                     "assets/images/Arrow.svg",
-                    width: sw(22),
-                    height: sh(22),
+                    width: sw(28),
+                    height: sh(28),
                   ),
                 ),
               ),
-            ),
 
-            /// Title (separate line centered)
-            Padding(
-              padding: EdgeInsets.only(bottom: sh(25)),
-              child: Text(
-                "Notifications",
-                textAlign: TextAlign.center,
-                style: FTextTheme.lightTextTheme.titleLarge!.copyWith(
-                  fontWeight: FontWeight.w700,
-                  fontSize: FTextTheme.lightTextTheme.titleLarge!.fontSize! *
-                      screenWidth /
-                      baseWidth,
-                  color: Colors.black,
+              /// Title
+              Positioned(
+                top: sh(60),
+                left: 0,
+                right: 0,
+                child: Text(
+                  "Notifications",
+                  textAlign: TextAlign.center,
+                  style: FTextTheme.lightTextTheme.titleLarge!.copyWith(
+                    fontWeight: FontWeight.w700,
+                    fontSize: FTextTheme.lightTextTheme.titleLarge!.fontSize! *
+                        screenWidth /
+                        baseWidth,
+                    color: Colors.black,
+                  ),
                 ),
               ),
+
+              /// Main Content Area
+              if (isLoading)
+                Positioned(
+                  top: sh(160),
+                  left: 0,
+                  right: 0,
+                  bottom: sh(50),
+                  child: _buildLoadingState(sw, sh, screenWidth, baseWidth),
+                )
+              else if (notifications.isEmpty)
+                Positioned(
+                  top: sh(160),
+                  left: 0,
+                  right: 0,
+                  bottom: sh(50),
+                  child: Container(
+                    child: Center(
+                      child: Text("No notification found"),
+                    ),
+                  ),
+                )
+              else
+                Positioned(
+                  top: sh(160),
+                  left: 0,
+                  right: 0,
+                  bottom: sh(50),
+                  child: userRole == 'Driver'
+                      ? _buildDriverContent(sw, sh, screenWidth, baseWidth)
+                      : _buildPassengerContent(sw, sh, screenWidth, baseWidth),
+                ),
+
+              /// Toggle Section at Bottom
+              Positioned(
+                top: sh(100),
+                left: sw(20),
+                right: sw(20),
+                child: _buildToggleSection(sw, sh, screenWidth, baseWidth),
+              ),
+            ],
+          ),
+        );
+      }),
+    );
+  }
+
+  /// -------------------- DRIVER CONTENT --------------------
+  Widget _buildDriverContent(
+      double Function(double) sw,
+      double Function(double) sh,
+      double screenWidth,
+      double baseWidth,
+      ) {
+    return SingleChildScrollView(
+      padding: EdgeInsets.symmetric(horizontal: sw(20)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          /// Today Section
+          Padding(
+            padding: EdgeInsets.only(
+              top: sh(8),
+              bottom: sh(16),
             ),
-
-            /// -------------------- NOTIFICATION LIST + TOGGLE --------------------
-            Expanded(
-              child: Obx(() {
-                // Get user role and load appropriate notifications
-                final userRole = StorageService.getRole();
-                controller.loadNotificationsForRole(userRole!);
-
-                if (controller.notifications.isEmpty) {
-                  return _buildEmptyState(sw, sh, screenWidth, baseWidth);
-                }
-
-                // Check if we should show grouped layout (for driver) or simple list (for passenger)
-                if (userRole == 'Driver') {
-                  return _buildDriverLayout(sw, sh, screenWidth, baseWidth);
-                } else {
-                  return _buildPassengerLayout(sw, sh, screenWidth, baseWidth);
-                }
-              }),
+            child: Text(
+              "Today",
+              style: TextStyle(
+                fontFamily: "Poppins",
+                fontWeight: FontWeight.w600,
+                fontSize: sw(18),
+                color: Colors.black,
+              ),
             ),
-          ],
-        ),
+          ),
+
+          /// Today's notifications (first 3 items)
+          ...controller.notifications.take(3).map((notification) =>
+              _buildDriverNotificationItem(
+                notification: notification,
+                sw: sw,
+                sh: sh,
+              ),
+          ).toList(),
+
+          /// Yesterday Section
+          Padding(
+            padding: EdgeInsets.only(
+              top: sh(24),
+              bottom: sh(16),
+            ),
+            child: Text(
+              "Yesterday",
+              style: TextStyle(
+                fontFamily: "Poppins",
+                fontWeight: FontWeight.w600,
+                fontSize: sw(18),
+                color: Colors.black,
+              ),
+            ),
+          ),
+
+          /// Yesterday's notifications (next 2 items)
+          ...controller.notifications.skip(3).take(2).map((notification) =>
+              _buildDriverNotificationItem(
+                notification: notification,
+                sw: sw,
+                sh: sh,
+              ),
+          ).toList(),
+        ],
       ),
     );
   }
 
-  /// -------------------- DRIVER LAYOUT --------------------
-  Widget _buildDriverLayout(
+  /// -------------------- PASSENGER CONTENT --------------------
+  Widget _buildPassengerContent(
       double Function(double) sw,
       double Function(double) sh,
       double screenWidth,
       double baseWidth,
       ) {
-    return ListView(
-      padding: EdgeInsets.symmetric(horizontal: sw(20)),
-      children: [
-        // Today Section
-        Padding(
-          padding: EdgeInsets.only(
-            top: sh(8),
-            bottom: sh(16),
-          ),
-          child: Text(
-            "Today",
-            style: TextStyle(
-              fontFamily: "Poppins",
-              fontWeight: FontWeight.w600,
-              fontSize: sw(18),
-              color: Colors.black,
-            ),
-          ),
-        ),
-
-        // Today's notifications (first 3 items)
-        ...controller.notifications.take(3).map((notification) =>
-            _buildDriverNotificationItem(
-              notification: notification,
-              sw: sw,
-              sh: sh,
-            ),
-        ).toList(),
-
-        // Yesterday Section
-        Padding(
-          padding: EdgeInsets.only(
-            top: sh(24),
-            bottom: sh(16),
-          ),
-          child: Text(
-            "Yesterday",
-            style: TextStyle(
-              fontFamily: "Poppins",
-              fontWeight: FontWeight.w600,
-              fontSize: sw(18),
-              color: Colors.black,
-            ),
-          ),
-        ),
-
-        // Yesterday's notifications (next 2 items)
-        ...controller.notifications.skip(3).take(2).map((notification) =>
-            _buildDriverNotificationItem(
-              notification: notification,
-              sw: sw,
-              sh: sh,
-            ),
-        ).toList(),
-
-        /// -------------------- TOGGLE SWITCH SECTION --------------------
-        _buildToggleSection(sw, sh, screenWidth, baseWidth),
-      ],
+    return ListView.builder(
+      padding: EdgeInsets.zero,
+      itemCount: controller.notifications.length,
+      itemBuilder: (context, index) {
+        final notification = controller.notifications[index];
+        return _buildNotificationItem(
+          notification: notification,
+          sw: sw,
+          sh: sh,
+          screenWidth: screenWidth,
+          baseWidth: baseWidth,
+        );
+      },
     );
   }
 
-  /// -------------------- PASSENGER LAYOUT --------------------
-  Widget _buildPassengerLayout(
+  /// -------------------- LOADING STATE --------------------
+  Widget _buildLoadingState(
       double Function(double) sw,
       double Function(double) sh,
       double screenWidth,
       double baseWidth,
       ) {
-    return ListView(
-      padding: EdgeInsets.zero,
-      children: [
-        // Notification items (using your original ListView.builder approach)
-        ...controller.notifications.map((notification) =>
-            _buildNotificationItem(
-              notification: notification,
-              sw: sw,
-              sh: sh,
-              screenWidth: screenWidth,
-              baseWidth: baseWidth,
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(
+            color: FColors.secondaryColor,
+          ),
+          SizedBox(height: sh(16)),
+          Text(
+            "Loading notifications...",
+            style: FTextTheme.lightTextTheme.titleMedium!.copyWith(
+              fontWeight: FontWeight.w500,
+              fontSize: FTextTheme.lightTextTheme.titleMedium!.fontSize! *
+                  screenWidth /
+                  baseWidth,
+              color: Colors.grey[500],
             ),
-        ).toList(),
-
-        // Toggle section - added at the end of the list
-        _buildToggleSection(sw, sh, screenWidth, baseWidth),
-      ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -219,18 +270,33 @@ class NotificationScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  notification.title,
-                  style: TextStyle(
-                    fontFamily: "Poppins",
-                    fontWeight: FontWeight.w500,
-                    fontSize: sw(16),
-                    color: Colors.black,
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        notification.title,
+                        style: TextStyle(
+                          fontFamily: "Poppins",
+                          fontWeight: FontWeight.w500,
+                          fontSize: sw(16),
+                          color: Colors.black,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      notification.time,
+                      style: TextStyle(
+                        fontFamily: "Poppins",
+                        fontWeight: FontWeight.w400,
+                        fontSize: sw(14),
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
                 ),
                 SizedBox(height: sh(4)),
                 Text(
-                  notification.time,
+                  notification.message,
                   style: TextStyle(
                     fontFamily: "Poppins",
                     fontWeight: FontWeight.w400,
@@ -242,93 +308,6 @@ class NotificationScreen extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  /// -------------------- EMPTY STATE --------------------
-  Widget _buildEmptyState(
-      double Function(double) sw,
-      double Function(double) sh,
-      double screenWidth,
-      double baseWidth,
-      ) {
-    return Column(
-      children: [
-        // Empty state message (your original design)
-        Expanded(
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.notifications_off_outlined,
-                  size: sw(80),
-                  color: Colors.grey[400],
-                ),
-                SizedBox(height: sh(10)),
-                Text(
-                  "No notifications yet",
-                  style: FTextTheme.lightTextTheme.titleMedium!.copyWith(
-                    fontWeight: FontWeight.w500,
-                    fontSize: FTextTheme.lightTextTheme.titleMedium!.fontSize! *
-                        screenWidth /
-                        baseWidth,
-                    color: Colors.grey[500],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        // Toggle section at bottom
-        _buildToggleSection(sw, sh, screenWidth, baseWidth),
-      ],
-    );
-  }
-
-  /// -------------------- TOGGLE SECTION --------------------
-  Widget _buildToggleSection(
-      double Function(double) sw,
-      double Function(double) sh,
-      double screenWidth,
-      double baseWidth,
-      ) {
-    return Padding(
-      padding: EdgeInsets.only(
-        right: sw(10),
-        left: sw(10),
-        top: sh(20),
-        bottom: sh(20),
-      ),
-      child: Align(
-        alignment: Alignment.centerRight,
-        child: Row(
-          // mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              "Enable Notifications",
-              style: FTextTheme.lightTextTheme.bodyLarge!.copyWith(
-                fontWeight: FontWeight.w400,
-                fontSize: FTextTheme.lightTextTheme.bodyLarge!.fontSize! *
-                    screenWidth /
-                    baseWidth,
-                color: Colors.black87,
-              ),
-            ),
-            // SizedBox(width: sw(130)),
-            Obx(
-                  () => Switch(
-                value: controller.notificationsEnabled.value,
-                onChanged: controller.toggleNotifications,
-                activeColor: Colors.black,
-                inactiveThumbColor: FColors.white,
-                inactiveTrackColor: FColors.radioField,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -353,6 +332,10 @@ class NotificationScreen extends StatelessWidget {
           Container(
             width: sw(48),
             height: sh(48),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(sw(5)),
+              color: FColors.radioField,
+            ),
             child: Center(
               child: _getNotificationIcon(
                 notification.type,
@@ -369,28 +352,79 @@ class NotificationScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  notification.title,
-                  style: FTextTheme.lightTextTheme.titleSmall!.copyWith(
-                    fontWeight: FontWeight.w500,
-                    fontSize: FTextTheme.lightTextTheme.titleSmall!.fontSize! *
-                        screenWidth /
-                        baseWidth,
-                    color: Colors.black,
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        notification.title,
+                        style: FTextTheme.lightTextTheme.titleSmall!.copyWith(
+                          fontWeight: FontWeight.w500,
+                          fontSize: FTextTheme.lightTextTheme.titleSmall!.fontSize! *
+                              screenWidth /
+                              baseWidth,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      notification.time,
+                      style: FTextTheme.lightTextTheme.bodySmall!.copyWith(
+                        fontWeight: FontWeight.w400,
+                        fontSize: FTextTheme.lightTextTheme.bodySmall!.fontSize! *
+                            screenWidth /
+                            baseWidth,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
                 ),
-                SizedBox(height: sh(2)),
+                SizedBox(height: sh(4)),
                 Text(
-                  notification.time,
-                  style: FTextTheme.lightTextTheme.bodySmall!.copyWith(
+                  notification.message,
+                  style: TextStyle(
+                    fontFamily: "Poppins",
                     fontWeight: FontWeight.w400,
-                    fontSize: FTextTheme.lightTextTheme.bodySmall!.fontSize! *
-                        screenWidth /
-                        baseWidth,
+                    fontSize: sw(14),
                     color: Colors.grey[600],
                   ),
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// -------------------- TOGGLE SECTION --------------------
+  Widget _buildToggleSection(
+      double Function(double) sw,
+      double Function(double) sh,
+      double screenWidth,
+      double baseWidth,
+      ) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: sw(10)),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            "Enable Notifications",
+            style: FTextTheme.lightTextTheme.bodyLarge!.copyWith(
+              fontWeight: FontWeight.w400,
+              fontSize: FTextTheme.lightTextTheme.bodyLarge!.fontSize! *
+                  screenWidth /
+                  baseWidth,
+              color: Colors.black87,
+            ),
+          ),
+          Obx(
+                () => Switch(
+              value: controller.notificationsEnabled.value,
+              onChanged: controller.toggleNotifications,
+              activeColor: Colors.black,
+              inactiveThumbColor: FColors.white,
+              inactiveTrackColor: FColors.radioField,
             ),
           ),
         ],
@@ -423,10 +457,16 @@ class NotificationScreen extends StatelessWidget {
           iconPath = 'assets/drawer/gift.svg';
           break;
         case NotificationType.accountUpdate:
-          iconPath = 'assets/drawer/annoucs.svg';
+          iconPath = 'assets/images/notification.svg';
+          break;
+        case NotificationType.promotions:
+          iconPath = 'assets/drawer/gift.svg';
+          break;
+        case NotificationType.rides:
+          iconPath = 'assets/drawer/car.svg';
           break;
         default:
-          iconPath = 'assets/images/notification_bell.svg';
+          iconPath = 'assets/images/notification.svg';
       }
     } else {
       // Passenger icons
@@ -444,10 +484,17 @@ class NotificationScreen extends StatelessWidget {
           iconPath = 'assets/drawer/gift.svg';
           break;
         case NotificationType.accountUpdate:
-          iconPath = 'assets/drawer/account.svg';
+          iconPath = 'assets/images/notification.svg';
           break;
+        case NotificationType.promotions:
+          iconPath = 'assets/drawer/gift.svg';
+          break;
+        case NotificationType.rides:
+          iconPath = 'assets/drawer/car.svg';
+          break;
+
         default:
-          iconPath = 'assets/images/notification_bell.svg';
+          iconPath = 'assets/images/notification.svg';
       }
     }
 

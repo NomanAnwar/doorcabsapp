@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:doorcab/common/widgets/snakbar/snackbar.dart';
+import 'package:doorcab/feautures/shared/screens/change_phonenumber_screen.dart';
 import 'package:doorcab/feautures/shared/services/driver_location_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import '../../../utils/http/http_client.dart';
+import '../../shared/services/pusher_beams.dart';
 import '../../shared/services/storage_service.dart';
 import '../models/driver_verification_helper.dart';
 import '../models/sign_up_response.dart';
@@ -21,9 +23,13 @@ class OtpController extends GetxController {
 
   late final String phone;
 
+  late final bool fornumberupdate;
+
   final Rxn<SignUpResponse> signUpResponse = Rxn<SignUpResponse>();
 
   DriverLocationService _driverLocationService = DriverLocationService();
+
+  final PusherBeamsService _pusherBeams = PusherBeamsService();
 
   @override
   void onInit() {
@@ -34,6 +40,8 @@ class OtpController extends GetxController {
         Get.arguments?['phone'] ??
             StorageService.getSignUpResponse()?.phoneNo ??
             '';
+
+    fornumberupdate = Get.arguments?['fornumberupdate'] ?? false ;
 
     if (phone.isEmpty) {
       Get.snackbar("Error", "Phone number is missing.");
@@ -210,51 +218,72 @@ class OtpController extends GetxController {
             // mark as logged-in for your splash flow
             await StorageService.saveLoginStatus(true);
 
-            if (response["isProfileUpdated"]) {
-              if (role == "Driver") {
-                // Set basic driver steps
-                StorageService.setDriverStep("basic", true);
-                if(response["isCnicUploaded"]) StorageService.setDriverStep("cnic", true);
-                if(response["isSelfieUploaded"]) StorageService.setDriverStep("selfie", true);
-                if(response["isLicenseUploaded"]) StorageService.setDriverStep("licence", true);
-                if(response["isVehicleDocsUploaded"]) StorageService.setDriverStep("vehicle", true);
-                if(response["isRegistrationUploaded"]) StorageService.setDriverStep("registration", true);
 
-                // Get detailed profile for comprehensive checks
-                final profileResponse = await FHttpHelper.get(
-                  "driver/${StorageService.getSignUpResponse()?.userId.toString()}",
-                );
-                print("Get Profile Api Response : " + profileResponse.toString());
+            if(fornumberupdate){
+              Get.off(()=> ChangePhoneNumberScreen());
+            }else {
+              if (response["isProfileUpdated"]) {
+                if (role == "Driver") {
+                  // Set basic driver steps
+                  StorageService.setDriverStep("basic", true);
+                  if (response["isCnicUploaded"]) StorageService.setDriverStep(
+                      "cnic", true);
+                  if (response["isSelfieUploaded"]) StorageService
+                      .setDriverStep("selfie", true);
+                  if (response["isLicenseUploaded"]) StorageService
+                      .setDriverStep("licence", true);
+                  if (response["isVehicleDocsUploaded"]) StorageService
+                      .setDriverStep("vehicle", true);
+                  if (response["isRegistrationUploaded"]) StorageService
+                      .setDriverStep("registration", true);
 
-                final driverProfile = profileResponse["driver"];
-                StorageService.saveProfile(driverProfile);
+                  // Get detailed profile for comprehensive checks
 
-                // Configure location service
-                await _driverLocationService.configure();
-                await _driverLocationService.start();
+                  final profileResponse = await FHttpHelper.get(
+                    "driver/${StorageService
+                        .getSignUpResponse()
+                        ?.userId
+                        .toString()}",
+                  );
+                  print("Get Profile Api Response : " +
+                      profileResponse.toString());
 
-                // Navigate based on comprehensive verification status
-                await _handleDriverNavigation(driverProfile);
+                  final driverProfile = profileResponse["driver"];
+                  StorageService.saveProfile(driverProfile);
 
-              } else {
-                // Passenger flow remains same
-                final response1 = await FHttpHelper.get("passenger/get-profile-info");
-                StorageService.saveProfile(response1["passenger"]);
-                _handlePassengerNavigation(response1["passenger"]);
+                  // Configure location service
+                  await _driverLocationService.configure();
+                  await _driverLocationService.start();
+
+                  await _pusherBeams.initialize();
+                  await _pusherBeams.registerDevice();
+
+                  // Navigate based on comprehensive verification status
+                  await _handleDriverNavigation(driverProfile);
+                } else {
+                  // Passenger flow remains same
+                  final response1 = await FHttpHelper.get(
+                      "passenger/get-profile-info");
+                  StorageService.saveProfile(response1["passenger"]);
+                  _handlePassengerNavigation(response1["passenger"]);
+                }
               }
-            } else {
-              // FIRST TIME USER - Profile not updated yet
-              if (role == "Driver") {
-                print("➡️ First time driver → Navigating to Select Driver Type");
+              else {
+                // FIRST TIME USER - Profile not updated yet
+                if (role == "Driver") {
+                  print(
+                      "➡️ First time driver → Navigating to Select Driver Type");
 
-                // Configure location service for driver
-                await _driverLocationService.configure();
-                await _driverLocationService.start();
+                  // Configure location service for driver
+                  await _driverLocationService.configure();
+                  await _driverLocationService.start();
 
-                Get.offAllNamed('/select_driver_type');
-              } else {
-                print("➡️ First time passenger → Navigating to Profile Setup");
-                Get.offAllNamed('/profile');
+                  Get.offAllNamed('/select_driver_type');
+                } else {
+                  print(
+                      "➡️ First time passenger → Navigating to Profile Setup");
+                  Get.offAllNamed('/profile');
+                }
               }
             }
 
@@ -294,11 +323,11 @@ class OtpController extends GetxController {
 
       // Show specific rejection message
       final rejectedReasons = DriverVerificationHelper.getRejectedReasons(driverProfile);
-      FSnackbar.show(
-        title: "Documents Rejected",
-        message: "${rejectedReasons.join(', ')}. Please re-upload clear documents.",
-        isError: true,
-      );
+      // FSnackbar.show(
+      //   title: "Documents Rejected",
+      //   message: "${rejectedReasons.join(', ')}. Please re-upload clear documents.",
+      //   isError: true,
+      // );
     } else if (!hasUploadedAll) {
       // User hasn't uploaded all documents yet
       final driverSteps = StorageService.getDriverSteps();

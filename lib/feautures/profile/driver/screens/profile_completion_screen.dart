@@ -93,11 +93,11 @@ class ProfileCompletionScreen extends StatelessWidget {
 
           if (isRejected) {
             // Show rejection message when tapped
-            FSnackbar.show(
-              title: "Document Rejected",
-              message: "Your $title was rejected. Please re-upload clear documents.",
-              isError: true,
-            );
+            // FSnackbar.show(
+            //   title: "Document Rejected",
+            //   message: "Your $title was rejected. Please re-upload clear documents.",
+            //   isError: true,
+            // );
           }
 
           Get.toNamed(route)?.then((completed) {

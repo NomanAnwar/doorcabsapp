@@ -4,7 +4,6 @@ import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import '../../../../common/widgets/buttons/f_primary_button.dart';
 import '../../../../utils/constants/colors.dart';
-import '../../../../utils/system_ui_mixin.dart';
 import '../../../../utils/theme/custom_theme/text_theme.dart';
 import '../controllers/available_bids_controller.dart';
 
@@ -44,7 +43,7 @@ class AvailableBidsScreen extends StatelessWidget {
                   children: [
                     /// Back button - ✅ UPDATED: Use cancellation flow
                     Positioned(
-                      top: sh(43),
+                      top: sh(23),
                       left: sw(23),
                       child: IconButton(
                         icon: Icon(Icons.arrow_back, size: sw(28)),
@@ -54,7 +53,7 @@ class AvailableBidsScreen extends StatelessWidget {
 
                     /// Scrollable bids list
                     Positioned(
-                      top: sh(88),
+                      top: sh(68),
                       left: sw(10),
                       right: sw(10),
                       bottom: sh(332),
@@ -156,21 +155,26 @@ class AvailableBidsScreen extends StatelessWidget {
                                     Positioned(
                                       top: sh(22),
                                       left: sw(15),
-                                      child: Text(
-                                        "Accept an offer from a driver",
-                                        style: FTextTheme
-                                            .lightTextTheme
-                                            .titleSmall!
-                                            .copyWith(
-                                              fontWeight: FontWeight.w500,
-                                              fontSize:
-                                                  FTextTheme
-                                                      .lightTextTheme
-                                                      .titleSmall!
-                                                      .fontSize! *
-                                                  screenWidth /
-                                                  baseWidth,
-                                            ),
+                                      child: Container(
+                                        width: sw(360),
+                                        child: Text(
+                                          "Accept an offer from a driver",
+                                          overflow: TextOverflow.ellipsis,
+                                          maxLines: 1,
+                                          style: FTextTheme
+                                              .lightTextTheme
+                                              .titleSmall!
+                                              .copyWith(
+                                                fontWeight: FontWeight.w500,
+                                                fontSize:
+                                                    FTextTheme
+                                                        .lightTextTheme
+                                                        .titleSmall!
+                                                        .fontSize! *
+                                                    screenWidth /
+                                                    baseWidth,
+                                              ),
+                                        ),
                                       ),
                                     ),
 
@@ -209,7 +213,7 @@ class AvailableBidsScreen extends StatelessWidget {
                                       left: 0,
                                       right: 0,
                                       child: Container(
-                                        height: sh(77),
+                                        height: sh(87),
                                         decoration: BoxDecoration(
                                           color: FColors.chipBg,
                                         ),
@@ -229,7 +233,7 @@ class AvailableBidsScreen extends StatelessWidget {
                                             ),
                                             Container(
                                               width: sw(300),
-                                              height: sh(42),
+                                              height: sh(52),
                                               child: Obx(
                                                 () => Text(
                                                   "Auto Accept the nearest driver for PKR ${c.currentFare.value}",

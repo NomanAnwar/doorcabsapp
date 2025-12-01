@@ -72,7 +72,7 @@ class DropOffController extends BaseController {
     pickupCtrl.text = userLocation.value?.address ??
         args?['userCurrentAddress'] ??
         args?['pickup'] ??
-        'Your Current Location';
+        '';
 
     // Set pickup as selected since we have user location
     if (args?['pickupLatLng'] != null && args?['pickupLatLng'] is LatLng) {
@@ -345,8 +345,8 @@ class DropOffController extends BaseController {
   }
 
   void addStop() {
-    if (stops.length >= 3) {
-      Get.snackbar('Limit reached', 'You can add up to 3 stops only.');
+    if (stops.length >= 1) {
+      Get.snackbar('Limit reached', 'You can add 1 stop only.');
       return;
     }
     _openStopsManager();
@@ -434,7 +434,7 @@ class DropOffController extends BaseController {
                       description: result['address'] ?? 'Stop (map)',
                       latLng: LatLng(result['lat'], result['lng']),
                     );
-                    if (stops.length < 3) stops.add(stop);
+                    if (stops.length < 1) stops.add(stop);
                   }
                 },
                 icon: Icon(Icons.add_location_alt_outlined, size: sw(20)),

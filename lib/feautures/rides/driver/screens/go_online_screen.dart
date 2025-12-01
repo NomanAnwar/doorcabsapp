@@ -11,6 +11,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:slide_to_act/slide_to_act.dart';
+import '../../../shared/screens/notification_screen.dart';
 import '../../../shared/screens/wallet_screen.dart';
 import '../controllers/go_online_controller.dart';
 
@@ -138,7 +139,7 @@ class GoOnlineScreen extends StatelessWidget {
 
                 /// Back Arrow (SVG)
                 Positioned(
-                  top: sh(80),
+                  top: sh(44),
                   left: sw(33),
                   child: GestureDetector(
                     onTap: () => Get.back(),
@@ -152,58 +153,65 @@ class GoOnlineScreen extends StatelessWidget {
 
                 /// Center Status Container
                 Positioned(
-                  top: sh(65),
+                  top: sh(35),
                   left: 0,
                   right: 0,
                   child: Center(
                     child: Obx(
-                          () => GestureDetector(
-                        onTap: () => controller.toggleEarningsVisibility(),
-                        child: Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: sw(14),
-                            vertical: sh(8),
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(sw(53)),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: sw(4),
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              SvgPicture.asset(
-                                controller.eyeIconPath,
-                                width: sw(20),
-                                height: sh(20),
-                              ),
-                              SizedBox(width: sw(6)),
-                              Text(
-                                controller.earningsDisplayText,
-                                style: FTextTheme.lightTextTheme.titleMedium!.copyWith(
-                                  fontSize: FTextTheme.lightTextTheme.titleMedium!.fontSize! *
-                                      screenWidth /
-                                      baseWidth,
-                                  color: Colors.black,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
+                          () {
+                            print("🎯 Earnings display rebuilding with value: ${controller.totalEarnings.value}");
+                              return  GestureDetector(
+                                  onTap: () =>
+                                      controller.toggleEarningsVisibility(),
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: sw(14),
+                                      vertical: sh(8),
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(
+                                          sw(53)),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.1),
+                                          blurRadius: sw(4),
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        SvgPicture.asset(
+                                          controller.eyeIconPath,
+                                          width: sw(20),
+                                          height: sh(20),
+                                        ),
+                                        SizedBox(width: sw(6)),
+                                        Text(
+                                          controller.earningsDisplayText,
+                                          style: FTextTheme.lightTextTheme
+                                              .titleMedium!.copyWith(
+                                            fontSize: FTextTheme.lightTextTheme
+                                                .titleMedium!.fontSize! *
+                                                screenWidth /
+                                                baseWidth,
+                                            color: Colors.black,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                          },
                     ),
                   ),
                 ),
 
                 /// Menu Icon
                 Positioned(
-                  top: sh(55),
+                  top: sh(35),
                   left: sw(382),
                   child: Builder(
                     builder: (context) {
@@ -236,14 +244,15 @@ class GoOnlineScreen extends StatelessWidget {
 
                 /// Notification Icon with Badge
                 Positioned(
-                  top: sh(100),
+                  top: sh(80),
                   left: sw(382),
                   child: Stack(
                     clipBehavior: Clip.none,
                     children: [
                       GestureDetector(
                         onTap: (){
-                          FSnackbar.show(title: 'Notifications ', message: "Will add Notifications soon.");
+                          // FSnackbar.show(title: 'Notifications ', message: "Will add Notifications soon.");
+                          Get.to(() => NotificationScreen());
                         },
                         child: Container(
                           width: sw(39),
@@ -283,7 +292,7 @@ class GoOnlineScreen extends StatelessWidget {
                           ),
                           child: Center(
                             child: Text(
-                              "3",
+                              "",
                               style: FTextTheme.lightTextTheme.labelSmall!.copyWith(
                                 fontSize: FTextTheme.lightTextTheme.labelSmall!.fontSize! *
                                     screenWidth /
@@ -302,7 +311,7 @@ class GoOnlineScreen extends StatelessWidget {
                 /// Flag Icon
                 Obx(
                       () => Positioned(
-                    top: controller.isOnline.value ? sh(465) : sh(515),
+                    top: controller.isOnline.value ? sh(565) : sh(545),
                     right: sw(23),
                     child: GestureDetector(
                       onTap: () => controller.toggleFlag(),
@@ -340,7 +349,7 @@ class GoOnlineScreen extends StatelessWidget {
                 /// Move Icon
                 Obx(
                       () => Positioned(
-                    top: controller.isOnline.value ? sh(510) : sh(560),
+                    top: controller.isOnline.value ? sh(610) : sh(590),
                     right: sw(23),
                     child: GestureDetector(
                       onTap: () => controller.centerMapLocation(),
@@ -373,7 +382,7 @@ class GoOnlineScreen extends StatelessWidget {
                 /// Compass Icon
                 Obx(
                       () => Positioned(
-                    top: controller.isOnline.value ? sh(510) : sh(560),
+                    top: controller.isOnline.value ? sh(610) : sh(590),
                     right: sw(390),
                     child: GestureDetector(
                       onTap: () => controller.toggleCompass(),
@@ -402,9 +411,6 @@ class GoOnlineScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-
-                /// Custom Bottom Navigation Bar
-                ///
 
                 /// Custom Bottom Navigation Bar
                 Positioned(
@@ -489,7 +495,7 @@ class GoOnlineScreen extends StatelessWidget {
                       onVerticalDragUpdate: (details) {},
                       child: Container(
                         width: screenWidth,
-                        height: controller.isOnline.value ? sh(330) : sh(280),
+                        height: controller.isOnline.value ? sh(230) : sh(250),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.only(
@@ -554,7 +560,7 @@ class GoOnlineScreen extends StatelessWidget {
                                       ),
                                       SizedBox(height: sh(2)),
                                       Text(
-                                        "We're looking for rides.",
+                                        "We're looking for rides for you.",
                                         style: FTextTheme.lightTextTheme.bodyMedium!.copyWith(
                                           fontSize: FTextTheme.lightTextTheme.bodyMedium!.fontSize! *
                                               screenWidth /
@@ -565,80 +571,88 @@ class GoOnlineScreen extends StatelessWidget {
                                     ],
                                   ),
                                 )
-                                    : Text(
-                                  "2 to 5 min wait in your area",
-                                  style: FTextTheme.lightTextTheme.headlineSmall!.copyWith(
-                                    fontSize: FTextTheme.lightTextTheme.headlineSmall!.fontSize! *
-                                        screenWidth /
-                                        baseWidth,
-                                    color: const Color(0xFF595959),
-                                  ),
-                                ),
+                                    :
+
+                                SizedBox(height: sh(2),),
+
+                                // Text(
+                                //   "2 to 5 min wait in your area",
+                                //   style: FTextTheme.lightTextTheme.headlineSmall!.copyWith(
+                                //     fontSize: FTextTheme.lightTextTheme.headlineSmall!.fontSize! *
+                                //         screenWidth /
+                                //         baseWidth,
+                                //     color: const Color(0xFF595959),
+                                //   ),
+                                // ),
 
                                 SizedBox(height: sh(12)),
 
                                 /// Second block
                                 controller.isOnline.value
-                                    ? Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        SvgPicture.asset(
-                                          'assets/images/cup.svg',
-                                          width: sw(30),
-                                          height: sh(30),
-                                        ),
-                                        SizedBox(width: sw(8)),
-                                        Column(
-                                          crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              "Unlock Your Next Tasks",
-                                              style: FTextTheme.lightTextTheme.titleMedium!.copyWith(
-                                                fontSize: FTextTheme.lightTextTheme.titleMedium!.fontSize! *
-                                                    screenWidth /
-                                                    baseWidth,
-                                                color: FColors.black,
-                                                fontWeight: FontWeight.w500
-                                              ),
-                                            ),
-                                            SizedBox(height: sh(2)),
-                                            Text(
-                                              "70/100 Point",
-                                              style: FTextTheme.lightTextTheme.bodySmall!.copyWith(
-                                                fontSize: FTextTheme.lightTextTheme.bodySmall!.fontSize! *
-                                                    screenWidth /
-                                                    baseWidth,
-                                                color: Colors.black54,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                    Text(
-                                      "until 20/30",
-                                      style: FTextTheme.lightTextTheme.bodySmall!.copyWith(
-                                        fontSize: FTextTheme.lightTextTheme.bodySmall!.fontSize! *
-                                            screenWidth /
-                                            baseWidth,
-                                        color: Colors.black87,
-                                      ),
-                                    ),
-                                  ],
-                                )
-                                    : Text(
-                                  "Average wait for 20 rides over the last hour",
-                                  style: FTextTheme.lightTextTheme.bodyMedium!.copyWith(
-                                    fontSize: FTextTheme.lightTextTheme.bodyMedium!.fontSize! *
-                                        screenWidth /
-                                        baseWidth,
-                                    color: Colors.black54,
-                                  ),
-                                ),
+                                    ?
+                                    SizedBox(height: sh(2))
+                                // Row(
+                                //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                //   crossAxisAlignment: CrossAxisAlignment.center,
+                                //   children: [
+                                //     Row(
+                                //       children: [
+                                //         SvgPicture.asset(
+                                //           'assets/images/cup.svg',
+                                //           width: sw(30),
+                                //           height: sh(30),
+                                //         ),
+                                //         SizedBox(width: sw(8)),
+                                //         Column(
+                                //           crossAxisAlignment:
+                                //           CrossAxisAlignment.start,
+                                //           children: [
+                                //             Text(
+                                //               "Unlock Your Next Tasks",
+                                //               style: FTextTheme.lightTextTheme.titleMedium!.copyWith(
+                                //                 fontSize: FTextTheme.lightTextTheme.titleMedium!.fontSize! *
+                                //                     screenWidth /
+                                //                     baseWidth,
+                                //                 color: FColors.black,
+                                //                 fontWeight: FontWeight.w500
+                                //               ),
+                                //             ),
+                                //             SizedBox(height: sh(2)),
+                                //             Text(
+                                //               "70/100 Point",
+                                //               style: FTextTheme.lightTextTheme.bodySmall!.copyWith(
+                                //                 fontSize: FTextTheme.lightTextTheme.bodySmall!.fontSize! *
+                                //                     screenWidth /
+                                //                     baseWidth,
+                                //                 color: Colors.black54,
+                                //               ),
+                                //             ),
+                                //           ],
+                                //         ),
+                                //       ],
+                                //     ),
+                                //     Text(
+                                //       "until 20/30",
+                                //       style: FTextTheme.lightTextTheme.bodySmall!.copyWith(
+                                //         fontSize: FTextTheme.lightTextTheme.bodySmall!.fontSize! *
+                                //             screenWidth /
+                                //             baseWidth,
+                                //         color: Colors.black87,
+                                //       ),
+                                //     ),
+                                //   ],
+                                // )
+                                    :
+                                SizedBox(height: sh(2)),
+                                // Text(
+                                //   "Average wait for 20 rides over the last hour",
+                                //   style: FTextTheme.lightTextTheme.bodyMedium!.copyWith(
+                                //     fontSize: FTextTheme.lightTextTheme.bodyMedium!.fontSize! *
+                                //         screenWidth /
+                                //         baseWidth,
+                                //     color: Colors.black54,
+                                //   ),
+                                // ),
 
                                 SizedBox(height: sh(12)),
                                 Divider(height: sh(1), thickness: sh(1)),
@@ -646,61 +660,63 @@ class GoOnlineScreen extends StatelessWidget {
 
                                 /// Grey Card (Goals / Offline Card)
                                 controller.isOnline.value
-                                    ? SizedBox(
-                                  height: sh(70),
-                                  child: Stack(
-                                    children: [
-                                      Positioned(
-                                        top: sh(5),
-                                        left: sw(5),
-                                        child: SvgPicture.asset(
-                                          'assets/images/goals.svg',
-                                          width: sw(30),
-                                          height: sh(30),
-                                        ),
-                                      ),
-                                      Positioned(
-                                        left: sw(50),
-                                        child: Text(
-                                          "Earnings Goal",
-                                          style: FTextTheme.lightTextTheme.titleMedium!.copyWith(
-                                            fontSize: FTextTheme.lightTextTheme.titleMedium!.fontSize! *
-                                                screenWidth /
-                                                baseWidth,
-                                            color: FColors.black,
-                                            fontWeight: FontWeight.w500
-                                          ),
-                                        ),
-                                      ),
-                                      Positioned(
-                                        top: sh(25),
-                                        left: sw(50),
-                                        child: Text(
-                                          "1000/5000",
-                                          style: FTextTheme.lightTextTheme.bodySmall!.copyWith(
-                                            fontSize: FTextTheme.lightTextTheme.bodySmall!.fontSize! *
-                                                screenWidth /
-                                                baseWidth,
-                                            color: Colors.black54,
-                                          ),
-                                        ),
-                                      ),
-                                      Positioned(
-                                        top: sh(10),
-                                        right: sw(10),
-                                        child: Text(
-                                          "Ends Sunday",
-                                          style: FTextTheme.lightTextTheme.bodySmall!.copyWith(
-                                            fontSize: FTextTheme.lightTextTheme.bodySmall!.fontSize! *
-                                                screenWidth /
-                                                baseWidth,
-                                            color: Colors.black87,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                )
+                                    ?
+                                SizedBox(height: sh(2))
+                                // SizedBox(
+                                //   height: sh(70),
+                                //   child: Stack(
+                                //     children: [
+                                //       Positioned(
+                                //         top: sh(5),
+                                //         left: sw(5),
+                                //         child: SvgPicture.asset(
+                                //           'assets/images/goals.svg',
+                                //           width: sw(30),
+                                //           height: sh(30),
+                                //         ),
+                                //       ),
+                                //       Positioned(
+                                //         left: sw(50),
+                                //         child: Text(
+                                //           "Earnings Goal",
+                                //           style: FTextTheme.lightTextTheme.titleMedium!.copyWith(
+                                //             fontSize: FTextTheme.lightTextTheme.titleMedium!.fontSize! *
+                                //                 screenWidth /
+                                //                 baseWidth,
+                                //             color: FColors.black,
+                                //             fontWeight: FontWeight.w500
+                                //           ),
+                                //         ),
+                                //       ),
+                                //       Positioned(
+                                //         top: sh(25),
+                                //         left: sw(50),
+                                //         child: Text(
+                                //           "1000/5000",
+                                //           style: FTextTheme.lightTextTheme.bodySmall!.copyWith(
+                                //             fontSize: FTextTheme.lightTextTheme.bodySmall!.fontSize! *
+                                //                 screenWidth /
+                                //                 baseWidth,
+                                //             color: Colors.black54,
+                                //           ),
+                                //         ),
+                                //       ),
+                                //       Positioned(
+                                //         top: sh(10),
+                                //         right: sw(10),
+                                //         child: Text(
+                                //           "Ends Sunday",
+                                //           style: FTextTheme.lightTextTheme.bodySmall!.copyWith(
+                                //             fontSize: FTextTheme.lightTextTheme.bodySmall!.fontSize! *
+                                //                 screenWidth /
+                                //                 baseWidth,
+                                //             color: Colors.black87,
+                                //           ),
+                                //         ),
+                                //       ),
+                                //     ],
+                                //   ),
+                                // )
                                     : Container(
                                   width: double.infinity,
                                   margin: EdgeInsets.only(left: sw(6)),

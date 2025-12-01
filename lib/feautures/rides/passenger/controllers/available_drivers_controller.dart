@@ -61,6 +61,9 @@ class AvailableDriversController extends BaseController {
   final isFareRaised = false.obs;
   final raisedFareValue = 0.obs;
 
+  // ✅ ADD: Background service integration (SAME AS DriversWaitingController)
+  final PusherBackgroundService _backgroundService = PusherBackgroundService();
+  Timer? _backgroundEventTimer;
 
   @override
   void onInit() async {
@@ -125,17 +128,6 @@ class AvailableDriversController extends BaseController {
         // ✅ UPDATED: Start both event listening and API fallback
         _startDriverUpdates();
       }
-
-      // ✅ Store bids observable
-      // final argBids = args['bids'];
-      // if (argBids != null && argBids is RxList<Map<String, dynamic>>) {
-      //   ever(argBids, (_) {
-      //     if (argBids.isNotEmpty) {
-      //       bids.assignAll(argBids);
-      //       _goToBids(args); // pass args forward
-      //     }
-      //   });
-      // }
     }
 
     // ✅ ADDED: Listen to fare controller changes to update button states
@@ -143,14 +135,113 @@ class AvailableDriversController extends BaseController {
     _updateButtonStates(); // Initial update
 
     startCountdown();
+
+    // ✅ UPDATED: Enhanced background service (SAME AS DriversWaitingController)
     _startBackgroundService();
+    _setupBackgroundEventListening();
   }
 
+
+  // ✅ UPDATED: Enhanced background service (SAME PATTERN AS DriversWaitingController)
   void _startBackgroundService() {
-    final passengerId = StorageService.getSignUpResponse()?.userId;
-    if (passengerId != null) {
-      PusherBackgroundService().startBackgroundMode(passengerId);
+    try {
+      final passengerId = StorageService.getSignUpResponse()?.userId;
+      final rideId = rideArgs['rideId']?.toString();
+
+      if (passengerId != null && rideId != null) {
+        _backgroundService.startBackgroundMode(
+          passengerId,
+          userType: 'passenger',
+          rideId: rideId, // ✅ ADD RIDE ID LIKE DriversWaitingController
+        );
+
+        // ✅ CHECK SERVICE STATUS LIKE DriversWaitingController
+        Timer(Duration(seconds: 3), () async {
+          final isRunning = await _backgroundService.isBackgroundServiceRunning();
+          print('🎯 AvailableDrivers Background Status: $isRunning');
+        });
+
+        print('🚀 Background service started for passenger: $passengerId, ride: $rideId');
+      } else {
+        print('⚠️ Missing passengerId or rideId for background service');
+      }
+    } catch (e) {
+      print('❌ Error starting background service: $e');
     }
+  }
+
+  // ✅ ADD: Setup background event listening (SAME PATTERN AS DriversWaitingController)
+  void _setupBackgroundEventListening() {
+    // Check for events every 2 seconds
+    _backgroundEventTimer = Timer.periodic(Duration(seconds: 2), (timer) async {
+      if (!Get.currentRoute.contains('AvailableDrivers')) return;
+
+      final events = await _backgroundService.getPendingEvents();
+      if (events.isNotEmpty) {
+        print('📥 AvailableDrivers: Found ${events.length} pending background events');
+        for (final event in events) {
+          _handleBackgroundEvent(event);
+        }
+      }
+    });
+  }
+
+  // ✅ ADD: Handle background events
+  void _handleBackgroundEvent(Map<String, dynamic> event) {
+    try {
+      final type = event['type'];
+      final data = event['data'];
+
+      print('🔄 AvailableDrivers Background: Processing event: $type');
+
+      switch (type) {
+        case 'new-bid':
+          _handleBackgroundNewBid(data);
+          break;
+        case 'ride-cancelled':
+          _handleBackgroundRideCancelled(data);
+          break;
+        case 'ride-update':
+          _handleBackgroundRideUpdate(data);
+          break;
+        default:
+          print('⚠️ AvailableDrivers: Unhandled background event type: $type');
+      }
+    } catch (e) {
+      print('❌ AvailableDrivers: Error processing background event: $e');
+    }
+  }
+
+  // ✅ ADD: Handle background new bid
+  void _handleBackgroundNewBid(Map<String, dynamic> data) {
+    try {
+      debugPrint("📨 AvailableDrivers Background: Received new bid: $data");
+      bids.add(data);
+
+      if (bids.length == 1) {
+        debugPrint("🚀 First bid received via background! Auto-navigating...");
+        _goToBidsImmediately(rideArgs);
+      }
+    } catch (e) {
+      debugPrint("❌ AvailableDrivers: Error storing background bid: $e");
+    }
+  }
+
+  // ✅ ADD: Handle background ride cancellation
+  void _handleBackgroundRideCancelled(Map<String, dynamic> data) {
+    debugPrint("❌ AvailableDrivers Background: Ride cancelled: $data");
+    FSnackbar.show(
+      title: "Ride Cancelled",
+      message: "Your ride was cancelled",
+      isError: true,
+    );
+    _navigateAfterCancellation();
+  }
+
+  // ✅ ADD: Handle background ride update
+  void _handleBackgroundRideUpdate(Map<String, dynamic> data) {
+    debugPrint("🔄 AvailableDrivers Background: Ride update received: $data");
+    // Handle any ride updates if needed
   }
 
   // ✅ ADDED: Start both event listening and API fallback
@@ -159,7 +250,7 @@ class AvailableDriversController extends BaseController {
     _startEventTimeoutTimer();
   }
 
-  // ✅ ADDED: Listen to nearby-drivers Pusher events
+  // ✅ UPDATED: Listen to nearby-drivers Pusher events with background integration
   void _listenForNearbyDriversEvent() {
     final passengerId = StorageService.getSignUpResponse()?.userId;
     if (passengerId != null) {
@@ -174,10 +265,14 @@ class AvailableDriversController extends BaseController {
           "new-bid": (data) {
             debugPrint("📨 Passenger received new bid in driver controller : $data");
             try {
+              // ✅ ALSO STORE IN BACKGROUND SERVICE FOR PERSISTENCE (SAME PATTERN)
+              _backgroundService.storeBackgroundEvent('new-bid', data);
+
+              // Process immediately in foreground
               bids.add(data);
 
               // ✅ NAVIGATE IMMEDIATELY ON FIRST BID
-              if (bids.length == 1) { // Only on the very first bid
+              if (bids.length == 1) {
                 debugPrint("🚀 First bid received! Auto-navigating to bids screen...");
                 _goToBidsImmediately(rideArgs);
               }
@@ -190,17 +285,20 @@ class AvailableDriversController extends BaseController {
     }
   }
 
-// ✅ ADDED: Navigate immediately when first bid is received
+  // ✅ ADDED: Navigate immediately when first bid is received
   void _goToBidsImmediately(Map<String, dynamic> parentArgs) {
     // Cancel all timers since we're navigating now
     _timer?.cancel();
     _eventTimeoutTimer?.cancel();
+    _backgroundEventTimer?.cancel(); // ✅ ADD: Cancel background timer
 
     final fareValue = isFareRaised.value ? raisedFareValue.value : initialMinimumFare;
 
     print("🚀 AUTO-NAVIGATING with ${bids.length} bids!");
     print("   - First bid fare: PKR ${bids.first['fareOffered']}");
     print("   - Total bids: ${bids.length}");
+
+    PusherBackgroundService().stopBackgroundMode();
 
     Get.off(() => const AvailableBidsScreen(), arguments: {
       ...parentArgs,

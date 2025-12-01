@@ -5,6 +5,7 @@ class NotificationModel {
   final String iconPath;
   final NotificationType type;
   final bool isRead;
+  final String message;
 
   NotificationModel({
     required this.id,
@@ -13,6 +14,7 @@ class NotificationModel {
     required this.iconPath,
     required this.type,
     this.isRead = false,
+    this.message = '',
   });
 
   NotificationModel copyWith({
@@ -22,6 +24,7 @@ class NotificationModel {
     String? iconPath,
     NotificationType? type,
     bool? isRead,
+    String? message,
   }) {
     return NotificationModel(
       id: id ?? this.id,
@@ -30,6 +33,7 @@ class NotificationModel {
       iconPath: iconPath ?? this.iconPath,
       type: type ?? this.type,
       isRead: isRead ?? this.isRead,
+      message: message ?? this.message,
     );
   }
 }
@@ -40,4 +44,6 @@ enum NotificationType {
   rideCompleted,
   newFeature,
   accountUpdate,
+  promotions,
+  rides,
 }

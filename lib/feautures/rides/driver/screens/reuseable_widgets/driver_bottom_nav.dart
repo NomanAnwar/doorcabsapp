@@ -6,6 +6,8 @@ import 'package:doorcab/feautures/rides/driver/screens/ride_request_list_screen.
 import 'package:doorcab/feautures/rides/driver/screens/performance_screen.dart';
 import 'package:doorcab/feautures/shared/screens/wallet_screen.dart';
 
+import '../schedule_ride_screen.dart';
+
 class DriverBottomNav extends StatelessWidget {
   final int currentIndex;
   final bool isRequestsListActive;
@@ -128,7 +130,7 @@ class DriverBottomNav extends StatelessWidget {
         }
         break;
       case 1: // Schedule Ride
-      // Get.offAll(() => ScheduleRideScreen());
+      Get.offAll(() => ScheduleRideScreen());
         break;
       case 2: // Performance
         if (Get.currentRoute != '/performance') {

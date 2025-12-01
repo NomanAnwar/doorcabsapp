@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../rides/driver/screens/reuseable_widgets/driver_bottom_nav.dart';
 import '../controllers/wallet_controller.dart';
 import '../models/wallet_model.dart';
+import 'package:doorcab/utils/constants/colors.dart';
+import 'package:doorcab/utils/theme/custom_theme/text_theme.dart';
+
+import '../services/storage_service.dart';
 
 class WalletScreen extends StatelessWidget {
   final WalletController controller = Get.put(WalletController());
@@ -13,11 +18,12 @@ class WalletScreen extends StatelessWidget {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
 
-    // Responsive values
-    final horizontalPadding = screenWidth * 0.05;
-    final avatarSize = screenWidth * 0.28;
-    final nameSize = screenWidth * 0.06;
-    final balanceSize = screenWidth * 0.055;
+    // Base reference (iPhone 16 Pro Max)
+    final baseWidth = 440.0;
+    final baseHeight = 956.0;
+
+    double sw(double w) => w * screenWidth / baseWidth;
+    double sh(double h) => h * screenHeight / baseHeight;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -25,182 +31,255 @@ class WalletScreen extends StatelessWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(Icons.arrow_back, color: Colors.black, size: sw(24)),
           onPressed: () => Get.back(),
         ),
         title: Text(
           'Wallet',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: screenWidth * 0.05,
+          style: FTextTheme.lightTextTheme.headlineLarge?.copyWith(
+            fontSize: sw(18),
             fontWeight: FontWeight.w600,
+            color: Colors.black,
           ),
         ),
         centerTitle: true,
       ),
-      drawer: null,
 
-      body: SingleChildScrollView( // ✅ REMOVED Obx
-        child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: horizontalPadding,
-            vertical: screenHeight * 0.02,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Profile Avatar
-              Center(
-                child: Container( // ✅ REMOVED inner Obx
-                  width: avatarSize.clamp(80.0, 120.0),
-                  height: avatarSize.clamp(80.0, 120.0),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFFFF4E6),
-                    shape: BoxShape.circle,
-                  ),
-                  child: ClipOval(
-                    child: Image.asset(
-                      controller.currentProfileImage, // ✅ Direct access
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Icon(
-                          Icons.person,
-                          size: avatarSize.clamp(40.0, 60.0),
-                          color: Colors.grey,
-                        );
-                      },
+      body: Obx(() {
+        final loading = controller.isLoading.value;
+        final wallet = controller.currentWallet;
+        final transactions = controller.currentTransactions;
+
+        // ✅ FIX: Safe data extraction with null checks
+        Map<String, dynamic>? profileData = StorageService.getProfile();
+
+        print("User profile on app drawer : " + profileData.toString());
+
+        String profileImage = '';
+
+        if (profileData != null) {
+          try {
+            profileImage = profileData['Profile_Image']?.toString() ?? '';
+          } catch (e) {
+            print('❌ Error parsing profile data: $e');
+          }
+        }
+
+        return Stack(
+          children: [
+            /// Main UI
+            SingleChildScrollView(
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: sw(20),
+                  vertical: sh(20),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Profile Avatar
+                    Center(
+                      child: Container(
+                        width: sw(100),
+                        height: sw(100),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFFFF4E6),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Column(
+                          children: [
+                            // ClipOval(
+                            //   child: Image.asset(
+                            //     controller.currentProfileImage,
+                            //     fit: BoxFit.cover,
+                            //     errorBuilder: (context, error, stackTrace) {
+                            //       return Icon(
+                            //         Icons.person,
+                            //         size: sw(40),
+                            //         color: Colors.grey,
+                            //       );
+                            //     },
+                            //   ),
+                            // ),
+                            CircleAvatar(
+                              radius: sw(50),
+                              // backgroundColor: Colors.grey[300],
+                              backgroundImage:
+                                  profileImage.isNotEmpty &&
+                                          profileImage.startsWith('http')
+                                      ? NetworkImage(profileImage)
+                                          as ImageProvider
+                                      : AssetImage(
+                                        profileImage.isEmpty
+                                            ? 'assets/Dashboard/profile.png'
+                                            : profileImage,
+                                      ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
+                    SizedBox(height: sh(20)),
+
+                    // Name
+                    Text(
+                      wallet.displayName,
+                      style: FTextTheme.lightTextTheme.headlineLarge?.copyWith(
+                        fontSize: sw(20),
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
+                    SizedBox(height: sh(5)),
+
+                    // ID or Wallet Balance subtitle
+                    if (controller.isDriver) ...[
+                      Text(
+                        wallet.displayId,
+                        style: FTextTheme.lightTextTheme.bodyMedium?.copyWith(
+                          fontSize: sw(14),
+                          fontWeight: FontWeight.w400,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                    ],
+                    SizedBox(height: sh(25)),
+
+                    // Balance Section (only for driver)
+                    if (controller.isDriver) ...[
+                      Text(
+                        'Balance',
+                        style: FTextTheme.lightTextTheme.bodyLarge?.copyWith(
+                          fontSize: sw(14),
+                          fontWeight: FontWeight.w400,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                      SizedBox(height: sh(5)),
+                      Text(
+                        wallet.displayBalance,
+                        style: FTextTheme.lightTextTheme.displaySmall?.copyWith(
+                          fontSize: sw(28),
+                          fontWeight: FontWeight.w700,
+                          color: Colors.black,
+                        ),
+                      ),
+                      SizedBox(height: sh(25)),
+                    ],
+
+                    // Pending Banner (Driver) or Wallet Row (Passenger)
+                    if (controller.isDriver)
+                      _buildPendingBanner(wallet, sw, sh)
+                    else
+                      _buildPassengerWalletRow(wallet, sw, sh),
+
+                    SizedBox(height: sh(20)),
+
+                    // Action Buttons
+                    _buildActionButtons(sw, sh),
+
+                    SizedBox(height: sh(30)),
+
+                    // Transactions Header
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Transactions',
+                        style: FTextTheme.lightTextTheme.headlineSmall
+                            ?.copyWith(
+                              fontSize: sw(18),
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                      ),
+                    ),
+                    SizedBox(height: sh(20)),
+
+                    // Transaction List
+                    if (transactions.isEmpty && !loading)
+                      Padding(
+                        padding: EdgeInsets.symmetric(vertical: sh(40)),
+                        child: Text(
+                          'No transactions found',
+                          style: FTextTheme.lightTextTheme.bodyMedium?.copyWith(
+                            fontSize: sw(14),
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      )
+                    else
+                      ListView.separated(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: transactions.length,
+                        separatorBuilder:
+                            (context, index) => SizedBox(height: sh(15)),
+                        itemBuilder: (context, index) {
+                          final transaction = transactions[index];
+                          return _buildTransactionItem(transaction, sw, sh);
+                        },
+                      ),
+                    SizedBox(height: sh(20)),
+                  ],
+                ),
+              ),
+            ),
+
+            /// Loader Overlay
+            if (loading)
+              Container(
+                height: screenHeight,
+                width: screenWidth,
+                color: Colors.black.withOpacity(0.4),
+                child: Center(
+                  child: CircularProgressIndicator(
+                    color: FColors.secondaryColor,
                   ),
                 ),
               ),
-              SizedBox(height: screenHeight * 0.02),
+          ],
+        );
+      }),
 
-              // Name
-              Text(
-                controller.currentWallet.name,
-                style: TextStyle(
-                  fontSize: nameSize.clamp(20.0, 24.0),
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
-              ),
-              SizedBox(height: screenHeight * 0.005),
-
-              // ID or Wallet Balance subtitle
-              Text(
-                controller.currentWallet.id,
-                style: TextStyle(
-                  fontSize: (screenWidth * 0.032).clamp(11.0, 14.0),
-                  fontWeight: FontWeight.w400,
-                  color: Colors.grey[700],
-                ),
-              ),
-              SizedBox(height: screenHeight * 0.025),
-
-              // Balance Section (only for driver)
-              if (controller.isDriver) ...[
-                Text(
-                  'Balance',
-                  style: TextStyle(
-                    fontSize: (screenWidth * 0.036).clamp(12.0, 14.0),
-                    fontWeight: FontWeight.w400,
-                    color: Colors.grey[700],
-                  ),
-                ),
-                SizedBox(height: screenHeight * 0.005),
-                Text(
-                  controller.currentWallet.balance,
-                  style: TextStyle(
-                    fontSize: balanceSize.clamp(20.0, 32.0),
-                    fontWeight: FontWeight.w700,
-                    color: Colors.black,
-                  ),
-                ),
-                SizedBox(height: screenHeight * 0.025),
-              ],
-
-              // Pending Banner (Driver) or Wallet Row (Passenger)
-              if (controller.isDriver)
-                _buildPendingBanner(screenWidth, screenHeight)
-              else
-                _buildPassengerWalletRow(screenWidth, screenHeight),
-
-              SizedBox(height: screenHeight * 0.02),
-
-              // Action Buttons
-              _buildActionButtons(screenWidth, screenHeight),
-
-              SizedBox(height: screenHeight * 0.03),
-
-              // Transactions Header
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Transactions',
-                  style: TextStyle(
-                    fontSize: (screenWidth * 0.05).clamp(18.0, 20.0),
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
-              ),
-              SizedBox(height: screenHeight * 0.02),
-
-              // Transaction List
-              ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: controller.currentTransactions.length,
-                separatorBuilder: (context, index) =>
-                    SizedBox(height: screenHeight * 0.015),
-                itemBuilder: (context, index) {
-                  final transaction = controller.currentTransactions[index];
-                  return _buildTransactionItem(
-                    transaction,
-                    screenWidth,
-                    screenHeight,
-                  );
-                },
-              ),
-              SizedBox(height: screenHeight * 0.02),
-            ],
-          ),
-        ),
-      ),
-
-      bottomNavigationBar: null,
+      bottomNavigationBar:
+          controller.isDriver
+              ? DriverBottomNav(
+                currentIndex: 3, // Wallet is active
+                isRequestsListActive: false,
+              )
+              : SizedBox(),
     );
   }
 
-  // ... rest of your methods remain exactly the same
-  Widget _buildPendingBanner(double screenWidth, double screenHeight) {
+  Widget _buildPendingBanner(
+    WalletModel wallet,
+    double Function(double) sw,
+    double Function(double) sh,
+  ) {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.symmetric(
-        horizontal: screenWidth * 0.05,
-        vertical: screenHeight * 0.018,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: sw(20), vertical: sh(18)),
       decoration: BoxDecoration(
         color: const Color(0xFFFFCC00),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(sw(12)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Flexible(
             child: Text(
-              controller.currentWallet.pendingLabel ?? '',
-              style: TextStyle(
-                fontSize: (screenWidth * 0.04).clamp(14.0, 16.0),
+              wallet.displayPendingLabel,
+              style: FTextTheme.lightTextTheme.bodyLarge?.copyWith(
+                fontSize: sw(14),
                 fontWeight: FontWeight.w600,
                 color: Colors.black,
               ),
             ),
           ),
           Text(
-            controller.currentWallet.pendingAmount ?? '',
-            style: TextStyle(
-              fontSize: (screenWidth * 0.04).clamp(14.0, 16.0),
+            wallet.displayPendingAmount,
+            style: FTextTheme.lightTextTheme.bodyLarge?.copyWith(
+              fontSize: sw(14),
               fontWeight: FontWeight.bold,
               color: Colors.black,
             ),
@@ -210,24 +289,25 @@ class WalletScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPassengerWalletRow(double screenWidth, double screenHeight) {
+  Widget _buildPassengerWalletRow(
+    WalletModel wallet,
+    double Function(double) sw,
+    double Function(double) sh,
+  ) {
     return Row(
       children: [
         Expanded(
           child: Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: screenWidth * 0.04,
-              vertical: screenHeight * 0.018,
-            ),
+            padding: EdgeInsets.symmetric(horizontal: sw(16), vertical: sh(18)),
             decoration: BoxDecoration(
               color: const Color(0xFFFFCC00),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(sw(12)),
             ),
             child: Center(
               child: Text(
                 'DoorCabs Wallet',
-                style: TextStyle(
-                  fontSize: (screenWidth * 0.038).clamp(13.0, 16.0),
+                style: FTextTheme.lightTextTheme.bodyLarge?.copyWith(
+                  fontSize: sw(14),
                   fontWeight: FontWeight.w600,
                   color: Colors.black,
                 ),
@@ -235,22 +315,19 @@ class WalletScreen extends StatelessWidget {
             ),
           ),
         ),
-        SizedBox(width: screenWidth * 0.03),
+        SizedBox(width: sw(12)),
         Expanded(
           child: Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: screenWidth * 0.04,
-              vertical: screenHeight * 0.018,
-            ),
+            padding: EdgeInsets.symmetric(horizontal: sw(16), vertical: sh(18)),
             decoration: BoxDecoration(
               color: const Color(0xFFF2F2F2),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(sw(12)),
             ),
             child: Center(
               child: Text(
-                controller.currentWallet.balance,
-                style: TextStyle(
-                  fontSize: (screenWidth * 0.038).clamp(13.0, 16.0),
+                wallet.displayBalance,
+                style: FTextTheme.lightTextTheme.bodyLarge?.copyWith(
+                  fontSize: sw(14),
                   fontWeight: FontWeight.bold,
                   color: Colors.black,
                 ),
@@ -262,100 +339,129 @@ class WalletScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButtons(double screenWidth, double screenHeight) {
-    final buttonWidth =
-        (screenWidth - (screenWidth * 0.1) - (screenWidth * 0.03)) / 2;
+  Widget _buildActionButtons(
+    double Function(double) sw,
+    double Function(double) sh,
+  ) {
+    final buttonWidth = (sw(440) - sw(40) - sw(12)) / 2;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         SizedBox(
-          width: buttonWidth,
-          height: screenHeight * 0.055,
+          width: controller.isDriver ? buttonWidth : sw(380),
+          height: sh(48),
           child: ElevatedButton(
             onPressed: controller.addFunds,
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF003366),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(sw(8)),
               ),
             ),
-            child: const Text(
-              'Add funds',
-              style: TextStyle(
+            child: Text(
+              'Top Up',
+              style: FTextTheme.lightTextTheme.bodyLarge?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: Colors.white,
+                fontSize: sw(14),
               ),
             ),
           ),
         ),
-        SizedBox(width: screenWidth * 0.03),
-        SizedBox(
-          width: buttonWidth,
-          height: screenHeight * 0.055,
-          child: ElevatedButton(
-            onPressed: controller.topUp,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFF2F2F2),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+        SizedBox(width: sw(12)),
+        if (controller.isDriver) ...[
+          SizedBox(
+            width: buttonWidth,
+            height: sh(48),
+            child: ElevatedButton(
+              onPressed: controller.topUp,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFF2F2F2),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(sw(8)),
+                ),
               ),
-            ),
-            child: const Text(
-              'Top up',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: Colors.black,
+              child: Text(
+                'Settlement',
+                style: FTextTheme.lightTextTheme.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black,
+                  fontSize: sw(14),
+                ),
               ),
             ),
           ),
-        ),
+        ],
       ],
     );
   }
 
   Widget _buildTransactionItem(
-      TransactionModel transaction, double screenWidth, double screenHeight) {
+    TransactionModel transaction,
+    double Function(double) sw,
+    double Function(double) sh,
+  ) {
     return InkWell(
       onTap: () => controller.onTransactionTap(transaction),
       child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: screenWidth * 0.03,
-          vertical: screenHeight * 0.006,
-        ),
+        padding: EdgeInsets.symmetric(horizontal: sw(12), vertical: sh(8)),
         child: Row(
           children: [
             Container(
-              padding: EdgeInsets.all(screenWidth * 0.025),
+              padding: EdgeInsets.all(sw(10)),
               decoration: BoxDecoration(
                 color: const Color(0xFFF2F2F2),
-                borderRadius: BorderRadius.circular(6),
+                borderRadius: BorderRadius.circular(sw(6)),
               ),
-              child: const Icon(Icons.arrow_outward, size: 18),
+              child: Icon(
+                transaction.isPositive
+                    ? Icons.arrow_downward
+                    : Icons.arrow_upward,
+                size: sw(18),
+                color: transaction.isPositive ? Colors.green : Colors.red,
+              ),
             ),
-            SizedBox(width: screenWidth * 0.02),
+            SizedBox(width: sw(8)),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    transaction.title,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w600, color: Colors.black),
+                    transaction.displayTitle,
+                    style: FTextTheme.lightTextTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black,
+                      fontSize: sw(14),
+                    ),
                   ),
+                  SizedBox(height: sh(2)),
                   Text(
-                    transaction.subtitle,
-                    style: TextStyle(color: Colors.grey[600]),
+                    transaction.description,
+                    style: FTextTheme.lightTextTheme.bodyMedium?.copyWith(
+                      color: Colors.grey[600],
+                      fontSize: sw(12),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  SizedBox(height: sh(2)),
+                  Text(
+                    transaction.displayDate,
+                    style: FTextTheme.lightTextTheme.bodySmall?.copyWith(
+                      color: Colors.grey[500],
+                      fontSize: sw(10),
+                    ),
                   ),
                 ],
               ),
             ),
             Text(
-              transaction.amount,
-              style: TextStyle(
+              transaction.displayAmount,
+              style: FTextTheme.lightTextTheme.bodyLarge?.copyWith(
                 fontWeight: FontWeight.bold,
-                color:
-                transaction.isPositive ? Colors.green : Colors.redAccent,
+                color: transaction.isPositive ? Colors.green : Colors.redAccent,
+                fontSize: sw(14),
               ),
             ),
           ],

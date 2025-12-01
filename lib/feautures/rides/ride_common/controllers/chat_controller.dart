@@ -91,6 +91,13 @@ class ChatController extends GetxController {
   /// Sync local messages with server API
   Future<void> _syncWithServer() async {
     try {
+      final token = StorageService.getAuthToken();
+      if (token == null) {
+        print("❌ User token not found for active rides API");
+        return;
+      }
+
+      FHttpHelper.setAuthToken(token, useBearer: true);
       final response = await FHttpHelper.get("chat/get-messages/$_rideId");
       final List<dynamic> serverMessages = response['messages'] ?? [];
 
@@ -154,8 +161,10 @@ class ChatController extends GetxController {
 
     } else {
       // Passenger side - args come from bid data
+
+      print("Data received in chat screen : "+ args.toString());
       _rideId = args['rideId']?.toString();
-      _driverId = args['bid']?['driver']?['id']?.toString();
+      _driverId = args['driver']?['id']?.toString();
       _receiverId = _driverId;
 
       print("👤 Passenger context - DriverId: $_driverId");
@@ -341,7 +350,7 @@ class ChatController extends GetxController {
         'badge': null,
       };
     } else {
-      final driver = args['bid']?['driver'] ?? {};
+      final driver = args['driver'] ?? {};
       final driverName = driver['name'] is Map
           ? '${driver['name']?['firstName'] ?? ''} ${driver['name']?['lastName'] ?? ''}'.trim()
           : driver['name']?.toString() ?? 'Driver';
@@ -350,7 +359,8 @@ class ChatController extends GetxController {
         'name': driverName,
         'phone': driver['phone_no']?.toString() ?? '',
         'avatar': driver['profileImage']?.toString() ?? 'assets/images/profile_img_sample.png',
-        'car': driver['vehicle']?.toString() ?? 'Vehicle',
+        'car': '${driver['vehicle']?.toString() ?? 'Vehicle'} ${driver['vehiclePlate']?.toString() ?? 'xyz'}',
+        // 'car': driver['vehicle']?.toString() ?? 'Vehicle',
         'etaText': args['estimated_arrival_time']?.toString() ?? 'Calculating...',
         'avgRating': driver['avgRating']?.toString(),
         'totalRatings': driver['total_ratings']?.toString(),

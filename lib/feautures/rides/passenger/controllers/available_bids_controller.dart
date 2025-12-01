@@ -36,6 +36,10 @@ class AvailableBidsController extends BaseController {
   late final Map<String, dynamic> rideArgs;
   final currentFare = 0.obs;
 
+  // ✅ ADD: Background service integration (SAME AS DriversWaitingController)
+  final PusherBackgroundService _backgroundService = PusherBackgroundService();
+  Timer? _backgroundEventTimer;
+
   @override
   void onInit() {
     super.onInit();
@@ -65,18 +69,121 @@ class AvailableBidsController extends BaseController {
     print("📌 Initial bids: $bids");
 
     _startCountdown();
-    _listenForNearbyDriversEvent(); // ✅ ADDED: Listen for nearby drivers
+    _listenForNearbyDriversEvent();
+
+    // ✅ UPDATED: Enhanced background service (SAME AS DriversWaitingController)
     _startBackgroundService();
+    _setupBackgroundEventListening();
   }
 
+  // ✅ UPDATED: Enhanced background service (SAME PATTERN AS DriversWaitingController)
   void _startBackgroundService() {
-    final passengerId = StorageService.getSignUpResponse()?.userId;
-    if (passengerId != null) {
-      PusherBackgroundService().startBackgroundMode(passengerId);
+    try {
+      final passengerId = StorageService.getSignUpResponse()?.userId;
+      final rideId = rideArgs['rideId']?.toString();
+
+      if (passengerId != null && rideId != null) {
+        _backgroundService.startBackgroundMode(
+          passengerId,
+          userType: 'passenger',
+          rideId: rideId, // ✅ ADD RIDE ID LIKE DriversWaitingController
+        );
+
+        // ✅ CHECK SERVICE STATUS LIKE DriversWaitingController
+        Timer(Duration(seconds: 3), () async {
+          final isRunning = await _backgroundService.isBackgroundServiceRunning();
+          print('🎯 AvailableBids Background Status: $isRunning');
+        });
+
+        print('🚀 Background service started for bids - passenger: $passengerId, ride: $rideId');
+      } else {
+        print('⚠️ Missing passengerId or rideId for background service in bids');
+      }
+    } catch (e) {
+      print('❌ Error starting background service in bids: $e');
     }
   }
 
-  // ✅ ADDED: Listen to nearby-drivers Pusher events (same as previous screen)
+  // ✅ ADD: Setup background event listening (SAME PATTERN AS DriversWaitingController)
+  void _setupBackgroundEventListening() {
+    // Check for events every 2 seconds
+    _backgroundEventTimer = Timer.periodic(Duration(seconds: 2), (timer) async {
+      if (!Get.currentRoute.contains('AvailableBids')) return;
+
+      final events = await _backgroundService.getPendingEvents();
+      if (events.isNotEmpty) {
+        print('📥 AvailableBids: Found ${events.length} pending background events');
+        for (final event in events) {
+          _handleBackgroundEvent(event);
+        }
+      }
+    });
+  }
+
+  // ✅ ADD: Handle background events
+  void _handleBackgroundEvent(Map<String, dynamic> event) {
+    try {
+      final type = event['type'];
+      final data = event['data'];
+
+      print('🔄 AvailableBids Background: Processing event: $type');
+
+      switch (type) {
+        case 'new-bid':
+          _handleBackgroundNewBid(data);
+          break;
+        case 'ride-cancelled':
+          _handleBackgroundRideCancelled(data);
+          break;
+        case 'bid-accepted':
+          _handleBackgroundBidAccepted(data);
+          break;
+        case 'bid-rejected':
+          _handleBackgroundBidRejected(data);
+          break;
+        default:
+          print('⚠️ AvailableBids: Unhandled background event type: $type');
+      }
+    } catch (e) {
+      print('❌ AvailableBids: Error processing background event: $e');
+    }
+  }
+
+  // ✅ ADD: Handle background new bid
+  void _handleBackgroundNewBid(Map<String, dynamic> data) {
+    try {
+      debugPrint("📨 AvailableBids Background: Received new bid: $data");
+      addBidWithTimer(Map<String, dynamic>.from(data));
+    } catch (e) {
+      debugPrint("❌ AvailableBids: Error storing background bid: $e");
+    }
+  }
+
+  // ✅ ADD: Handle background bid accepted
+  void _handleBackgroundBidAccepted(Map<String, dynamic> data) {
+    debugPrint("✅ AvailableBids Background: Bid accepted: $data");
+    // Handle bid acceptance if needed
+  }
+
+  // ✅ ADD: Handle background bid rejected
+  void _handleBackgroundBidRejected(Map<String, dynamic> data) {
+    debugPrint("❌ AvailableBids Background: Bid rejected: $data");
+    // Handle bid rejection if needed
+  }
+
+  // ✅ ADD: Handle background ride cancellation
+  void _handleBackgroundRideCancelled(Map<String, dynamic> data) {
+    debugPrint("🚫 AvailableBids Background: Ride cancelled: $data");
+    FSnackbar.show(
+      title: "Ride Cancelled",
+      message: "The ride has been cancelled",
+      isError: true,
+    );
+    _clearAllRideControllers();
+    Get.offAll(() => RideTypeScreen());
+  }
+
+  // ✅ UPDATED: Listen to nearby-drivers Pusher events with background integration
   void _listenForNearbyDriversEvent() {
     final passengerId = StorageService.getSignUpResponse()?.userId;
     if (passengerId != null) {
@@ -91,7 +198,10 @@ class AvailableBidsController extends BaseController {
           "new-bid": (data) {
             debugPrint("📨 AvailableBidsScreen: Received new bid: $data");
             try {
-              // Add bid with timer when new bid arrives
+              // ✅ ALSO STORE IN BACKGROUND SERVICE FOR PERSISTENCE (SAME PATTERN)
+              _backgroundService.storeBackgroundEvent('new-bid', data);
+
+              // Process immediately in foreground
               addBidWithTimer(Map<String, dynamic>.from(data));
             } catch (e) {
               debugPrint("❌ Error storing bid: $e");
@@ -268,7 +378,7 @@ class AvailableBidsController extends BaseController {
 
         if (response['message'] == "Bid accepted successfully.") {
           print("✅ Accept bid API Response : " + response.toString());
-          showSuccess("Driver ${bid['driver']?['name']?['firstName'] ?? ''} confirmed");
+          FSnackbar.show(title:'Driver', message: "${bid['driver']?['name']?['firstName'] ?? ''} confirmed");
 
           // Clear all bids and cancel their timers to avoid stray timers calling reject
           for (final b in List<Map<String, dynamic>>.from(bids)) {
@@ -296,9 +406,12 @@ class AvailableBidsController extends BaseController {
             },
           );
 
+          PusherBackgroundService().stopBackgroundMode();
+
           // navigate
-          Get.toNamed("/drivers-waiting", arguments: {
+          Get.offAllNamed("/drivers-waiting", arguments: {
             ...response,
+            'status': rideArgs['status'],
             'bid': bid,
             'rideType': rideArgs['rideType'],
           });
@@ -742,6 +855,8 @@ class AvailableBidsController extends BaseController {
   @override
   void onClose() {
     _cancelAllTimers();
+    _backgroundEventTimer?.cancel(); // ✅ ADD: Cancel background timer
+    _backgroundService.stopBackgroundMode();
     super.onClose();
   }
 }

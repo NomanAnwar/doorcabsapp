@@ -4,7 +4,6 @@ import 'package:doorcab/utils/theme/custom_theme/text_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
-import '../../../../utils/system_ui_mixin.dart';
 import '../controllers/dropoff_controller.dart';
 
 class DropOffScreen extends StatelessWidget {
@@ -38,7 +37,7 @@ class DropOffScreen extends StatelessWidget {
           children: [
             /// Back
             Positioned(
-              top: sh(43),
+              top: sh(23),
               left: sw(23),
               child: IconButton(
                 icon: Icon(Icons.arrow_back, size: sw(28)),
@@ -48,7 +47,7 @@ class DropOffScreen extends StatelessWidget {
 
             /// Title
             Positioned(
-              top: sh(81),
+              top: sh(51),
               left: 0,
               right: 0,
               child: Center(
@@ -66,7 +65,7 @@ class DropOffScreen extends StatelessWidget {
 
             /// Main scrollable content
             Positioned(
-              top: sh(121),
+              top: sh(100),
               left: 0,
               right: 0,
               bottom: sh(100),
@@ -422,7 +421,7 @@ class DropOffScreen extends StatelessWidget {
 
             /// ADD STOP button - Positioned independently in main Stack
             Positioned(
-              top: sh(162), // Position between the two fields
+              top: sh(140), // Position between the two fields
               right: sw(9),
               child: SizedBox(
                 width: sw(35),

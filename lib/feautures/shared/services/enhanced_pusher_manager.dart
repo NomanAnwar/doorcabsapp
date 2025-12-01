@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:doorcab/common/widgets/snakbar/snackbar.dart';
 import 'pusher_channels.dart';
 
@@ -43,7 +44,7 @@ class EnhancedPusherManager {
     final channelEvents = _activeSubscriptions[channelName] ?? {};
     final newEvents = events?.keys.toSet() ?? {};
     _activeSubscriptions[channelName] = {...channelEvents, ...newEvents};
-
+    // FSnackbar.show(title: "Subscribe the channel", message: "$channelName");
     print('✅ Subscribed to $channelName with events: $newEvents');
   }
 
@@ -82,6 +83,9 @@ class EnhancedPusherManager {
     if (!isBackground) {
       // App came to foreground - ensure connection is active
       _ensureConnection();
+    } else {
+      // App went to background - optimize for battery
+      print('📱 App in background, Pusher connection maintained');
     }
   }
 
@@ -119,5 +123,38 @@ class EnhancedPusherManager {
   // Method to manually set connection state (for testing)
   void setConnectionStateForTesting(String state) {
     _connectionState = state;
+  }
+
+
+  // Add this method to your EnhancedPusherManager class
+  Future<void> reconnectPusher() async {
+    try {
+      print('🔄 Attempting to reconnect Pusher...');
+
+      // Disconnect first if connected
+      try {
+        await _pusher.disconnect();
+      } catch (e) {
+        print('⚠️ Error during disconnect: $e');
+      }
+
+      // Clear existing state
+      _activeSubscriptions.clear();
+      _isInitialized = false;
+
+      // Reinitialize
+      await initialize();
+      _connectionState = 'connected';
+
+      print('✅ Pusher reconnected successfully');
+    } catch (e) {
+      print('❌ Pusher reconnection failed: $e');
+      _connectionState = 'error';
+
+      // Retry after delay
+      Timer(Duration(seconds: 5), () {
+        reconnectPusher();
+      });
+    }
   }
 }

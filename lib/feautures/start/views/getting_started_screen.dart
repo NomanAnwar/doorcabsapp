@@ -217,6 +217,15 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
                               child: TextField(
                                 controller: phoneController,
                                 keyboardType: TextInputType.phone,
+                                maxLength: 11,
+                                buildCounter: (
+                                    BuildContext context, {
+                                      required int currentLength,
+                                      required bool isFocused,
+                                      required int? maxLength,
+                                    }) {
+                                  return null; // <- This hides the counter
+                                },
                                 style: FTextTheme.lightTextTheme.titleLarge!
                                     .copyWith(
                                     fontSize: FTextTheme.lightTextTheme

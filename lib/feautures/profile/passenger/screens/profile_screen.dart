@@ -27,7 +27,6 @@ class ProfileScreen extends StatelessWidget {
     double sh(double h) => h * screenHeight / baseHeight;
 
     return Scaffold(
-      backgroundColor: FColors.primaryColor,
       body: Form(
         key: c.formKey,
         child: SingleChildScrollView(
@@ -38,6 +37,16 @@ class ProfileScreen extends StatelessWidget {
               children: [
                 /// Header Image
                 Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: Container(
+                    height: sh(200),
+                    color: FColors.primaryColor,
+                  ),
+                ),
+
+                Positioned(
                   top: sh(14),
                   left: 0,
                   right: 0,
@@ -47,42 +56,6 @@ class ProfileScreen extends StatelessWidget {
                     height: sh(200),
                   ),
                 ),
-
-
-                /// Back Arrow button
-
-                Positioned(
-                  top: sh(38),
-                  left: sw(20),
-                  child: TextButton(
-                    onPressed: () {},
-                    child: SvgPicture.asset(
-                      'assets/images/Arrow.svg',
-                      width: sw(20),
-                      height: sh(20),
-                    ),
-                  ),
-                ),
-
-                /// Edit Button (commented but responsive)
-
-                Positioned(
-                  top: sh(38),
-                  right: sw(20),
-                  child: TextButton(
-                    onPressed: () {},
-                    child: Text(
-                      "Edit",
-                      style: FTextTheme.lightTextTheme.titleSmall!.copyWith(
-                        fontSize: FTextTheme.lightTextTheme
-                            .titleSmall!.fontSize! *
-                            screenWidth /
-                            baseWidth,
-                      ),
-                    ),
-                  ),
-                ),
-
 
                 /// White Background Container
                 Positioned(
@@ -133,12 +106,18 @@ class ProfileScreen extends StatelessWidget {
                     width: sw(190),
                     height: sh(52),
                     controller: c.firstNameCtrl,
+                    focusNode: c.firstNameFocus,
+                    nextFocus: c.lastNameFocus,
                     hint: "First Name",
+                    // keyboardType: TextInputType.name,
+                    keyboardType: TextInputType.emailAddress,
+                    textInputAction: TextInputAction.next,
                     icon: Icons.person_outline,
                     validator: (value) =>
                     value == null || value.trim().isEmpty ? "First Name is required" : null,
                     screenWidth: screenWidth,
                     baseWidth: baseWidth,
+                    length: 20,
                   ),
                 ),
 
@@ -150,10 +129,16 @@ class ProfileScreen extends StatelessWidget {
                     width: sw(190),
                     height: sh(52),
                     controller: c.lastNameCtrl,
+                    focusNode: c.lastNameFocus,
+                    nextFocus: c.emailFocus,
+                    // keyboardType: TextInputType.name,
+                    keyboardType: TextInputType.emailAddress,
+                    textInputAction: TextInputAction.next,
                     hint: "Last Name",
                     icon: Icons.person_outline,
                     screenWidth: screenWidth,
                     baseWidth: baseWidth,
+                    length: 20,
                   ),
                 ),
 
@@ -165,85 +150,86 @@ class ProfileScreen extends StatelessWidget {
                     width: sw(393),
                     height: sh(52),
                     controller: c.emailCtrl,
+                    focusNode: c.emailFocus,
+                    nextFocus: c.emergencyFocus,
                     hint: "Email",
                     icon: Icons.email_rounded,
                     keyboardType: TextInputType.emailAddress,
+                    textInputAction: TextInputAction.next,
                     screenWidth: screenWidth,
                     baseWidth: baseWidth,
+                    length: 50,
                   ),
                 ),
 
-                /// Contact
+                /// Emergency Contact
                 Positioned(
                   top: sh(541),
                   left: sw(25),
                   child: _buildField(
                     width: sw(393),
                     height: sh(52),
-                    controller: c.contactCtrl,
-                    hint: "Contact Number",
-                    icon: Icons.phone_in_talk,
-                    keyboardType: TextInputType.phone,
-                    screenWidth: screenWidth,
-                    baseWidth: baseWidth,
-                  ),
-                ),
-
-                /// Emergency Contact
-                Positioned(
-                  top: sh(637),
-                  // top: sh(541),
-                  left: sw(25),
-                  child: _buildField(
-                    width: sw(393),
-                    height: sh(52),
                     controller: c.emergencyCtrl,
+                    focusNode: c.emergencyFocus,
+                    nextFocus: c.countryFocus,
                     hint: "Emergency Contact",
                     icon: Icons.phone_in_talk,
                     keyboardType: TextInputType.phone,
+                    textInputAction: TextInputAction.next,
                     validator: (value) =>
                     value == null || value.trim().isEmpty ? "Emergency Contact is required" : null,
                     screenWidth: screenWidth,
                     baseWidth: baseWidth,
+                    length: 13,
                   ),
                 ),
 
                 /// Country
                 Positioned(
-                  // top: sh(637),
-                  top: sh(733),
+                  top: sh(637),
                   left: sw(25),
                   child: _buildField(
                     width: sw(190),
                     height: sh(52),
                     controller: c.countryCtrl,
+                    focusNode: c.countryFocus,
+                    nextFocus: c.cityFocus,
+                    // keyboardType: TextInputType.text,
+                    keyboardType: TextInputType.emailAddress,
+                    textInputAction: TextInputAction.next,
                     hint: "Country",
                     icon: Icons.flag_outlined,
                     screenWidth: screenWidth,
                     baseWidth: baseWidth,
+                    length: 20,
                   ),
                 ),
 
-                /// City
+                /// City (Last Field)
                 Positioned(
-                  // top: sh(637),
-                  top: sh(733),
+                  top: sh(637),
                   left: sw(229),
                   child: _buildField(
                     width: sw(190),
                     height: sh(52),
                     controller: c.cityCtrl,
+                    focusNode: c.cityFocus,
+                    nextFocus: null,
+                    // keyboardType: TextInputType.text,
+                    keyboardType: TextInputType.emailAddress,
+                    textInputAction: TextInputAction.done,
                     hint: "City",
                     icon: Icons.location_city,
                     screenWidth: screenWidth,
                     baseWidth: baseWidth,
+                    length: 20,
+                    isLastField: true,
                   ),
                 ),
 
                 /// Continue Button
                 Positioned(
-                  // bottom: sh(140),
-                  bottom: sh(60),
+                  bottom: sh(140),
                   left: sw(25),
                   right: sw(25),
                   child: Obx(() {
@@ -273,7 +259,7 @@ class ProfileScreen extends StatelessWidget {
                           strokeWidth: 2.5,
                         ),
                       )
-                          : Text(FTextStrings.submit,
+                          : Text(FTextStrings.save,
                           style: FTextTheme.darkTextTheme.titleSmall!.copyWith(
                             fontWeight: FontWeight.bold,
                             fontSize: FTextTheme.lightTextTheme
@@ -293,44 +279,69 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  /// --- Text Field with validation ---
+  /// --- Text Field with validation and focus management ---
   Widget _buildField({
     required double width,
     required double height,
     required TextEditingController controller,
+    required FocusNode focusNode,
+    required FocusNode? nextFocus,
     required String hint,
     required double screenWidth,
     required double baseWidth,
     required IconData icon,
+    required int length,
+    required TextInputAction textInputAction,
     String? Function(String?)? validator,
     TextInputType keyboardType = TextInputType.text,
+    bool isLastField = false,
   }) {
+    final c = Get.find<ProfileController>();
 
     return SizedBox(
       width: width,
-      // height: height,
       child: TextFormField(
         controller: controller,
+        focusNode: focusNode,
         keyboardType: keyboardType,
-        validator:  validator,
+        textInputAction: textInputAction,
+        validator: validator,
+        maxLength: length,
+        onFieldSubmitted: (value) {
+          if (isLastField) {
+            // Last field - submit form
+            c.onLastFieldSubmit();
+          } else if (nextFocus != null) {
+            // Move to next field
+            c.moveToNextField(focusNode, nextFocus);
+          }
+        },
+        buildCounter: (
+            BuildContext context, {
+              required int currentLength,
+              required bool isFocused,
+              required int? maxLength,
+            }) {
+          return null; // <- This hides the counter
+        },
         style: FTextTheme.lightTextTheme.labelLarge!.copyWith(
-            fontWeight: FontWeight.w400,
-          fontSize: FTextTheme.lightTextTheme
-              .labelLarge!.fontSize! *
-              screenWidth /
-              baseWidth,
-          color: FColors.black
-        ),
-        decoration: InputDecoration(
-          prefixIcon: Icon(icon, color: Colors.grey.shade700),
-          hintText: hint,
-          hintStyle: FTextTheme.lightTextTheme.labelLarge!.copyWith(
             fontWeight: FontWeight.w400,
             fontSize: FTextTheme.lightTextTheme
                 .labelLarge!.fontSize! *
                 screenWidth /
                 baseWidth,
-            color: FColors.chipBg.withOpacity(0.7)
+            color: FColors.black
+        ),
+        decoration: InputDecoration(
+          prefixIcon: Icon(icon, color: Colors.grey.shade700),
+          hintText: hint,
+          hintStyle: FTextTheme.lightTextTheme.labelLarge!.copyWith(
+              fontWeight: FontWeight.w400,
+              fontSize: FTextTheme.lightTextTheme
+                  .labelLarge!.fontSize! *
+                  screenWidth /
+                  baseWidth,
+              color: FColors.chipBg.withOpacity(0.7)
           ),
           filled: true,
           fillColor: const Color(0xFFE3E3E3),

@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+
 import '../../../utils/formatters/formatter.dart';
+import '../../../utils/constants/colors.dart';
+import '../../../utils/theme/custom_theme/text_theme.dart';
 import '../controllers/payment_methods_controller.dart';
 
 class PaymentMethodsScreen extends StatelessWidget {
@@ -14,9 +17,12 @@ class PaymentMethodsScreen extends StatelessWidget {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
 
-    // Scaling factors for responsive design
-    final widthFactor = screenWidth / 440;
-    final heightFactor = screenHeight / 956;
+    // Base reference (iPhone 16 Pro Max)
+    final baseWidth = 440.0;
+    final baseHeight = 956.0;
+
+    double sw(double w) => w * screenWidth / baseWidth;
+    double sh(double h) => h * screenHeight / baseHeight;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -24,66 +30,62 @@ class PaymentMethodsScreen extends StatelessWidget {
         child: Column(
           children: [
             // App Bar
-            _buildAppBar(context, widthFactor, heightFactor),
+            _buildAppBar(context, sw, sh),
 
             // Scrollable Content
             Expanded(
               child: SingleChildScrollView(
                 child: Padding(
-                  padding: EdgeInsets.only(bottom: 20 * heightFactor),
+                  padding: EdgeInsets.only(bottom: sh(20)),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      SizedBox(height: 37 * heightFactor),
+                      SizedBox(height: sh(37)),
 
                       // Add Debit/Credit Card Details
                       Padding(
-                        padding: EdgeInsets.only(left: 41 * widthFactor),
+                        padding: EdgeInsets.only(left: sw(15)),
                         child: Text(
                           'Add Debit/Credit Card Details',
-                          style: TextStyle(
-                            fontFamily: 'Plus Jakarta Sans',
+                          style: FTextTheme.lightTextTheme.headlineLarge?.copyWith(
+                            fontSize: sw(18),
                             fontWeight: FontWeight.w700,
-                            fontSize: 18 * widthFactor,
-                            height: 23 / 18,
                             color: const Color(0xFF141414),
                           ),
                         ),
                       ),
 
-                      SizedBox(height: 25 * heightFactor),
+                      SizedBox(height: sh(25)),
 
                       // Card Icon and Toggle
-                      _buildCardSection(controller, widthFactor, heightFactor),
+                      _buildCardSection(controller, context, sw, sh),
 
-                      SizedBox(height: 18 * heightFactor),
+                      SizedBox(height: sh(18)),
 
                       // Digital Wallets
                       Padding(
-                        padding: EdgeInsets.only(left: 41 * widthFactor),
+                        padding: EdgeInsets.only(left: sw(15)),
                         child: Text(
                           'Digital Wallets',
-                          style: TextStyle(
-                            fontFamily: 'Plus Jakarta Sans',
+                          style: FTextTheme.lightTextTheme.headlineLarge?.copyWith(
+                            fontSize: sw(18),
                             fontWeight: FontWeight.w700,
-                            fontSize: 18 * widthFactor,
-                            height: 23 / 18,
                             color: Colors.black,
                           ),
                         ),
                       ),
 
-                      SizedBox(height: 19 * heightFactor),
+                      SizedBox(height: sh(19)),
 
                       // Jazzcash Section
-                      _buildJazzcashSection(controller, widthFactor, heightFactor),
+                      _buildJazzcashSection(controller, context, sw, sh),
 
-                      SizedBox(height: 18 * heightFactor),
+                      SizedBox(height: sh(18)),
 
                       // Easypasa Section
-                      _buildEasypasaSection(controller, widthFactor, heightFactor),
+                      _buildEasypasaSection(controller, context, sw, sh),
 
-                      SizedBox(height: 30 * heightFactor),
+                      SizedBox(height: sh(30)),
                     ],
                   ),
                 ),
@@ -93,10 +95,10 @@ class PaymentMethodsScreen extends StatelessWidget {
             // Fixed Button at Bottom
             Container(
               padding: EdgeInsets.symmetric(
-                horizontal: 41 * widthFactor,
-                vertical: 16 * heightFactor,
+                horizontal: sw(15),
+                vertical: sh(16),
               ),
-              child: _buildAddButton(controller, widthFactor, heightFactor),
+              child: _buildAddButton(controller, context, sw, sh),
             ),
           ],
         ),
@@ -104,12 +106,12 @@ class PaymentMethodsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAppBar(BuildContext context, double widthFactor, double heightFactor) {
+  Widget _buildAppBar(BuildContext context, double Function(double) sw, double Function(double) sh) {
     return Container(
       padding: EdgeInsets.only(
-        left: 33 * widthFactor,
-        right: 33 * widthFactor,
-        top: 23 * heightFactor,
+        left: sw(33),
+        right: sw(33),
+        top: sh(23),
       ),
       child: Stack(
         alignment: Alignment.center,
@@ -119,13 +121,12 @@ class PaymentMethodsScreen extends StatelessWidget {
             child: GestureDetector(
               onTap: () => Get.back(),
               child: Container(
-                width: 28.02 * widthFactor,
-                height: 28.02 * heightFactor,
+                width: sw(28),
+                height: sh(28),
                 alignment: Alignment.center,
                 child: SvgPicture.asset(
                   'assets/icons/Arrow.svg',
-                  width: 28 * widthFactor,
-                  // color: Colors.black,
+                  width: sw(28),
                 ),
               ),
             ),
@@ -133,11 +134,9 @@ class PaymentMethodsScreen extends StatelessWidget {
           Center(
             child: Text(
               'Payment Methods',
-              style: TextStyle(
-                fontFamily: 'Plus Jakarta Sans',
+              style: FTextTheme.lightTextTheme.headlineLarge?.copyWith(
+                fontSize: sw(18),
                 fontWeight: FontWeight.w700,
-                fontSize: 18 * widthFactor,
-                height: 23 / 18,
                 color: Colors.black,
               ),
             ),
@@ -147,9 +146,9 @@ class PaymentMethodsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildCardSection(PaymentMethodController controller, double widthFactor, double heightFactor) {
+  Widget _buildCardSection(PaymentMethodController controller, BuildContext context, double Function(double) sw, double Function(double) sh) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 35 * widthFactor),
+      padding: EdgeInsets.symmetric(horizontal: sw(15)),
       child: Column(
         children: [
           Row(
@@ -157,70 +156,73 @@ class PaymentMethodsScreen extends StatelessWidget {
             children: [
               // Card Icon
               Container(
-                width: 37 * widthFactor,
-                height: 22.9 * heightFactor,
+                width: sw(37),
+                height: sh(23),
                 child: SvgPicture.asset(
                   'assets/transaction/card.svg',
-                  width: 37 * widthFactor,
-                  height: 22.9 * heightFactor,
+                  width: sw(37),
+                  height: sh(23),
                 ),
               ),
               Obx(() => _buildCustomToggle(
                 value: controller.paymentMethod.value.isCardEnabled,
                 onChanged: (value) => controller.toggleCard(value),
-                widthFactor: widthFactor,
-                heightFactor: heightFactor,
+                sw: sw,
+                sh: sh,
               )),
             ],
           ),
-          SizedBox(height: 18 * heightFactor),
-          // Text fields always visible - Fixed overflow
+          SizedBox(height: sh(18)),
+          // Text fields always visible
           Row(
             children: [
               Expanded(
                 flex: 213,
                 child: _buildTextField(
                   controller: controller.cardNumberController,
-                  height: 52 * heightFactor,
+                  height: sh(55),
                   hintText: '0000 0000 0000 0000',
-                  onChanged: (value) => controller.updateCardNumber(value),
                   keyboardType: TextInputType.number,
                   inputFormatters: [
                     FilteringTextInputFormatter.digitsOnly,
                     LengthLimitingTextInputFormatter(16),
                     CardNumberInputFormatter(),
                   ],
+                  sw: sw,
+                  sh: sh,
                 ),
               ),
-              SizedBox(width: 9 * widthFactor),
+              SizedBox(width: sw(5)),
               Expanded(
-                flex: 74,
+                flex: 70,
                 child: _buildTextField(
                   controller: controller.expiryDateController,
-                  height: 52 * heightFactor,
+                  height: sh(55),
                   hintText: '10/05',
-                  onChanged: (value) => controller.updateExpiryDate(value),
                   keyboardType: TextInputType.number,
                   inputFormatters: [
                     FilteringTextInputFormatter.digitsOnly,
                     LengthLimitingTextInputFormatter(4),
                     ExpiryDateInputFormatter(),
                   ],
+                  sw: sw,
+                  sh: sh,
                 ),
               ),
-              SizedBox(width: 9 * widthFactor),
+              SizedBox(width: sw(5)),
               Expanded(
-                flex: 67,
+                flex: 70,
                 child: _buildTextField(
                   controller: controller.cvvController,
-                  height: 52 * heightFactor,
+                  height: sh(55),
                   hintText: 'CVC',
-                  onChanged: (value) => controller.updateCvv(value),
                   keyboardType: TextInputType.number,
                   inputFormatters: [
                     FilteringTextInputFormatter.digitsOnly,
                     LengthLimitingTextInputFormatter(3),
                   ],
+                  sw: sw,
+                  sh: sh,
                 ),
               ),
             ],
@@ -230,34 +232,32 @@ class PaymentMethodsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildJazzcashSection(PaymentMethodController controller, double widthFactor, double heightFactor) {
+  Widget _buildJazzcashSection(PaymentMethodController controller, BuildContext context, double Function(double) sw, double Function(double) sh) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 39 * widthFactor),
+      padding: EdgeInsets.symmetric(horizontal: sw(15)),
       child: Column(
         children: [
           Row(
             children: [
               // Jazzcash Icon
               Container(
-                width: 39 * widthFactor,
-                height: 39 * heightFactor,
+                width: sw(39),
+                height: sh(39),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(sw(8)),
                 ),
                 child: Image.asset(
                   'assets/transaction/Jazzcash.png',
-                  width: 39 * widthFactor,
-                  height: 39 * heightFactor,
+                  width: sw(39),
+                  height: sh(39),
                 ),
               ),
-              SizedBox(width: 14 * widthFactor),
+              SizedBox(width: sw(14)),
               Text(
                 'Jazzcash',
-                style: TextStyle(
-                  fontFamily: 'Plus Jakarta Sans',
+                style: FTextTheme.lightTextTheme.titleLarge?.copyWith(
+                  fontSize: sw(16),
                   fontWeight: FontWeight.w600,
-                  fontSize: 16 * widthFactor,
-                  height: 24 / 16,
                   color: Colors.black,
                 ),
               ),
@@ -265,59 +265,58 @@ class PaymentMethodsScreen extends StatelessWidget {
               Obx(() => _buildCustomToggle(
                 value: controller.paymentMethod.value.isJazzcashEnabled,
                 onChanged: (value) => controller.toggleJazzcash(value),
-                widthFactor: widthFactor,
-                heightFactor: heightFactor,
+                sw: sw,
+                sh: sh,
               )),
             ],
           ),
-          SizedBox(height: 11 * heightFactor),
+          SizedBox(height: sh(11)),
           // Text field always visible
           _buildTextField(
             controller: controller.jazzcashController,
             width: double.infinity,
-            height: 52 * heightFactor,
+            height: sh(55),
             hintText: '0300 123 4567',
-            onChanged: (value) => controller.updateJazzcashNumber(value),
             keyboardType: TextInputType.phone,
             inputFormatters: [
               FilteringTextInputFormatter.digitsOnly,
               LengthLimitingTextInputFormatter(11),
               PhoneNumberInputFormatter(),
             ],
+            sw: sw,
+            sh: sh,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildEasypasaSection(PaymentMethodController controller, double widthFactor, double heightFactor) {
+  Widget _buildEasypasaSection(PaymentMethodController controller, BuildContext context, double Function(double) sw, double Function(double) sh) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 39 * widthFactor),
+      padding: EdgeInsets.symmetric(horizontal: sw(15)),
       child: Column(
         children: [
           Row(
             children: [
               // Easypasa Icon
               Container(
-                width: 39 * widthFactor,
-                height: 39 * heightFactor,
+                width: sw(39),
+                height: sh(39),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(sw(8)),
                 ),
                 child: SvgPicture.asset(
                   'assets/transaction/easypaisa.svg',
-                  width: 39 * widthFactor,
-                  height: 39 * heightFactor,
+                  width: sw(39),
+                  height: sh(39),
                 ),
               ),
-              SizedBox(width: 14 * widthFactor),
+              SizedBox(width: sw(14)),
               Text(
                 'Easypasa',
-                style: TextStyle(
-                  fontFamily: 'Plus Jakarta Sans',
+                style: FTextTheme.lightTextTheme.titleLarge?.copyWith(
+                  fontSize: sw(16),
                   fontWeight: FontWeight.w600,
-                  fontSize: 16 * widthFactor,
-                  height: 24 / 16,
                   color: Colors.black,
                 ),
               ),
@@ -325,25 +324,26 @@ class PaymentMethodsScreen extends StatelessWidget {
               Obx(() => _buildCustomToggle(
                 value: controller.paymentMethod.value.isEasypasaEnabled,
                 onChanged: (value) => controller.toggleEasypasa(value),
-                widthFactor: widthFactor,
-                heightFactor: heightFactor,
+                sw: sw,
+                sh: sh,
               )),
             ],
           ),
-          SizedBox(height: 11 * heightFactor),
+          SizedBox(height: sh(11)),
           // Text field always visible
           _buildTextField(
             controller: controller.easypasaController,
             width: double.infinity,
-            height: 52 * heightFactor,
+            height: sh(55),
             hintText: '0300 000 0000',
-            onChanged: (value) => controller.updateEasypasaNumber(value),
             keyboardType: TextInputType.phone,
             inputFormatters: [
               FilteringTextInputFormatter.digitsOnly,
               LengthLimitingTextInputFormatter(11),
               PhoneNumberInputFormatter(),
             ],
+            sw: sw,
+            sh: sh,
           ),
         ],
       ),
@@ -355,15 +355,16 @@ class PaymentMethodsScreen extends StatelessWidget {
     double? width,
     required double height,
     required String hintText,
-    required Function(String) onChanged,
     TextInputType? keyboardType,
     List<TextInputFormatter>? inputFormatters,
+    required double Function(double) sw,
+    required double Function(double) sh,
   }) {
     return Container(
       width: width,
       height: height,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(sw(14)),
         border: Border.all(
           color: const Color(0xFFE3E3E3),
           width: 2,
@@ -371,25 +372,20 @@ class PaymentMethodsScreen extends StatelessWidget {
       ),
       child: TextField(
         controller: controller,
-        onChanged: onChanged,
         keyboardType: keyboardType,
         inputFormatters: inputFormatters,
-        style: const TextStyle(
-          fontFamily: 'Plus Jakarta Sans',
+        style: FTextTheme.lightTextTheme.bodyMedium?.copyWith(
           fontWeight: FontWeight.w500,
-          fontSize: 14,
           color: Colors.black,
         ),
         decoration: InputDecoration(
           hintText: hintText,
-          hintStyle: TextStyle(
-            fontFamily: 'Plus Jakarta Sans',
+          hintStyle: FTextTheme.lightTextTheme.bodyMedium?.copyWith(
             fontWeight: FontWeight.w400,
-            fontSize: 14,
             color: Colors.grey[400],
           ),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          contentPadding: EdgeInsets.symmetric(horizontal: sw(15), vertical: sh(14)),
         ),
       ),
     );
@@ -398,25 +394,25 @@ class PaymentMethodsScreen extends StatelessWidget {
   Widget _buildCustomToggle({
     required bool value,
     required Function(bool) onChanged,
-    required double widthFactor,
-    required double heightFactor,
+    required double Function(double) sw,
+    required double Function(double) sh,
   }) {
     return GestureDetector(
       onTap: () => onChanged(!value),
       child: Container(
-        width: 51 * widthFactor,
-        height: 31 * heightFactor,
+        width: sw(51),
+        height: sh(31),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(15.5),
+          borderRadius: BorderRadius.circular(sw(15.5)),
           color: value ? const Color(0xFFFFC300) : Colors.grey[300],
         ),
         child: AnimatedAlign(
           duration: const Duration(milliseconds: 200),
           alignment: value ? Alignment.centerRight : Alignment.centerLeft,
           child: Container(
-            width: 27 * widthFactor,
-            height: 27 * heightFactor,
-            margin: EdgeInsets.symmetric(horizontal: 2 * widthFactor),
+            width: sw(27),
+            height: sh(27),
+            margin: EdgeInsets.symmetric(horizontal: sw(2)),
             decoration: const BoxDecoration(
               shape: BoxShape.circle,
               color: Colors.white,
@@ -427,29 +423,35 @@ class PaymentMethodsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAddButton(PaymentMethodController controller, double widthFactor, double heightFactor) {
-    return GestureDetector(
-      onTap: () => controller.addNewPaymentMethod(),
-      child: Container(
-        width: double.infinity,
-        height: 48 * heightFactor,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          color: const Color(0xFFFFC300),
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          'Add New Payment Method',
-          style: TextStyle(
-            fontFamily: 'Plus Jakarta Sans',
-            fontWeight: FontWeight.w500,
-            fontSize: 16 * widthFactor,
-            height: 24 / 16,
-            color: Colors.black,
+  Widget _buildAddButton(
+      PaymentMethodController controller,
+      BuildContext context,
+      double Function(double) sw,
+      double Function(double) sh,
+      ) {
+    return Obx(() {
+      bool enabled = controller.isButtonEnabled.value;
+
+      return GestureDetector(
+        onTap: enabled ? () => controller.addNewPaymentMethod() : null,
+        child: Container(
+          width: double.infinity,
+          height: sh(48),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(sw(8)),
+            color: enabled ? const Color(0xFFFFC300) : Colors.grey[400],
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            'Add New Payment Method',
+            style: FTextTheme.lightTextTheme.titleLarge?.copyWith(
+              fontSize: sw(16),
+              fontWeight: FontWeight.w500,
+              color: enabled ? Colors.black : Colors.white,
+            ),
           ),
         ),
-      ),
-    );
+      );
+    });
   }
-
 }

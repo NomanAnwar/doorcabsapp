@@ -29,49 +29,61 @@ class RatingScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            /// Back button and Title Row
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: sw(20), vertical: sh(20)),
-              child: Row(
-                children: [
-                  /// Back button
-                  GestureDetector(
-                    onTap: () => Get.back(),
-                    child: Container(
-                      width: sw(28),
-                      height: sh(28),
-                      child: Icon(
-                        Icons.arrow_back,
-                        size: sw(28),
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: sw(16)),
-
-                  /// Title
-                  Expanded(
-                    child: Text(
-                      role == "Driver" ? "Rate passenger" : "Rate your ride",
-                      style: FTextTheme.lightTextTheme.titleMedium!.copyWith(
-                        fontSize: FTextTheme.lightTextTheme.titleMedium!.fontSize! *
-                            screenWidth /
-                            baseWidth,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-
-                  /// Invisible spacer for balance
-                  SizedBox(width: sw(44)), // Same width as back button + spacing
-                ],
+            /// White Background Container (like ProfileScreen)
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: Container(
+                color: Colors.white,
               ),
             ),
 
-            /// Profile Image
-            Container(
-              margin: EdgeInsets.only(top: sh(20), bottom: sh(20)),
+            /// Back Arrow button - positioned like ProfileScreen
+            Positioned(
+              top: sh(23),
+              left: sw(23),
+              child: GestureDetector(
+                onTap: () => Get.back(),
+                child: Container(
+                  width: sw(28),
+                  height: sh(28),
+                  child: Icon(
+                    Icons.arrow_back,
+                    size: sw(28),
+                    color: Colors.black, // Black color for white background
+                  ),
+                ),
+              ),
+            ),
+
+            /// Title - positioned centrally at top
+            Positioned(
+              top: sh(23),
+              left: 0,
+              right: 0,
+              child: Container(
+                height: sh(28),
+                alignment: Alignment.center,
+                child: Text(
+                  role == "Driver" ? "Rate passenger" : "Rate your ride",
+                  style: FTextTheme.lightTextTheme.titleMedium!.copyWith(
+                    fontSize: FTextTheme.lightTextTheme.titleMedium!.fontSize! *
+                        screenWidth /
+                        baseWidth,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+
+            /// Profile Image - positioned below header
+            Positioned(
+              top: sh(80), // Adjusted from margin.only(top: sh(20))
+              left: (screenWidth - sw(128)) / 2, // Center horizontally
               child: Container(
                 width: sw(128),
                 height: sh(128),
@@ -98,9 +110,11 @@ class RatingScreen extends StatelessWidget {
               ),
             ),
 
-            /// Subtitle
-            Container(
-              margin: EdgeInsets.only(bottom: sh(20)),
+            /// Subtitle - below profile image
+            Positioned(
+              top: sh(230), // profile top(80) + profile height(128) + spacing(22)
+              left: sw(20),
+              right: sw(20),
               child: Text(
                 role == "Driver"
                     ? "Rate Your Experience With ${args['name']}?"
@@ -114,30 +128,38 @@ class RatingScreen extends StatelessWidget {
               ),
             ),
 
-            /// Stars Rating
-            Obx(() {
-              return Container(
-                margin: EdgeInsets.only(bottom: sh(30)),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(5, (i) {
-                    final idx = i + 1;
-                    final filled = c.rating.value >= idx;
-                    return GestureDetector(
-                      onTap: () => c.rating.value = idx.toDouble(),
-                      child: Icon(
-                        Icons.star,
-                        size: sw(42),
-                        color: filled ? Colors.amber : Colors.grey.shade300,
-                      ),
-                    );
-                  }),
-                ),
-              );
-            }),
+            /// Stars Rating - below subtitle
+            Positioned(
+              top: sh(280), // subtitle top(230) + subtitle height + spacing
+              left: 0,
+              right: 0,
+              child: Obx(() {
+                return Container(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(5, (i) {
+                      final idx = i + 1;
+                      final filled = c.rating.value >= idx;
+                      return GestureDetector(
+                        onTap: () => c.rating.value = idx.toDouble(),
+                        child: Icon(
+                          Icons.star,
+                          size: sw(42),
+                          color: filled ? Colors.amber : Colors.grey.shade300,
+                        ),
+                      );
+                    }),
+                  ),
+                );
+              }),
+            ),
 
-            /// Tags Section - Now scrollable and dynamic
-            Expanded(
+            /// Tags Section - scrollable content area
+            Positioned(
+              top: sh(350), // stars top(280) + stars height + spacing
+              left: 0,
+              right: 0,
+              bottom: sh(100), // Space for submit button
               child: SingleChildScrollView(
                 padding: EdgeInsets.symmetric(horizontal: sw(20)),
                 child: Column(
@@ -225,17 +247,18 @@ class RatingScreen extends StatelessWidget {
                       ),
                     ),
 
-                    /// Spacer before button
+                    /// Spacer before button (extra space for scroll)
                     SizedBox(height: sh(30)),
                   ],
                 ),
               ),
             ),
 
-            /// Submit Button - Fixed at bottom
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.symmetric(horizontal: sw(30), vertical: sh(20)),
+            /// Submit Button - Fixed at bottom (like ProfileScreen)
+            Positioned(
+              left: sw(30),
+              right: sw(30),
+              bottom: sh(20),
               child: Obx(() {
                 return SizedBox(
                   height: sh(48),

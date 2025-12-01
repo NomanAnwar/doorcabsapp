@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:doorcab/feautures/shared/services/storage_service.dart';
 import '../models/payment_method_model.dart';
-
+import '../screens/topup_screen.dart';
 
 class PaymentMethodController extends GetxController {
   final paymentMethod = PaymentMethodModel().obs;
+  final isButtonEnabled = false.obs;
 
   // Text editing controllers
   final cardNumberController = TextEditingController();
@@ -16,8 +18,33 @@ class PaymentMethodController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    // Initialize with default values if needed
     loadPaymentMethods();
+
+    // Listen to text changes for real-time validation
+    cardNumberController.addListener(() {
+      updateCardNumber(cardNumberController.text);
+      validateButton();
+    });
+
+    expiryDateController.addListener(() {
+      updateExpiryDate(expiryDateController.text);
+      validateButton();
+    });
+
+    cvvController.addListener(() {
+      updateCvv(cvvController.text);
+      validateButton();
+    });
+
+    jazzcashController.addListener(() {
+      updateJazzcashNumber(jazzcashController.text);
+      validateButton();
+    });
+
+    easypasaController.addListener(() {
+      updateEasypasaNumber(easypasaController.text);
+      validateButton();
+    });
   }
 
   @override
@@ -30,13 +57,51 @@ class PaymentMethodController extends GetxController {
     super.onClose();
   }
 
-  // Load payment methods from backend
+  // Load payment methods from storage
   void loadPaymentMethods() {
-    // TODO: Implement API call to load payment methods
-    // Example:
-    // final data = await apiService.getPaymentMethods();
-    // paymentMethod.value = PaymentMethodModel.fromJson(data);
-    // updateTextControllers();
+    try {
+      final savedData = StorageService.getPaymentMethod();
+      if (savedData != null) {
+        paymentMethod.value = savedData;
+        updateTextControllers();
+
+        // Auto-enable the active method
+        if (savedData.activeMethod.isNotEmpty) {
+          _enableActiveMethod(savedData.activeMethod);
+        }
+
+        validateButton();
+        print("✅ Loaded payment method from storage: ${savedData.activeMethod}");
+      } else {
+        print("ℹ️ No saved payment method found");
+      }
+    } catch (e) {
+      print("❌ Error loading payment methods: $e");
+    }
+  }
+
+  void _enableActiveMethod(String method) {
+    switch (method) {
+      case 'card':
+        toggleCard(true);
+        break;
+      case 'jazzcash':
+        toggleJazzcash(true);
+        break;
+      case 'easypaisa':
+        toggleEasypasa(true);
+        break;
+    }
+  }
+
+  // Save payment method to storage
+  Future<void> _savePaymentMethod() async {
+    try {
+      await StorageService.savePaymentMethod(paymentMethod.value);
+      print("💾 Payment method saved to storage: ${paymentMethod.value.activeMethod}");
+    } catch (e) {
+      print("❌ Error saving payment method: $e");
+    }
   }
 
   // Update text controllers with loaded data
@@ -48,72 +113,179 @@ class PaymentMethodController extends GetxController {
     easypasaController.text = paymentMethod.value.easypasaNumber;
   }
 
-  // Toggle card enabled
+  // Toggle methods with exclusive activation
   void toggleCard(bool value) {
     paymentMethod.update((val) {
       val!.isCardEnabled = value;
+      if (value) {
+        // Disable other methods
+        val.isJazzcashEnabled = false;
+        val.isEasypasaEnabled = false;
+        val.activeMethod = 'card';
+      } else {
+        val.activeMethod = '';
+      }
     });
+    _savePaymentMethod();
+    validateButton();
   }
 
-  // Toggle Jazzcash
   void toggleJazzcash(bool value) {
     paymentMethod.update((val) {
       val!.isJazzcashEnabled = value;
+      if (value) {
+        // Disable other methods
+        val.isCardEnabled = false;
+        val.isEasypasaEnabled = false;
+        val.activeMethod = 'jazzcash';
+      } else {
+        val.activeMethod = '';
+      }
     });
+    _savePaymentMethod();
+    validateButton();
   }
 
-  // Toggle Easypasa
   void toggleEasypasa(bool value) {
     paymentMethod.update((val) {
       val!.isEasypasaEnabled = value;
+      if (value) {
+        // Disable other methods
+        val.isCardEnabled = false;
+        val.isJazzcashEnabled = false;
+        val.activeMethod = 'easypaisa';
+      } else {
+        val.activeMethod = '';
+      }
     });
+    _savePaymentMethod();
+    validateButton();
   }
 
-  // Update card number
+  // Update methods
   void updateCardNumber(String value) {
     paymentMethod.update((val) {
       val!.cardNumber = value;
     });
   }
 
-  // Update expiry date
   void updateExpiryDate(String value) {
     paymentMethod.update((val) {
       val!.expiryDate = value;
     });
   }
 
-  // Update CVV
   void updateCvv(String value) {
     paymentMethod.update((val) {
       val!.cvv = value;
     });
   }
 
-  // Update Jazzcash number
   void updateJazzcashNumber(String value) {
     paymentMethod.update((val) {
       val!.jazzcashNumber = value;
     });
   }
 
-  // Update Easypasa number
   void updateEasypasaNumber(String value) {
     paymentMethod.update((val) {
       val!.easypasaNumber = value;
     });
   }
 
+  // Validate button
+  void validateButton() {
+    // Clean the card number (remove spaces)
+    String cleanCardNumber = cardNumberController.text.replaceAll(' ', '');
+
+    // Clean the expiry date (remove /)
+    String cleanExpiry = expiryDateController.text.replaceAll('/', '');
+
+    // Clean the CVV (remove any non-digit characters)
+    String cleanCvv = cvvController.text.replaceAll(RegExp(r'\D'), '');
+
+    bool isCardValid = paymentMethod.value.isCardEnabled &&
+        cleanCardNumber.length == 16 &&
+        cleanExpiry.length == 4 &&
+        cleanCvv.length == 3;
+
+    bool isJazzValid = paymentMethod.value.isJazzcashEnabled &&
+        jazzcashController.text.replaceAll(' ', '').length == 11;
+
+    bool isEasypaisaValid = paymentMethod.value.isEasypasaEnabled &&
+        easypasaController.text.replaceAll(' ', '').length == 11;
+
+    // If ANY method valid → enable button
+    isButtonEnabled.value = isCardValid || isJazzValid || isEasypaisaValid;
+  }
+
+  // Get selected payment method type
+  String getSelectedPaymentMethod() {
+    if (paymentMethod.value.isCardEnabled &&
+        cardNumberController.text.replaceAll(' ', '').length == 16 &&
+        expiryDateController.text.replaceAll('/', '').length == 4 &&
+        cvvController.text.length == 3) {
+      return 'card';
+    } else if (paymentMethod.value.isJazzcashEnabled &&
+        jazzcashController.text.replaceAll(' ', '').length == 11) {
+      return 'jazzcash';
+    } else if (paymentMethod.value.isEasypasaEnabled &&
+        easypasaController.text.replaceAll(' ', '').length == 11) {
+      return 'easypaisa';
+    }
+    return '';
+  }
+
+  // Get payment method details for display
+  Map<String, dynamic> getSelectedPaymentDetails() {
+    String method = getSelectedPaymentMethod();
+
+    switch (method) {
+      case 'card':
+        return {
+          'type': 'card',
+          'name': 'Card',
+          'icon': 'assets/transaction/card.svg',
+          'iconType': 'svg',
+          'details': cardNumberController.text,
+        };
+      case 'jazzcash':
+        return {
+          'type': 'jazzcash',
+          'name': 'Jazzcash',
+          'icon': 'assets/transaction/Jazzcash.png',
+          'iconType': 'image',
+          'details': jazzcashController.text,
+        };
+      case 'easypaisa':
+        return {
+          'type': 'easypaisa',
+          'name': 'Easypasa',
+          'icon': 'assets/transaction/easypaisa.svg',
+          'iconType': 'svg',
+          'details': easypasaController.text,
+        };
+      default:
+        return {};
+    }
+  }
+
   // Add new payment method
   void addNewPaymentMethod() {
     print('Payment Method Data: ${paymentMethod.value.toJson()}');
 
-    Get.snackbar(
-      'Success',
-      'Payment method added successfully',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: const Color(0xFFFFC300),
-      colorText: Colors.black,
-    );
+    // Get selected payment method details
+    Map<String, dynamic> selectedMethod = getSelectedPaymentDetails();
+
+    // Navigate to next screen with payment method details
+    Get.to(() => TopUpScreen(), arguments: selectedMethod);
+
+    // Get.snackbar(
+    //   'Success',
+    //   'Payment method added successfully',
+    //   snackPosition: SnackPosition.BOTTOM,
+    //   backgroundColor: const Color(0xFFFFC300),
+    //   colorText: Colors.black,
+    // );
   }
 }

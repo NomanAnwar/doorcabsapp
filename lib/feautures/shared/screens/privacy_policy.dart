@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
-import '../../../utils/constants/colors.dart';
-import '../../../utils/theme/custom_theme/text_theme.dart';
+import 'package:doorcab/utils/constants/colors.dart';
+import 'package:doorcab/utils/theme/custom_theme/text_theme.dart';
+import '../controllers/privacy_policy_controller.dart';
 
 class PrivacyPolicyScreen extends StatelessWidget {
-  const PrivacyPolicyScreen({super.key});
+  final PrivacyPolicyController controller = Get.put(PrivacyPolicyController());
+
+  PrivacyPolicyScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
 
+    // Base reference (iPhone 16 Pro Max)
     const baseWidth = 440.0;
     const baseHeight = 956.0;
 
@@ -20,107 +24,183 @@ class PrivacyPolicyScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Stack(
+      body: Obx(() {
+        final loading = controller.isLoading.value;
+
+        return Stack(
           children: [
-            // 🔙 Back Arrow
-            Positioned(
-              top: sh(20),
-              left: sw(20),
-              child: GestureDetector(
-                onTap: () => Get.back(),
-                child: SvgPicture.asset(
-                  "assets/images/Arrow.svg",
-                  width: sw(28),
-                  height: sh(28),
-                ),
-              ),
-            ),
-
-            // 🧾 Title
-            Positioned(
-              top: sh(62),
-              left: sw(25),
-              right: sw(25),
-              child: Center(
-                child: Text(
-                  "Privacy & Policy",
-                  style: FTextTheme.lightTextTheme.titleLarge!.copyWith(
-                    fontWeight: FontWeight.w700,
-                    fontSize: FTextTheme.lightTextTheme.titleLarge!.fontSize! *
-                        screenWidth /
-                        baseWidth,
-                    color: Colors.black,
-                  ),
-                ),
-              ),
-            ),
-
-            // 📜 Content
-            Positioned(
-              top: sh(120),
-              left: sw(20),
-              right: sw(20),
-              bottom: 0,
-              child: SingleChildScrollView(
-                child: Column(
+            /// Main UI
+            SingleChildScrollView(
+              child: SizedBox(
+                height: screenHeight,
+                width: double.infinity,
+                child: Stack(
                   children: [
-                    _buildExpansionTile(
-                      title: "Data Collection",
-                      content:
-                      "We collect personal information such as name, contact details, and location only to improve your user experience and ensure smooth app functionality.",
-                      sw: sw,
-                      sh: sh,
-                      screenWidth: screenWidth,
-                      baseWidth: baseWidth,
+                    /// 🔙 Back Arrow
+                    Positioned(
+                      top: sh(50),
+                      left: sw(20),
+                      child: GestureDetector(
+                        onTap: () => Get.back(),
+                        child: SvgPicture.asset(
+                          "assets/images/Arrow.svg",
+                          width: sw(28),
+                          height: sw(28),
+                        ),
+                      ),
                     ),
-                    _divider(sw: sw),
-                    _buildExpansionTile(
-                      title: "Data Usage",
-                      content:
-                      "Your data is used solely for providing and improving our services. We never sell, rent, or share your personal data with unauthorized parties.",
-                      sw: sw,
-                      sh: sh,
-                      screenWidth: screenWidth,
-                      baseWidth: baseWidth,
+
+                    /// 🧾 Title
+                    Positioned(
+                      top: sh(100),
+                      left: 0,
+                      right: 0,
+                      child: Center(
+                        child: Text(
+                          "Privacy & Policy",
+                          style: FTextTheme.lightTextTheme.titleLarge!.copyWith(
+                            fontWeight: FontWeight.w700,
+                            fontSize: FTextTheme.lightTextTheme.titleLarge!.fontSize! *
+                                screenWidth /
+                                baseWidth,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ),
                     ),
-                    _divider(sw: sw),
-                    _buildExpansionTile(
-                      title: "Data Protection",
-                      content:
-                      "We use advanced encryption and secure storage mechanisms to protect your information against unauthorized access or misuse.",
-                      sw: sw,
-                      sh: sh,
-                      screenWidth: screenWidth,
-                      baseWidth: baseWidth,
-                    ),
-                    _divider(sw: sw),
-                    _buildExpansionTile(
-                      title: "User Rights",
-                      content:
-                      "You have the right to access, correct, or delete your personal data. You can also withdraw consent for data processing anytime by contacting support.",
-                      sw: sw,
-                      sh: sh,
-                      screenWidth: screenWidth,
-                      baseWidth: baseWidth,
-                    ),
-                    _divider(sw: sw),
-                    _buildExpansionTile(
-                      title: "Policy Updates",
-                      content:
-                      "We may update our privacy policy occasionally. Users will be notified of significant changes through in-app alerts or email notifications.",
-                      sw: sw,
-                      sh: sh,
-                      screenWidth: screenWidth,
-                      baseWidth: baseWidth,
+
+                    /// 📜 Content
+                    Positioned(
+                      top: sh(160),
+                      left: sw(20),
+                      right: sw(20),
+                      bottom: 0,
+                      child: Obx(() {
+                        if (controller.isLoading.value) {
+                          return Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                CircularProgressIndicator(
+                                  color: FColors.secondaryColor,
+                                ),
+                                SizedBox(height: sh(16)),
+                                Text(
+                                  "Loading Privacy Policy...",
+                                  style: FTextTheme.lightTextTheme.titleMedium!.copyWith(
+                                    fontSize: FTextTheme.lightTextTheme.titleMedium!.fontSize! *
+                                        screenWidth /
+                                        baseWidth,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+
+                        if (controller.hasError.value) {
+                          return Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.error_outline,
+                                  size: sw(48),
+                                  color: Colors.grey,
+                                ),
+                                SizedBox(height: sh(16)),
+                                Text(
+                                  'Failed to load Privacy Policy',
+                                  style: FTextTheme.lightTextTheme.titleMedium!.copyWith(
+                                    fontSize: FTextTheme.lightTextTheme.titleMedium!.fontSize! *
+                                        screenWidth /
+                                        baseWidth,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                                SizedBox(height: sh(16)),
+                                ElevatedButton(
+                                  onPressed: controller.fetchPrivacyPolicy,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: FColors.secondaryColor,
+                                    foregroundColor: Colors.black,
+                                  ),
+                                  child: Text(
+                                    'Retry',
+                                    style: FTextTheme.lightTextTheme.titleSmall!.copyWith(
+                                      fontSize: FTextTheme.lightTextTheme.titleSmall!.fontSize! *
+                                          screenWidth /
+                                          baseWidth,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+
+                        final privacyPolicy = controller.privacyPolicy.value;
+
+                        if (privacyPolicy == null) {
+                          return Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.privacy_tip_outlined,
+                                  size: sw(48),
+                                  color: Colors.grey,
+                                ),
+                                SizedBox(height: sh(16)),
+                                Text(
+                                  'No Privacy Policy available',
+                                  style: FTextTheme.lightTextTheme.titleMedium!.copyWith(
+                                    fontSize: FTextTheme.lightTextTheme.titleMedium!.fontSize! *
+                                        screenWidth /
+                                        baseWidth,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+
+                        return SingleChildScrollView(
+                          child: Column(
+                            children: [
+                              _buildPolicySection(
+                                title: privacyPolicy.title, // Access the value
+                                content: privacyPolicy.description, // Access the value
+                                sw: sw,
+                                sh: sh,
+                                screenWidth: screenWidth,
+                                baseWidth: baseWidth,
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
                     ),
                   ],
                 ),
               ),
             ),
+
+            /// Loader Overlay (same as OtpScreen)
+            // if (loading)
+            //   Container(
+            //     height: screenHeight,
+            //     width: screenWidth,
+            //     color: Colors.black.withOpacity(0.4),
+            //     child: const Center(
+            //       child: CircularProgressIndicator(color: Colors.white),
+            //     ),
+            //   ),
           ],
-        ),
-      ),
+        );
+      }),
     );
   }
 
@@ -130,7 +210,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
     thickness: sw(1),
   );
 
-  Widget _buildExpansionTile({
+  Widget _buildPolicySection({
     required String title,
     required String content,
     required double Function(double) sw,
@@ -138,34 +218,33 @@ class PrivacyPolicyScreen extends StatelessWidget {
     required double screenWidth,
     required double baseWidth,
   }) {
-    return Theme(
-      data: ThemeData().copyWith(dividerColor: Colors.transparent),
-      child: ExpansionTile(
-        tilePadding: EdgeInsets.symmetric(horizontal: sw(0)),
-        title: Text(
-          title,
-          style: FTextTheme.lightTextTheme.bodySmall!.copyWith(
-            fontWeight: FontWeight.bold,
-            fontSize: FTextTheme.lightTextTheme.bodySmall!.fontSize! *
-                screenWidth /
-                baseWidth,
-            color: Colors.black,
-          ),
-        ),
-        iconColor: Colors.black,
-        collapsedIconColor: Colors.black,
+    return Container(
+      width: double.infinity,
+      margin: EdgeInsets.only(bottom: sh(16)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: sw(10), vertical: sh(5)),
-            child: Text(
-              content,
-              style: FTextTheme.lightTextTheme.bodySmall!.copyWith(
-                fontSize: FTextTheme.lightTextTheme.bodySmall!.fontSize! *
-                    screenWidth /
-                    baseWidth,
-                color: Colors.black87,
-                height: 1.4,
-              ),
+          // Title
+          // Text(
+          //   title,
+          //   style: FTextTheme.lightTextTheme.titleSmall!.copyWith(
+          //     fontWeight: FontWeight.w700,
+          //     fontSize: FTextTheme.lightTextTheme.titleSmall!.fontSize! *
+          //         screenWidth /
+          //         baseWidth,
+          //     color: Colors.black,
+          //   ),
+          // ),
+          // SizedBox(height: sh(8)),
+          // Content
+          Text(
+            content,
+            style: FTextTheme.lightTextTheme.bodyLarge!.copyWith(
+              fontSize: FTextTheme.lightTextTheme.bodyLarge!.fontSize! *
+                  screenWidth /
+                  baseWidth,
+              color: Colors.black87,
+              height: 1.6,
             ),
           ),
         ],

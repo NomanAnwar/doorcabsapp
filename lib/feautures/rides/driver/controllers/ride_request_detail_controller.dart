@@ -430,7 +430,7 @@ class RideRequestDetailController extends BaseController {
     final bounds = LatLngBounds(southwest: southwest, northeast: northeast);
 
     try {
-      await mapController!.animateCamera(CameraUpdate.newLatLngBounds(bounds, 20));
+      await mapController!.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
     } catch (e) {
       // If animateCamera with bounds fails (sometimes on small devices), fallback to center+zoom
       final center = LatLng((minLat + maxLat) / 2, (minLng + maxLng) / 2);
@@ -562,7 +562,8 @@ class RideRequestDetailController extends BaseController {
         bidStatus.value = "accepted";
         // showSuccess(data['message'] ?? "Your bid was accepted!");
         Future.delayed(Duration(seconds: 2), () {
-          Get.offNamed('/go-to-pickup', arguments: {"rideData": data});
+          _unsubscribeFromChannels();
+          Get.offAllNamed('/go-to-pickup', arguments: {"rideData": data});
         });
         break;
 
@@ -578,6 +579,26 @@ class RideRequestDetailController extends BaseController {
           Get.back(result: 'ignored');
         });
         break;
+    }
+  }
+
+  Future<void> _unsubscribeFromChannels() async {
+    try {
+      await executeWithRetry(() async {
+
+          final driverId = StorageService.getSignUpResponse()?.userId;
+          if (driverId != null) {
+            _pusherManager.unsubscribeSafely("private-driver-$driverId");
+            _pusherManager.unsubscribeSafely("driver-$driverId");
+          }
+        // for (final channel in _subscribedChannels) {
+        //   _pusherManager.unsubscribeSafely(channel);
+        //   print("✅ RideRequestListController unsubscribed from: $channel");
+        // }
+        // _subscribedChannels.clear();
+      });
+    } catch (e) {
+      print('❌ Error unsubscribing from channels: $e');
     }
   }
 
@@ -749,7 +770,11 @@ class RideRequestDetailController extends BaseController {
               },
             ));
 
-            await PusherBackgroundService().startBackgroundMode(driverId, rideId: rideId);
+            await PusherBackgroundService().startBackgroundMode(
+              driverId,
+              userType: 'driver', // ✅ ADD THIS LINE
+              rideId: rideId,
+            );
           } else {
             print("⚠️ driverId not found in submit-bids response");
           }

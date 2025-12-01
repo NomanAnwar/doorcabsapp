@@ -126,6 +126,9 @@ class FHttpHelper {
   /// Handle API response
   static Map<String, dynamic> _handleResponse(http.Response response) {
     // FSnackbar.show(title: 'Request', message: response.body.toString());
+
+    print("Noman debug : "+ response.body.toString());
+    print("Noman debug : "+ response.statusCode.toString());
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return json.decode(response.body);
     } else {

@@ -271,6 +271,13 @@ class RideHomeController extends GetxController {
     if (rideTypes.isEmpty) isLoadingRideTypes.value = true;
 
     try {
+      final token = StorageService.getAuthToken();
+      if (token == null) {
+        print("❌ User token not found for active rides API");
+        return;
+      }
+
+      FHttpHelper.setAuthToken(token, useBearer: true);
       final res = await FHttpHelper.get("vehicle/list");
       final data = (res["data"] is List) ? (res["data"] as List) : const [];
       print("Vehicle API Response : " + res.toString());
@@ -384,6 +391,13 @@ class RideHomeController extends GetxController {
     if (cities.isEmpty) isLoadingCities.value = true;
 
     try {
+      final token = StorageService.getAuthToken();
+      if (token == null) {
+        print("❌ User token not found for active rides API");
+        return;
+      }
+
+      FHttpHelper.setAuthToken(token, useBearer: true);
       final res = await FHttpHelper.get("city/list-cities");
       final data = (res["data"] is List) ? (res["data"] as List) : const [];
 

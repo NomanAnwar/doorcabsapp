@@ -41,10 +41,21 @@ class ChatScreen extends StatelessWidget {
           height: screenHeight,
           child: Stack(
             children: [
-              // Back button
+              /// White Background Container (like ProfileScreen)
               Positioned(
-                top: sh(30),
-                left: sw(33),
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  color: Colors.white,
+                ),
+              ),
+
+              /// Back button - positioned like ProfileScreen
+              Positioned(
+                top: sh(23),
+                left: sw(20),
                 child: GestureDetector(
                   onTap: () => Get.back(),
                   child: Container(
@@ -53,14 +64,35 @@ class ChatScreen extends StatelessWidget {
                     child: Icon(
                       Icons.arrow_back,
                       size: sw(28),
+                      color: Colors.black, // Black for white background
                     ),
                   ),
                 ),
               ),
 
-              // Driver Details Card
+              /// Title - positioned centrally at top
               Positioned(
-                top: sh(68),
+                top: sh(23),
+                left: 0,
+                right: 0,
+                child: Container(
+                  height: sh(28),
+                  alignment: Alignment.center,
+                  child: Text(
+                    "Chat",
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 18 * screenWidth / baseWidth,
+                      color: Colors.black,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+
+              /// Driver Details Card
+              Positioned(
+                top: sh(70),
                 left: sw(10),
                 right: sw(10),
                 child: Container(
@@ -103,8 +135,8 @@ class ChatScreen extends StatelessWidget {
                       // Driver Badge
                       if (displayData['badge'] != null && displayData['badge']!.isNotEmpty)
                         Positioned(
-                          top: sh(60),
-                          left: sw(80),
+                          top: sh(55),
+                          left: sw(75),
                           child: Container(
                             width: sw(12),
                             height: sh(12),
@@ -213,15 +245,13 @@ class ChatScreen extends StatelessWidget {
                               width: sw(30),
                               height: sh(30),
                               decoration: const BoxDecoration(
-                                // color: Color(0xFF003566),
                                 shape: BoxShape.circle,
                               ),
-                              child: Image.asset("assets/images/call.png", width: sw(30), height: sh(30))
-                              // Icon(
-                              //   Icons.call,
-                              //   color: Colors.white,
-                              //   size: sw(16),
-                              // ),
+                              child: Image.asset(
+                                  "assets/images/call.png",
+                                  width: sw(30),
+                                  height: sh(30)
+                              ),
                             ),
                           ),
                         ),
@@ -230,12 +260,12 @@ class ChatScreen extends StatelessWidget {
                 ),
               ),
 
-              // Messages list - Use remaining space dynamically
+              /// Messages list - Use remaining space dynamically
               Positioned(
-                top: sh(180),
+                top: sh(210), // driver card top(70) + driver card height(120) + spacing(20)
                 left: 0,
                 right: 0,
-                bottom: sh(70),
+                bottom: sh(100), // Space for input field
                 child: Obx(
                       () => ListView.builder(
                     controller: c.scrollController,
@@ -247,7 +277,7 @@ class ChatScreen extends StatelessWidget {
 
                       return Container(
                         width: double.infinity,
-                        margin: EdgeInsets.symmetric(vertical: sh(8)),
+                        margin: EdgeInsets.symmetric(vertical: sh(2)),
                         child: Row(
                           mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
                           children: [
@@ -278,6 +308,7 @@ class ChatScreen extends StatelessWidget {
                                       ),
                                     ),
                                   ),
+
                                   // Timestamp
                                   Container(
                                     margin: EdgeInsets.only(top: sh(4)),
@@ -305,11 +336,11 @@ class ChatScreen extends StatelessWidget {
                 ),
               ),
 
-              // Input field - Fixed at bottom
+              /// Input field - Fixed at bottom (like ProfileScreen's button)
               Positioned(
                 left: sw(10),
                 right: sw(10),
-                bottom: sh(10),
+                bottom: sh(30),
                 child: Container(
                   width: sw(420),
                   height: sh(51),

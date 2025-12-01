@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'dart:ui' as ui;
-import '../controllers/complaint_controller.dart';
+import '../controllers/submit_complaint_controller.dart';
 
 class SubmitComplaintScreen extends StatelessWidget {
   const SubmitComplaintScreen({super.key});
@@ -17,7 +17,23 @@ class SubmitComplaintScreen extends StatelessWidget {
     double sw(double w) => w * screenWidth / baseWidth;
     double sh(double h) => h * screenHeight / baseHeight;
 
-    final ComplaintController controller = Get.find<ComplaintController>();
+    // ✅ UPDATED: Get arguments and initialize controller with them
+    final arguments = Get.arguments as Map<String, dynamic>?;
+    final SubmitComplaintController controller = Get.put(SubmitComplaintController());
+
+    // Pass arguments to controller
+    if (arguments != null) {
+      controller.setComplaintArguments(
+        rideId: arguments['rideId']?.toString() ?? '',
+        complaintForId: arguments['complaintForId']?.toString() ?? '',
+        driverId: arguments['driverId']?.toString(),
+        passengerId: arguments['passengerId']?.toString(),
+        name: arguments['name']?.toString(),
+        profileImage: arguments['profileImage']?.toString(),
+        rating: arguments['rating']?.toString(),
+        total_rating: arguments['total_rating']?.toString(),
+      );
+    }
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -63,61 +79,82 @@ class SubmitComplaintScreen extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       // Driver Avatar
-                      Container(
-                        width: sw(100),
-                        height: sw(100),
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                        ),
-                        child: driver.imageUrl != null
-                            ? ClipOval(
-                          child: Image.network(
-                            driver.imageUrl!,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                decoration: const BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Color(0xFFE8F4F8),
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    driver.name[0].toUpperCase(),
-                                    style: TextStyle(
-                                      fontFamily: "Plus Jakarta Sans",
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: sw(36),
-                                      color: const Color(0xFF0A2C4B),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
+                      // Container(
+                      //   width: sw(100),
+                      //   height: sw(100),
+                      //   decoration: const BoxDecoration(
+                      //     shape: BoxShape.circle,
+                      //   ),
+                      //   child: driver.imageUrl != null
+                      //       ? ClipOval(
+                      //     child: Image.network(
+                      //       driver.imageUrl!,
+                      //       fit: BoxFit.cover,
+                      //       errorBuilder: (context, error, stackTrace) {
+                      //         return Container(
+                      //           decoration: const BoxDecoration(
+                      //             shape: BoxShape.circle,
+                      //             color: Color(0xFFE8F4F8),
+                      //           ),
+                      //           child: Center(
+                      //             child: Text(
+                      //               driver.name[0].toUpperCase(),
+                      //               style: TextStyle(
+                      //                 fontFamily: "Plus Jakarta Sans",
+                      //                 fontWeight: FontWeight.w700,
+                      //                 fontSize: sw(36),
+                      //                 color: const Color(0xFF0A2C4B),
+                      //               ),
+                      //             ),
+                      //           ),
+                      //         );
+                      //       },
+                      //     ),
+                      //   )
+                      //       : Container(
+                      //     decoration: const BoxDecoration(
+                      //       shape: BoxShape.circle,
+                      //       color: Color(0xFFE8F4F8),
+                      //     ),
+                      //     child: Center(
+                      //       child: Text(
+                      //         driver.name[0].toUpperCase(),
+                      //         style: TextStyle(
+                      //           fontFamily: "Plus Jakarta Sans",
+                      //           fontWeight: FontWeight.w700,
+                      //           fontSize: sw(36),
+                      //           color: const Color(0xFF0A2C4B),
+                      //         ),
+                      //       ),
+                      //     ),
+                      //   ),
+                      // ),
+
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(sw(50)),
+                        child: controller.profileImage.value.isNotEmpty == true
+                            ? (controller.profileImage.value.startsWith("http")
+                            ? Image.network(
+                          controller.profileImage.value,
+                          width: sw(90),
+                          height: sh(90),
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => _buildDefaultAvatar(sw, sh),
                         )
-                            : Container(
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Color(0xFFE8F4F8),
-                          ),
-                          child: Center(
-                            child: Text(
-                              driver.name[0].toUpperCase(),
-                              style: TextStyle(
-                                fontFamily: "Plus Jakarta Sans",
-                                fontWeight: FontWeight.w700,
-                                fontSize: sw(36),
-                                color: const Color(0xFF0A2C4B),
-                              ),
-                            ),
-                          ),
-                        ),
+                            : Image.asset(
+                          controller.profileImage.value,
+                          width: sw(90),
+                          height: sh(90),
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => _buildDefaultAvatar(sw, sh),
+                        ))
+                            : _buildDefaultAvatar(sw, sh),
                       ),
                       SizedBox(height: sh(16)),
 
                       // Driver Name
                       Text(
-                        driver.name,
+                        controller.name.value,
                         style: TextStyle(
                           fontFamily: "Plus Jakarta Sans",
                           fontWeight: FontWeight.w600,
@@ -140,7 +177,9 @@ class SubmitComplaintScreen extends StatelessWidget {
                           ),
                           SizedBox(width: sw(4)),
                           Text(
-                            "${driver.rating} (${driver.totalRides} rides)",
+                            "${controller.rating == null || controller.rating == 0 || controller.rating.isEmpty ? '0' : controller.rating} "
+                                "(${controller.total_rating == null || controller.total_rating == 0 || controller.total_rating.isEmpty ? '0' : controller.total_rating} rides)",
+                            // "${driver.rating} (${driver.totalRides} rides)",
                             style: TextStyle(
                               fontFamily: "Plus Jakarta Sans",
                               fontWeight: FontWeight.w400,
@@ -154,16 +193,16 @@ class SubmitComplaintScreen extends StatelessWidget {
                       SizedBox(height: sh(6)),
 
                       // Driver Role
-                      Text(
-                        driver.role,
-                        style: TextStyle(
-                          fontFamily: "Plus Jakarta Sans",
-                          fontWeight: FontWeight.w400,
-                          fontSize: sw(10),
-                          color: const Color(0xFF0A2C4B),
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
+                      // Text(
+                      //   driver.role,
+                      //   style: TextStyle(
+                      //     fontFamily: "Plus Jakarta Sans",
+                      //     fontWeight: FontWeight.w400,
+                      //     fontSize: sw(10),
+                      //     color: const Color(0xFF0A2C4B),
+                      //   ),
+                      //   textAlign: TextAlign.center,
+                      // ),
                     ],
                   ),
                 );
@@ -271,7 +310,6 @@ class SubmitComplaintScreen extends StatelessWidget {
                       SizedBox(height: sh(25)),
 
                       // Upload Files Section
-                      // Upload Files Section - Centered Title
                       Center(
                         child: Text(
                           "Upload Supporting Evidence (Optional)",
@@ -286,7 +324,7 @@ class SubmitComplaintScreen extends StatelessWidget {
 
                       SizedBox(height: sh(15)),
 
-// Upload Box - Fixed dimensions with dashed border
+                      // Upload Box
                       GestureDetector(
                         onTap: () => controller.uploadFiles(),
                         child: Obx(() => Container(
@@ -297,7 +335,6 @@ class SubmitComplaintScreen extends StatelessWidget {
                               color: Colors.transparent,
                               width: 0,
                             ),
-                            // borderRadius: BorderRadius.circular(sw(12)),
                           ),
                           child: CustomPaint(
                             painter: DashedBorderPainter(
@@ -353,12 +390,14 @@ class SubmitComplaintScreen extends StatelessWidget {
                                       ),
                                     ),
                                   ] else ...[
-                                    // Show uploaded files
+                                    // ✅ FIXED: Show uploaded files with index-based removal
                                     Expanded(
-                                      child: ListView(
+                                      child: ListView.builder(
                                         shrinkWrap: true,
                                         padding: EdgeInsets.symmetric(horizontal: sw(16)),
-                                        children: controller.uploadedFiles.map((file) {
+                                        itemCount: controller.uploadedFiles.length,
+                                        itemBuilder: (context, index) {
+                                          final file = controller.uploadedFiles[index];
                                           return Padding(
                                             padding: EdgeInsets.symmetric(vertical: sh(4)),
                                             child: Row(
@@ -380,8 +419,9 @@ class SubmitComplaintScreen extends StatelessWidget {
                                                     overflow: TextOverflow.ellipsis,
                                                   ),
                                                 ),
+                                                // ✅ FIXED: Pass index instead of file path
                                                 GestureDetector(
-                                                  onTap: () => controller.removeFile(file),
+                                                  onTap: () => controller.removeFile(index),
                                                   child: Icon(
                                                     Icons.close,
                                                     size: sw(18),
@@ -391,18 +431,33 @@ class SubmitComplaintScreen extends StatelessWidget {
                                               ],
                                             ),
                                           );
-                                        }).toList(),
+                                        },
                                       ),
                                     ),
                                     SizedBox(height: sh(10)),
-                                    Text(
-                                      "Tap to add more files",
-                                      style: TextStyle(
-                                        fontFamily: "Plus Jakarta Sans",
-                                        fontSize: sw(12),
-                                        color: Colors.black54,
-                                      ),
-                                      textAlign: TextAlign.center,
+                                    // ✅ ADDED: Show file count and total size
+                                    Column(
+                                      children: [
+                                        Text(
+                                          "${controller.fileCount} file(s) - ${controller.totalFileSize}",
+                                          style: TextStyle(
+                                            fontFamily: "Plus Jakarta Sans",
+                                            fontSize: sw(11),
+                                            color: Colors.black54,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                        SizedBox(height: sh(4)),
+                                        Text(
+                                          "Tap to add more files",
+                                          style: TextStyle(
+                                            fontFamily: "Plus Jakarta Sans",
+                                            fontSize: sw(12),
+                                            color: Colors.black54,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ],
@@ -457,6 +512,22 @@ class SubmitComplaintScreen extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildDefaultAvatar(double Function(double) sw, double Function(double) sh) {
+    return Container(
+      width: sw(90),
+      height: sh(90),
+      decoration: BoxDecoration(
+        color: Colors.grey[300],
+        shape: BoxShape.circle,
+      ),
+      child: Icon(
+        Icons.person,
+        size: sw(40),
+        color: Colors.grey[600],
       ),
     );
   }
@@ -526,4 +597,6 @@ class DashedBorderPainter extends CustomPainter {
         dashSpace != oldDelegate.dashSpace ||
         borderRadius != oldDelegate.borderRadius;
   }
+
+
 }

@@ -5,11 +5,15 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'feautures/shared/handlers/lifecycle_handler.dart';
+import 'feautures/shared/services/app_immersive_service.dart';
 import 'feautures/shared/services/driver_location_service.dart';
+import 'feautures/shared/services/notification_helper.dart';
 import 'feautures/shared/services/pusher_background_service.dart';
 import 'feautures/shared/services/pusher_beams.dart';
 import 'feautures/shared/services/enhanced_pusher_manager.dart';
-import 'package:wakelock_plus/wakelock_plus.dart';
+import 'feautures/shared/services/queue_ride/driver_ride_queue_manager.dart';
+import 'feautures/shared/services/queue_ride/ride_queue_manager.dart';
+import 'feautures/shared/services/storage_service.dart';
 
 final EnhancedPusherManager _pusherManager = EnhancedPusherManager();
 final PusherBeamsService _pusherBeams = PusherBeamsService();
@@ -24,16 +28,25 @@ final List<Permission> requiredPermissions = [
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await StorageService.init();
 
-  // await SystemChrome.setPreferredOrientations([
-  //   DeviceOrientation.portraitUp,
-  //   DeviceOrientation.portraitDown,
-  // ]);
+  await NotificationHelper.initialize();
 
+  await AppImmersiveService().initializeAppImmersiveMode();
 
   await _initializeCoreServices();
 
+  _loadActiveRidesOnStartup();
+
   final allPermissionsGranted = await _checkAndRequestPermissions();
+
+  // await Get.putAsync(() => DriverRideQueueManager().init());
+
+  Get.put(DriverRideQueueManager());
+
+
+  // await Get.putAsync(() => RideQueueManager().init());
+  // await Get.putAsync(() => DriverRideQueueManager().init());
 
   if (allPermissionsGranted) {
     runApp(const MyApp());
@@ -41,6 +54,24 @@ void main() async {
     runApp(const PermissionDeniedApp());
   }
 }
+
+// void _loadActiveRidesOnStartup() {
+//   final activeRides = StorageService.getActiveRides();
+//   if (activeRides.isNotEmpty) {
+//     print('🚀 App started with ${activeRides.length} active rides');
+//
+//     // You can set up global listeners or notifications here
+//     for (final ride in activeRides) {
+//       final rideId = ride['rideId'];
+//       if (rideId != null) {
+//         print('🔔 Active ride found: $rideId');
+//         // You might want to set up background services or notifications
+//       }
+//     }
+//   }
+// }
+
+
 
 Future<bool> _checkAndRequestPermissions() async {
   bool allGranted = await _checkPermissions();
@@ -202,4 +233,30 @@ class PermissionDeniedApp extends StatelessWidget {
 
 class NavigationService {
   static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+}
+
+void _loadActiveRidesOnStartup() {
+  final activeRides = StorageService.getActiveRides();
+  if (activeRides.isNotEmpty) {
+    print('🚀 App started with ${activeRides.length} active rides');
+
+    // Set up background services for all active rides
+    for (final ride in activeRides) {
+      final rideId = ride['rideId'];
+      final passengerId = StorageService.getSignUpResponse()?.userId;
+
+      if (rideId != null && passengerId != null) {
+        print('🔔 Setting up background service for active ride: $rideId');
+
+        // Start background service for each active ride
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          PusherBackgroundService().startBackgroundMode(
+            passengerId,
+            userType: 'passenger',
+            rideId: rideId.toString(),
+          );
+        });
+      }
+    }
+  }
 }

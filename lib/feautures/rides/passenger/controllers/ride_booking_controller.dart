@@ -101,6 +101,10 @@ class RideBookingController extends BaseController {
 
   // final bids = <Map<String, dynamic>>[].obs;
 
+  // Add these observables to your RideBookingController class
+  final geocodeRetryCount = 0.obs;
+  final maxGeocodeRetries = 5.obs;
+
   // Marker icons
   BitmapDescriptor? pickupBitmap;
   BitmapDescriptor? dropoffBitmap;
@@ -233,9 +237,9 @@ class RideBookingController extends BaseController {
 
     final distanceCharge = (distanceKm.value * perKmCharge).roundToDouble();
     final surgeMultiplier =
-        (cityData?['is_surged'] == true)
-            ? (cityData?['surge_value'] as num?)?.toDouble() ?? 1.0
-            : 1.0;
+    (cityData?['is_surged'] == true)
+        ? (cityData?['surge_value'] as num?)?.toDouble() ?? 1.0
+        : 1.0;
     final totalFare = selectedVehicleFare.toDouble();
 
     final result = {
@@ -483,9 +487,9 @@ class RideBookingController extends BaseController {
   void _updateRequestRideButtonState() {
     isRequestRideDisabled.value =
         selectedRideType.value.isEmpty ||
-        isRequestingRide.value ||
-        isCalculatingFare.value ||
-        !isCitySupported.value; // ✅ ADDED: Disable if city not supported
+            isRequestingRide.value ||
+            isCalculatingFare.value ||
+            !isCitySupported.value; // ✅ ADDED: Disable if city not supported
   }
 
   // ======= City & city-data lookup =======
@@ -527,9 +531,9 @@ class RideBookingController extends BaseController {
 
   // ======= Fare calculation per vehicle =======
   double _calculateFareForVehicle(
-    RideOption vehicle,
-    Map<String, dynamic>? cityData,
-  ) {
+      RideOption vehicle,
+      Map<String, dynamic>? cityData,
+      ) {
     debugPrint(
       '\n===== _calculateFareForVehicle START for vehicle=${vehicle.name} =====',
     );
@@ -545,9 +549,9 @@ class RideBookingController extends BaseController {
     final effectiveCityData = cityData ?? _defaultCityData;
     final cityBaseFare = (effectiveCityData['fare'] as num?)?.toDouble() ?? 0;
     final surgeMultiplier =
-        (effectiveCityData['is_surged'] == true)
-            ? (effectiveCityData['surge_value'] as num?)?.toDouble() ?? 1.0
-            : 1.0;
+    (effectiveCityData['is_surged'] == true)
+        ? (effectiveCityData['surge_value'] as num?)?.toDouble() ?? 1.0
+        : 1.0;
 
     final distance = distanceKm.value;
     if (distance <= 0) {
@@ -565,7 +569,7 @@ class RideBookingController extends BaseController {
     final totalFare = subtotal * surgeMultiplier;
 
     final minimumFare =
-        baseFare > 0 ? baseFare : vehicle.initialFare.toDouble();
+    baseFare > 0 ? baseFare : vehicle.initialFare.toDouble();
     final finalFare = totalFare < minimumFare ? minimumFare : totalFare;
 
     debugPrint('  computed basePrice: $basePrice');
@@ -758,36 +762,36 @@ class RideBookingController extends BaseController {
   }
 
   // ======= Reverse geocode helper =======
-  Future<void> _reverseGeocodeCityFromCoords(LatLng coords) async {
-    debugPrint('===== _reverseGeocodeCityFromCoords START for $coords =====');
-    try {
-      final placemarks = await placemarkFromCoordinates(
-        coords.latitude,
-        coords.longitude,
-      );
-      debugPrint('  placemarks length: ${placemarks.length}');
-      if (placemarks.isNotEmpty) {
-        final city =
-            placemarks.first.locality ?? placemarks.first.subAdministrativeArea;
-        final country = placemarks.first.country ?? '';
-
-        if (city?.isNotEmpty == true) {
-          userCityName.value = city!;
-          debugPrint(
-            '  reverse geocoded -> city: ${userCityName.value}, country: $country',
-          );
-
-          // ✅ UPDATED: Fetch city data from API
-          await _fetchCityDataFromApi(city!);
-        } else {
-          userCityName.value = 'Unknown';
-        }
-      }
-    } catch (e) {
-      debugPrint('  ❌ Reverse geocode failed: $e');
-    }
-    debugPrint('===== _reverseGeocodeCityFromCoords END =====');
-  }
+  // Future<void> _reverseGeocodeCityFromCoords(LatLng coords) async {
+  //   debugPrint('===== _reverseGeocodeCityFromCoords START for $coords =====');
+  //   try {
+  //     final placemarks = await placemarkFromCoordinates(
+  //       coords.latitude,
+  //       coords.longitude,
+  //     );
+  //     debugPrint('  placemarks length: ${placemarks.length}');
+  //     if (placemarks.isNotEmpty) {
+  //       final city =
+  //           placemarks.first.locality ?? placemarks.first.subAdministrativeArea;
+  //       final country = placemarks.first.country ?? '';
+  //
+  //       if (city?.isNotEmpty == true) {
+  //         userCityName.value = city!;
+  //         debugPrint(
+  //           '  reverse geocoded -> city: ${userCityName.value}, country: $country',
+  //         );
+  //
+  //         // ✅ UPDATED: Fetch city data from API
+  //         await _fetchCityDataFromApi(city!);
+  //       } else {
+  //         userCityName.value = 'Unknown';
+  //       }
+  //     }
+  //   } catch (e) {
+  //     debugPrint('  ❌ Reverse geocode failed: $e');
+  //   }
+  //   debugPrint('===== _reverseGeocodeCityFromCoords END =====');
+  // }
 
   // ✅ Fetch city data from API
   Future<void> _fetchCityDataFromApi(String cityName) async {
@@ -878,7 +882,7 @@ class RideBookingController extends BaseController {
     FSnackbar.show(
       title: 'Service Notice',
       message:
-          'We are not operating in $cityName yet. We will be coming soon! Using default pricing.',
+      'We are not operating in $cityName yet. We will be coming soon! Using default pricing.',
       isError: true,
     );
 
@@ -1204,9 +1208,9 @@ class RideBookingController extends BaseController {
   }
 
   Future<Map<String, dynamic>> _getRoutePointsWithDistance(
-    LatLng pickup,
-    LatLng dropoff,
-  ) async {
+      LatLng pickup,
+      LatLng dropoff,
+      ) async {
     debugPrint(
       '===== _getRoutePointsWithDistance START from $pickup to $dropoff =====',
     );
@@ -1478,9 +1482,9 @@ class RideBookingController extends BaseController {
       // Show appropriate feedback
       if (value) {
         final fareDisplay =
-            selectedRideType.value.isNotEmpty
-                ? selectedVehicleFare.toString()
-                : "matching";
+        selectedRideType.value.isNotEmpty
+            ? selectedVehicleFare.toString()
+            : "matching";
         FSnackbar.show(
           title: 'Auto Accept Enabled',
           message: "Now Auto-accept Bids for PKR $fareDisplay",
@@ -1511,6 +1515,183 @@ class RideBookingController extends BaseController {
   }
 
   // ======= Request ride =======
+  // Future<void> onRequestRide() async {
+  //   debugPrint('\n===== onRequestRide START =====');
+  //
+  //   // ✅ ADDED: Check if city is supported
+  //   if (!isCitySupported.value) {
+  //     FSnackbar.show(
+  //       title: 'Service Unavailable',
+  //       message:
+  //       'We are not operating in ${userCityName.value} yet. We will be coming soon!',
+  //       isError: true,
+  //     );
+  //     return;
+  //   }
+  //
+  //   if (pickupLocation.value.isEmpty || dropoffLocation.value.isEmpty) {
+  //     FSnackbar.show(
+  //       title: 'Error',
+  //       message: 'Pickup and Drop-off are required.',
+  //     );
+  //     debugPrint('  Missing pickup/dropoff, aborting');
+  //     return;
+  //   }
+  //
+  //   if (pickupCoords == null || dropoffCoords == null) {
+  //     FSnackbar.show(
+  //       title: 'Error',
+  //       message: 'Could not determine coordinates for locations.',
+  //     );
+  //     debugPrint('  Missing coords, aborting');
+  //     return;
+  //   }
+  //
+  //   if (!mapReady.value || isCalculatingFare.value) {
+  //     FSnackbar.show(
+  //       title: 'Error',
+  //       message: 'Route and fare are being prepared.',
+  //     );
+  //     debugPrint('  map not ready or fare calculating, aborting');
+  //     return;
+  //   }
+  //
+  //   isLoading.value = true;
+  //   isRequestingRide.value = true;
+  //   _updateRequestRideButtonState();
+  //
+  //   try {
+  //     await executeWithRetry(() async {
+  //       final requestBody = await _prepareRideRequestBody();
+  //       debugPrint('  prepared request body');
+  //       final token = StorageService.getAuthToken();
+  //
+  //       if (token == null) {
+  //         throw Exception("User token not found. Please login again.");
+  //       }
+  //
+  //       FHttpHelper.setAuthToken(token, useBearer: true);
+  //
+  //       final response = await FHttpHelper.post('ride/request', requestBody);
+  //       debugPrint("  Ride Request API Response : $response");
+  //
+  //       // ✅ UPDATED: Handle all response scenarios properly
+  //       final rideId = response['rideId']?.toString();
+  //       final message = response['message']?.toString() ?? '';
+  //
+  //       // Scenario 1: Server error (no rideId, error message)
+  //       if (rideId == null && message.isNotEmpty && !message.toLowerCase().contains('success')) {
+  //         debugPrint('  Ride request failed with message: $message');
+  //         throw Exception(message);
+  //       }
+  //
+  //       // Scenario 2: Success with warning (has rideId but warning message)
+  //       if (rideId != null && message.isNotEmpty && !message.toLowerCase().contains('success')) {
+  //         // This is a success case but with a warning message
+  //         debugPrint('  Ride request successful with warning: $message');
+  //
+  //         // Show warning message but still proceed
+  //         FSnackbar.show(
+  //           title: 'Notice',
+  //           message: message,
+  //           isError: false, // Not an error, just a warning
+  //         );
+  //
+  //         Get.toNamed(
+  //           '/available-drivers',
+  //           arguments: {
+  //             'rideId': rideId,
+  //             'rideData': response,
+  //             'pickup': {
+  //               "lat": pickupCoords?.latitude,
+  //               "lng": pickupCoords?.longitude,
+  //               "address": pickupLocation.value,
+  //             },
+  //             'dropoffs': await _getNotification_dropoffs(),
+  //             'rideType': selectedVehicleName,
+  //             'fare': requestBody['requested_rideFare'],
+  //             'passengers': selectedPassengers.value,
+  //             'payment': selectedPaymentLabel.value,
+  //             'pickupLat': pickupCoords?.latitude,
+  //             'pickupLng': pickupCoords?.longitude,
+  //             'warningMessage': message, // Pass warning to next screen
+  //           },
+  //         );
+  //         return; // Exit early
+  //       }
+  //
+  //       // Scenario 3: Clear success (has rideId and success message)
+  //       if (rideId != null && message.toLowerCase().contains('success')) {
+  //         debugPrint('  Ride request successful: $message');
+  //
+  //         FSnackbar.show(
+  //           title: 'Success',
+  //           message: message,
+  //         );
+  //
+  //         Get.toNamed(
+  //           '/available-drivers',
+  //           arguments: {
+  //             'rideId': rideId,
+  //             'rideData': response,
+  //             'pickup': {
+  //               "lat": pickupCoords?.latitude,
+  //               "lng": pickupCoords?.longitude,
+  //               "address": pickupLocation.value,
+  //             },
+  //             'dropoffs': await _getNotification_dropoffs(),
+  //             'rideType': selectedVehicleName,
+  //             'fare': requestBody['requested_rideFare'],
+  //             'passengers': selectedPassengers.value,
+  //             'payment': selectedPaymentLabel.value,
+  //             'pickupLat': pickupCoords?.latitude,
+  //             'pickupLng': pickupCoords?.longitude,
+  //           },
+  //         );
+  //         return; // Exit early
+  //       }
+  //
+  //       // If we reach here, it's an unexpected response format
+  //       debugPrint('  Unexpected response format: $response');
+  //       throw Exception('Unexpected response from server');
+  //
+  //     }, maxRetries: 2);
+  //   } catch (e) {
+  //     debugPrint('  onRequestRide error: $e');
+  //
+  //     // ✅ UPDATED: More specific error handling
+  //     String errorMessage = 'Failed to request ride';
+  //     String errorTitle = 'Error';
+  //
+  //     final errorString = e.toString();
+  //
+  //     if (errorString.contains('timeout') || errorString.contains('Timeout')) {
+  //       errorTitle = 'Network Timeout';
+  //       errorMessage = 'Request timed out. Please check your internet connection and try again.';
+  //     } else if (errorString.contains('socket') || errorString.contains('Socket')) {
+  //       errorTitle = 'Network Error';
+  //       errorMessage = 'Network connection error. Please check your internet connection.';
+  //     } else if (errorString.contains('token') || errorString.contains('Token')) {
+  //       errorTitle = 'Authentication Error';
+  //       errorMessage = 'Please login again to continue.';
+  //     } else {
+  //       // Remove "Exception: " prefix if present
+  //       errorMessage = errorString.replaceAll('Exception: ', '');
+  //     }
+  //
+  //     FSnackbar.show(
+  //       title: errorTitle,
+  //       message: errorMessage,
+  //       isError: true,
+  //     );
+  //   } finally {
+  //     isLoading.value = false;
+  //     isRequestingRide.value = false;
+  //     _updateRequestRideButtonState();
+  //     debugPrint('===== onRequestRide END =====\n');
+  //   }
+  // }
+
   Future<void> onRequestRide() async {
     debugPrint('\n===== onRequestRide START =====');
 
@@ -1519,7 +1700,7 @@ class RideBookingController extends BaseController {
       FSnackbar.show(
         title: 'Service Unavailable',
         message:
-            'We are not operating in ${userCityName.value} yet. We will be coming soon!',
+        'We are not operating in ${userCityName.value} yet. We will be coming soon!',
         isError: true,
       );
       return;
@@ -1571,39 +1752,25 @@ class RideBookingController extends BaseController {
         final response = await FHttpHelper.post('ride/request', requestBody);
         debugPrint("  Ride Request API Response : $response");
 
-        if (response['message'] == 'Ride request sent successfully.') {
+        // ✅ UPDATED: Better success condition checking
+        if (response['success'] == true || response['message']?.toString().toLowerCase().contains('success') == true || response['rideId'] != null) {
           final rideData = response;
-          final rideId = rideData['rideId'];
+          final rideId = rideData['rideId'] ?? rideData['data']?['rideId'];
+
+          if (rideId == null) {
+            throw Exception("Ride ID not found in response");
+          }
 
           FSnackbar.show(
             title: 'Success',
             message: 'Ride requested successfully!',
           );
 
-          // final passengerId = StorageService.getSignUpResponse()!.userId;
-          // if (passengerId != null) {
-          //   await _pusherManager.subscribeOnce(
-          //     "passenger-$passengerId",
-          //     events: {
-          //       "new-bid": (data) {
-          //         debugPrint("📨 Passenger received new bid: $data");
-          //         try {
-          //           bids.add(data);
-          //         } catch (e) {
-          //           debugPrint("❌ Error storing bid: $e");
-          //         }
-          //       },
-          //       "nearby-drivers": (data) {
-          //         debugPrint("🗺️ Nearby drivers update: $data");
-          //       },
-          //     },
-          //   );
-          // }
-
           Get.toNamed(
             '/available-drivers',
             arguments: {
               'rideId': rideId,
+              "status": "requested",
               'rideData': rideData,
               'pickup': {
                 "lat": pickupCoords?.latitude,
@@ -1617,18 +1784,51 @@ class RideBookingController extends BaseController {
               'payment': selectedPaymentLabel.value,
               'pickupLat': pickupCoords?.latitude,
               'pickupLng': pickupCoords?.longitude,
-              // 'bids':bids,
             },
           );
         } else {
-          throw Exception(response['message'] ?? 'Failed to request ride');
+          // ✅ UPDATED: Extract error message properly
+          final errorMessage = response['message']?.toString() ??
+              response['error']?.toString() ??
+              response['data']?['message']?.toString() ??
+              'Failed to request ride';
+
+          debugPrint('  Ride request failed with message: $errorMessage');
+          FSnackbar.show(
+            title: 'Ride request failed',
+            message: '$errorMessage', isError: true,
+          );
+          throw Exception(errorMessage);
         }
       }, maxRetries: 2);
     } catch (e) {
       debugPrint('  onRequestRide error: $e');
       FSnackbar.show(
-        title: 'Error',
-        message: 'Failed to request ride: ${e.toString()}',
+        title: 'Ride request failed',
+        message: '$e', isError: true,
+      );
+
+      // ✅ ADDED: More specific error handling
+      String errorMessage = 'Failed to request ride';
+      String errorTitle = 'Error';
+
+      if (e.toString().contains('timeout') || e.toString().contains('Timeout')) {
+        errorTitle = 'Network Timeout';
+        errorMessage = 'Request timed out. Please check your internet connection and try again.';
+      } else if (e.toString().contains('socket') || e.toString().contains('Socket')) {
+        errorTitle = 'Network Error';
+        errorMessage = 'Network connection error. Please check your internet connection.';
+      } else if (e.toString().contains('token') || e.toString().contains('Token')) {
+        errorTitle = 'Authentication Error';
+        errorMessage = 'Please login again to continue.';
+      } else {
+        errorMessage = e.toString().replaceAll('Exception: ', '');
+      }
+
+      FSnackbar.show(
+        title: errorTitle,
+        message: errorMessage,
+        isError: true,
       );
     } finally {
       isLoading.value = false;
@@ -1669,23 +1869,23 @@ class RideBookingController extends BaseController {
 
     // ✅ CORRECTED: Proper dropoffs format
     final formattedDropoffs =
-        dropoffs.asMap().entries.map((entry) {
-          final index = entry.key;
-          final dropoff = entry.value;
-          return {
-            "lat": dropoff["lat"],
-            "lng": dropoff["lng"],
-            "stop_order": index + 1,
-            "address": dropoff["address"],
-          };
-        }).toList();
+    dropoffs.asMap().entries.map((entry) {
+      final index = entry.key;
+      final dropoff = entry.value;
+      return {
+        "lat": dropoff["lat"],
+        "lng": dropoff["lng"],
+        "stop_order": index + 1,
+        "address": dropoff["address"],
+      };
+    }).toList();
 
     // ✅ CORRECTED: Proper fare structure
     final formattedFare = {
       "baseFare": fareBreakdown['base_fare'] ?? 0,
       "distanceCharges": fareBreakdown['distance_charge'] ?? 0,
       "surgeCharges":
-          (fareBreakdown['total_fare'] ?? 0) -
+      (fareBreakdown['total_fare'] ?? 0) -
           (fareBreakdown['base_fare'] ?? 0) -
           (fareBreakdown['distance_charge'] ?? 0),
       "discount": 0,
@@ -1723,9 +1923,9 @@ class RideBookingController extends BaseController {
       "passengers_no": selectedPassengers.value.toString(),
       // ✅ Ensure string format
       "request_datetime":
-          selectedDate.value != null && selectedTime.value != null
-              ? _formatDateTime(selectedDate.value!, selectedTime.value!)
-              : DateTime.now().toIso8601String(),
+      selectedDate.value != null && selectedTime.value != null
+          ? _formatDateTime(selectedDate.value!, selectedTime.value!)
+          : DateTime.now().toIso8601String(),
       "ride_type": "Instant ride",
       // ✅ ADDED
       "comments": comment.value,
@@ -1738,8 +1938,8 @@ class RideBookingController extends BaseController {
   }
 
   Future<Map<String, String>> _getLocationDetailsFromCoords(
-    LatLng coords,
-  ) async {
+      LatLng coords,
+      ) async {
     try {
       final placemarks = await placemarkFromCoordinates(
         coords.latitude,
@@ -1751,7 +1951,7 @@ class RideBookingController extends BaseController {
         return {
           'country': placemark.country ?? 'Pakistan',
           'city':
-              placemark.locality ??
+          placemark.locality ??
               placemark.subAdministrativeArea ??
               'Unknown',
         };
@@ -1770,9 +1970,9 @@ class RideBookingController extends BaseController {
   }
 
   Future<void> _sendPushNotificationToDrivers(
-    Map<String, dynamic> rideData,
-    double amount,
-  ) async {
+      Map<String, dynamic> rideData,
+      double amount,
+      ) async {
     debugPrint('===== _sendPushNotificationToDrivers START =====');
     try {
       final notificationBody = {
@@ -1808,7 +2008,7 @@ class RideBookingController extends BaseController {
       "Easypaisa": "easypaisa",
       "JazzCash": "jazzcash",
       "Debit/Credit Card": "card",
-      "DoorCabs Wallet": "cash",
+      "DoorCabs Wallet": "wallet",
     };
     selectedPaymentLabel.value = method;
     debugPrint('Payment selected: $method -> ${paymentMap[method]}');
@@ -1820,7 +2020,7 @@ class RideBookingController extends BaseController {
       "Easypaisa": "easypaisa",
       "JazzCash": "jazzcash",
       "Debit/Credit Card": "card",
-      "DoorCabs Wallet": "cash",
+      "DoorCabs Wallet": "wallet",
     };
     return paymentMap[selectedPaymentLabel.value] ?? "cash";
   }
@@ -1854,6 +2054,93 @@ class RideBookingController extends BaseController {
     }
     return selectedVehicleFare.toString();
   }
+
+
+  // Update the _reverseGeocodeCityFromCoords method with retry logic
+  Future<void> _reverseGeocodeCityFromCoords(LatLng coords) async {
+    debugPrint('===== _reverseGeocodeCityFromCoords START for $coords =====');
+
+    geocodeRetryCount.value = 0;
+
+    while (geocodeRetryCount.value < maxGeocodeRetries.value) {
+      try {
+        geocodeRetryCount.value++;
+        debugPrint('  Reverse geocode attempt ${geocodeRetryCount.value}');
+
+        final placemarks = await placemarkFromCoordinates(
+          coords.latitude,
+          coords.longitude,
+        ).timeout(Duration(seconds: 10)); // Add timeout
+
+        debugPrint('  placemarks length: ${placemarks.length}');
+        if (placemarks.isNotEmpty) {
+          final city = placemarks.first.locality ?? placemarks.first.subAdministrativeArea;
+          final country = placemarks.first.country ?? '';
+
+          if (city?.isNotEmpty == true) {
+            userCityName.value = city!;
+            debugPrint('  reverse geocoded -> city: ${userCityName.value}, country: $country');
+
+            // ✅ UPDATED: Fetch city data from API
+            await _fetchCityDataFromApi(city!);
+            geocodeRetryCount.value = 0; // Reset on success
+            break;
+          } else {
+            userCityName.value = 'Unknown';
+            geocodeRetryCount.value = 0; // Reset on success
+            break;
+          }
+        }
+      } catch (e) {
+        debugPrint('  ❌ Reverse geocode attempt ${geocodeRetryCount.value} failed: $e');
+
+        if (geocodeRetryCount.value >= maxGeocodeRetries.value) {
+          debugPrint('  ❌ Reverse geocode failed after ${maxGeocodeRetries.value} attempts');
+          // Fallback: try to determine city from address
+          await _fallbackCityDetermination();
+          break;
+        }
+
+        // Wait before retrying
+        await Future.delayed(Duration(seconds: 2));
+      }
+    }
+    debugPrint('===== _reverseGeocodeCityFromCoords END =====');
+  }
+
+// Add fallback method for city determination
+  Future<void> _fallbackCityDetermination() async {
+    debugPrint('===== _fallbackCityDetermination START =====');
+    try {
+      // Try to extract city from pickup address
+      final address = pickupLocation.value.toLowerCase();
+      if (address.contains('lahore')) {
+        userCityName.value = 'Lahore';
+      } else if (address.contains('karachi')) {
+        userCityName.value = 'Karachi';
+      } else if (address.contains('islamabad')) {
+        userCityName.value = 'Islamabad';
+      } else if (address.contains('multan')) {
+        userCityName.value = 'Multan';
+      } else {
+        userCityName.value = 'Unknown';
+      }
+
+      debugPrint('  Fallback city determination: ${userCityName.value}');
+
+      if (userCityName.value != 'Unknown') {
+        await _fetchCityDataFromApi(userCityName.value);
+      } else {
+        _handleUnsupportedCity('Unknown');
+      }
+    } catch (e) {
+      debugPrint('  ❌ Fallback city determination failed: $e');
+      _handleUnsupportedCity('Unknown');
+    }
+    debugPrint('===== _fallbackCityDetermination END =====');
+  }
+
+
 
   @override
   void onClose() {

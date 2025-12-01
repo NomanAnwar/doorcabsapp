@@ -27,6 +27,8 @@ class PusherBeamsService {
       await _setupFirebaseMessaging();
       print('✅ Firebase Messaging initialized');
 
+      // await clearAllInterests();
+
       // Register device interests
       await registerDevice();
 
@@ -168,24 +170,33 @@ class PusherBeamsService {
   Future<void> registerDevice() async {
     try {
       // Get driver ID for driver-specific interest
-      final driverId = StorageService.getSignUpResponse()?.userId;
-      if (driverId != null) {
-        final driverInterest = 'driver_$driverId';
-        await PusherBeams.instance.addDeviceInterest(driverInterest);
-        print('✅ Subscribed to driver-specific interest: $driverInterest');
+      final userId = StorageService.getSignUpResponse()?.userId;
+      final role = StorageService.getRole();
+      print("User Role in the beam : "+role.toString());
+      if (userId != null) {
+
+        if(role == "Driver" || role == "driver") {
+          final driverInterest = 'driver-$userId';
+          await PusherBeams.instance.addDeviceInterest(driverInterest);
+          print('✅ Subscribed to driver-specific interest: $driverInterest');
+        } else if (role == "Passenger" || role == "passenger"){
+          final driverInterest = 'passenger-$userId';
+          await PusherBeams.instance.addDeviceInterest(driverInterest);
+          print('✅ Subscribed to passenger-specific interest: $driverInterest');
+        }
       }
 
       final interests = await getCurrentInterests();
       print('📱 Device registered with interests: $interests');
 
       // Subscribe to relevant interests
-      await subscribeToInterest('debug-ride_requests');
-      await subscribeToInterest('ride_requests');
-      await subscribeToInterest('driver_updates');
+      // await subscribeToInterest('debug-ride_requests');
+      // await subscribeToInterest('ride_requests');
+      // await subscribeToInterest('driver_updates');
 
       // Send interests to backend for tracking
-      if (driverId != null) {
-        await _sendInterestsToServer(driverId, interests);
+      if (userId != null) {
+        await _sendInterestsToServer(userId, interests);
       }
 
     } catch (e) {

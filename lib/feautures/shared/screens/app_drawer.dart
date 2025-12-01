@@ -5,6 +5,7 @@ import 'package:doorcab/feautures/shared/screens/settings_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
+import '../../profile/common/screens/edit_profile_screen.dart';
 import '../../rides/passenger/screens/ride_history_screen.dart';
 import '../../shared/services/storage_service.dart';
 import '../../../utils/constants/colors.dart';
@@ -30,6 +31,8 @@ class AppDrawer extends StatelessWidget {
 
     // ✅ FIX: Safe data extraction with null checks
     Map<String, dynamic>? profileData = StorageService.getProfile();
+
+    print("User profile on app drawer : "+profileData.toString());
 
     String firstName = '';
     String lastName = '';
@@ -124,44 +127,50 @@ class AppDrawer extends StatelessWidget {
             ),
           ),
           SizedBox(height: sh(20)),
-          Row(
-            children: [
-              // ✅ FIX: Handle both network and asset images
-              CircleAvatar(
-                radius: sw(40),
-                backgroundColor: Colors.grey[300],
-                backgroundImage: profilePath.isNotEmpty && profilePath.startsWith('http')
-                    ? NetworkImage(profilePath) as ImageProvider
-                    : AssetImage(profilePath.isEmpty
-                    ? 'assets/drawer/passenger.png'
-                    : profilePath),
-              ),
-              SizedBox(width: sw(12)),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    name,
-                    style: FTextTheme.lightTextTheme.titleMedium!.copyWith(
-                      fontWeight: FontWeight.w600,
-                      fontSize: FTextTheme.lightTextTheme.titleMedium!.fontSize! *
-                          screenWidth /
-                          baseWidth,
+          GestureDetector(
+            onTap: () async {
+              Get.back();
+              await Get.to(() => EditProfileScreen());
+            },
+            child: Row(
+              children: [
+                // ✅ FIX: Handle both network and asset images
+                CircleAvatar(
+                  radius: sw(40),
+                  backgroundColor: Colors.grey[300],
+                  backgroundImage: profilePath.isNotEmpty && profilePath.startsWith('http')
+                      ? NetworkImage(profilePath) as ImageProvider
+                      : AssetImage(profilePath.isEmpty
+                      ? 'assets/Dashboard/profile.png'
+                      : profilePath),
+                ),
+                SizedBox(width: sw(12)),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      style: FTextTheme.lightTextTheme.titleMedium!.copyWith(
+                        fontWeight: FontWeight.w600,
+                        fontSize: FTextTheme.lightTextTheme.titleMedium!.fontSize! *
+                            screenWidth /
+                            baseWidth,
+                      ),
                     ),
-                  ),
-                  SizedBox(height: sh(4)),
-                  Text(
-                    "View profile",
-                    style: FTextTheme.lightTextTheme.labelSmall!.copyWith(
-                      color: Colors.grey[600],
-                      fontSize: FTextTheme.lightTextTheme.labelSmall!.fontSize! *
-                          screenWidth /
-                          baseWidth,
+                    SizedBox(height: sh(4)),
+                    Text(
+                      "View profile",
+                      style: FTextTheme.lightTextTheme.labelSmall!.copyWith(
+                        color: Colors.grey[600],
+                        fontSize: FTextTheme.lightTextTheme.labelSmall!.fontSize! *
+                            screenWidth /
+                            baseWidth,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -233,6 +242,9 @@ class AppDrawer extends StatelessWidget {
       _drawerItem('assets/drawer/car.svg', 'Home', () {
         Get.back();
         Get.to(() => GoOnlineScreen());
+      }, sw, sh, screenWidth, baseWidth),
+      _drawerItem('assets/drawer/car.svg', 'My Rides History', () {
+        Get.to(() => RideHistoryScreen());
       }, sw, sh, screenWidth, baseWidth),
       _drawerItem('assets/drawer/courier.svg', 'Couriers', () {
         FSnackbar.show(title: "Not Added", message: 'Courier Service Will be Added Soon.');

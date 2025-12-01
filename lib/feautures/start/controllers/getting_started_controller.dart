@@ -38,6 +38,7 @@ class GettingStartedController extends BaseController {
           "phone": formattedPhone,
           "userId": response["userId"],
           "method": method,
+          "fornumberupdate": false,
         });
       } else {
         throw Exception(response["message"] ?? "Sign up failed");

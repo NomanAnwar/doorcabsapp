@@ -6,7 +6,6 @@ import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../../utils/constants/colors.dart';
-import '../../../../utils/system_ui_mixin.dart';
 import '../../../../utils/theme/custom_theme/text_theme.dart';
 import '../controllers/available_drivers_controller.dart';
 
@@ -73,8 +72,8 @@ class AvailableDriversScreen extends StatelessWidget {
 
                     /// Back button
                     Positioned(
-                      top: sh(44),
-                      left: sw(26),
+                      top: sh(23),
+                      left: sw(23),
                       child: IconButton(
                         icon: Icon(
                           Icons.arrow_back,
@@ -85,9 +84,11 @@ class AvailableDriversScreen extends StatelessWidget {
                       ),
                     ),
 
+
+
                     /// Menu Button
                     Positioned(
-                      top: sh(44),
+                      top: sh(24),
                       right: sw(33),
                       child: GestureDetector(
                         onTap: () {

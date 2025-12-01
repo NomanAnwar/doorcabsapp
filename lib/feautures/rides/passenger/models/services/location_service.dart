@@ -79,6 +79,8 @@ class RideTypeLocationService {
           position.longitude
       );
 
+      print("user location in ride type : "+ position.altitude.toString() + position.longitude.toString());
+
       return UserLocation(
         latitude: position.latitude,
         longitude: position.longitude,

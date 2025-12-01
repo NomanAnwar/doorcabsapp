@@ -17,7 +17,7 @@ class DriverBackgroundService {
   }
 
   static Future<void> stopDriverBackgroundMode() async {
-    await PusherBackgroundService().stopBackgroundMode();
+    PusherBackgroundService().stopBackgroundMode();
     print("🚗 Driver background mode stopped");
   }
 }

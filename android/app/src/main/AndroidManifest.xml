@@ -1,5 +1,8 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Permissions - GOOD! -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
@@ -9,23 +12,26 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.CALL_PHONE"/>
-
-    <!-- ADD THESE PERMISSIONS -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
     <application
         android:label="doorcab"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        tools:replace="android:label">
 
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:launchMode="singleTop"
+            android:launchMode="singleTask"
             android:taskAffinity=""
             android:theme="@style/LaunchTheme"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
@@ -41,13 +47,17 @@
                 android:name="android.app.lib_name"
                 android:value="flutter" />
 
+            <meta-data
+                android:name="android.app.immersive"
+                android:value="true" />
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
-        <!-- Don't delete the meta-data below. -->
+        <!-- Google Maps API Key -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyAmN17lAC9v1BSdRB6Q_R75boSy_mXjDe4"/>
@@ -60,6 +70,7 @@
             android:name="com.pusher.pushnotifications.gcm_default_sender_id"
             android:value="@string/gcm_defaultSenderId" />
 
+        <!-- Firebase Services -->
         <service
             android:name="com.pusher.pushnotifications.fcm.MessagingService"
             android:exported="false">
@@ -67,6 +78,28 @@
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
+
+        <!-- ✅ CORRECTED: Background Service with tools:replace -->
+        <service
+            android:name="id.flutter.flutter_background_service.BackgroundService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="location|dataSync|connectedDevice|specialUse"
+            android:stopWithTask="false"
+            tools:replace="android:exported,android:foregroundServiceType" />
+
+        <!-- ✅ CORRECTED: Single HeadlessTask Service -->
+        <service
+            android:name="com.transistorsoft.flutter.backgroundfetch.HeadlessTask"
+            android:enabled="true"
+            android:exported="true"
+            android:permission="android.permission.BIND_JOB_SERVICE"
+            android:taskAffinity="com.transistorsoft.backgroundfetch" />
+
+        <!-- Background Services -->
+        <service
+            android:name="com.transistorsoft.flutter.backgroundfetch.BackgroundFetchService"
+            android:exported="false" />
 
         <service
             android:name="com.pusher.pushnotifications.fcm.InstanceIdService"
@@ -76,15 +109,15 @@
             </intent-filter>
         </service>
 
-        <!-- ADD: Background Service -->
-        <service
-            android:name="com.transistorsoft.flutter.backgroundfetch.BackgroundFetchService"
-            android:exported="false" />
+        <!-- ✅ ADDED: Flutter Background Service Channel -->
+        <meta-data
+            android:name="flutter_background_service_plugin_channel_name"
+            android:value="doorcab_background_service" />
 
-        <service
-            android:name="com.beaconsafe.flutter_background_service.FlutterBackgroundService"
-            android:enabled="true"
-            android:exported="false" />
+        <!-- Notification Channel Configuration -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="doorcab_background" />
 
     </application>
 

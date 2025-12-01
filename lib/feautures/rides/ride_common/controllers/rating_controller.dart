@@ -1,3 +1,4 @@
+import 'package:doorcab/common/widgets/snakbar/snackbar.dart';
 import 'package:doorcab/feautures/rides/driver/screens/go_online_screen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
@@ -116,7 +117,7 @@ class RatingController extends GetxController {
 
       print("Rating API Response : " + response.toString());
       // Show success message
-      Get.snackbar("Success", "Your rating has been submitted successfully");
+      FSnackbar.show(title: "Success", message: "Your rating has been submitted successfully");
 
       _clearAllRideControllers();
 

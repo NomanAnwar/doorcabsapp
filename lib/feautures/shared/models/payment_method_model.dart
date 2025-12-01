@@ -7,6 +7,7 @@ class PaymentMethodModel {
   String jazzcashNumber;
   bool isEasypasaEnabled;
   String easypasaNumber;
+  String activeMethod; // 'card', 'jazzcash', 'easypasa', or ''
 
   PaymentMethodModel({
     this.isCardEnabled = false,
@@ -17,6 +18,7 @@ class PaymentMethodModel {
     this.jazzcashNumber = '',
     this.isEasypasaEnabled = false,
     this.easypasaNumber = '',
+    this.activeMethod = '',
   });
 
   Map<String, dynamic> toJson() {
@@ -29,6 +31,7 @@ class PaymentMethodModel {
       'jazzcashNumber': jazzcashNumber,
       'isEasypasaEnabled': isEasypasaEnabled,
       'easypasaNumber': easypasaNumber,
+      'activeMethod': activeMethod,
     };
   }
 
@@ -42,6 +45,7 @@ class PaymentMethodModel {
       jazzcashNumber: json['jazzcashNumber'] ?? '',
       isEasypasaEnabled: json['isEasypasaEnabled'] ?? false,
       easypasaNumber: json['easypasaNumber'] ?? '',
+      activeMethod: json['activeMethod'] ?? '',
     );
   }
 }

@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../../utils/constants/text_strings.dart';
-import '../../../../utils/system_ui_mixin.dart';
 import '../controllers/map_selection_controller.dart';
 
 class MapSelectionScreen extends StatelessWidget{
@@ -54,10 +53,10 @@ class MapSelectionScreen extends StatelessWidget{
 
             /// Back arrow
             Positioned(
-              top: sh(44),
-              left: sw(26),
+              top: sh(23),
+              left: sw(23),
               child: IconButton(
-                icon: Icon(Icons.arrow_back, color: Colors.black87, size: sw(28.02)),
+                icon: Icon(Icons.arrow_back, size: sw(28)),
                 onPressed: Get.back,
               ),
             ),
@@ -79,7 +78,7 @@ class MapSelectionScreen extends StatelessWidget{
             Positioned(
               left: sw(24),
               right: sw(24),
-              top: sh(80),
+              top: sh(70),
               child: Container(
                 decoration: BoxDecoration(
                   color: Colors.white,

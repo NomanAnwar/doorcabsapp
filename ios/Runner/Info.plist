@@ -47,12 +47,6 @@
 		<true/>
 		<key>UIApplicationSupportsIndirectInputEvents</key>
 		<true/>
-		<!-- Background fetch/notification -->
-		<key>UIBackgroundModes</key>
-		<array>
-			<string>fetch</string>
-			<string>remote-notification</string>
-		</array>
 		<!-- Debug / Dev -->
 		<key>NSLocalNetworkUsageDescription</key>
 		<string>This app uses the local network to connect to the Flutter debugger during development.</string>
@@ -104,6 +98,8 @@
             <string>remote-notification</string>
             <!-- ADD THIS FOR BACKGROUND PUSHER -->
             <string>audio</string>
+            <string>location</string>        <!-- REQUIRED for ride apps -->
+            <string>processing</string>
         </array>
 	</dict>
 </plist>

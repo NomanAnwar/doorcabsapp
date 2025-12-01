@@ -42,7 +42,7 @@ class RideRequestListScreen extends StatelessWidget {
                 children: [
                   // Drawer icon
                   Positioned(
-                    top: sh(37.1),
+                    top: sh(15.1),
                     left: sw(33.85),
                     child: Builder(
                       builder: (ctx) => GestureDetector(
@@ -64,7 +64,7 @@ class RideRequestListScreen extends StatelessWidget {
 
                   // Title
                   Positioned(
-                    top: sh(37.1),
+                    top: sh(20.1),
                     left: sw(25),
                     width: sw(390),
                     child: Text(
@@ -81,18 +81,18 @@ class RideRequestListScreen extends StatelessWidget {
 
                   // Settings
                   Positioned(
-                    top: sh(37.1),
+                    top: sh(17.1),
                     left: sw(389),
                     child: Icon(
                       Icons.settings,
-                      size: sw(24),
+                      size: sw(34),
                       color: FColors.black,
                     ),
                   ),
 
                   // Online status
                   Positioned(
-                    top: sh(100),
+                    top: sh(70),
                     left: sw(33),
                     child: Text(
                       'Online',
@@ -107,8 +107,8 @@ class RideRequestListScreen extends StatelessWidget {
 
                   // Toggle
                   Positioned(
-                    top: sh(80),
-                    left: sw(362),
+                    top: sh(50),
+                    right: sw(5),
                     child: Transform.scale(
                       scale: 0.7,
                       child: Switch(
@@ -124,7 +124,7 @@ class RideRequestListScreen extends StatelessWidget {
 
                   // Requests list
                   Positioned(
-                    top: sh(157),
+                    top: sh(107),
                     left: sw(10),
                     right: sw(10),
                     bottom: sh(64), // Adjusted for custom bottom nav bar

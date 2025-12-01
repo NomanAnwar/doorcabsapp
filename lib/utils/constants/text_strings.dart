@@ -19,7 +19,7 @@ class FTextStrings {
   static const String splahTagLine = "Pakistan’s 1st Actual Ride Hailing App";
   static const String wellcomeTagLine = "Get Start With DoorCabs";
   static const String wellcomeSubheading = "With Your Phone Number";
-  static const String otpTagLine = "PHone Verificatrion";
+  static const String otpTagLine = "PHone Verification";
   static const String otpSubheading = "Enter Your OTP Code Here";
 
   // -------------------

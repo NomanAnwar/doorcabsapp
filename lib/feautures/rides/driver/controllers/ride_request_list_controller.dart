@@ -9,6 +9,9 @@ import '../../../shared/services/pusher_background_service.dart';
 import '../../../shared/services/pusher_beams.dart';
 import '../../../shared/services/enhanced_pusher_manager.dart';
 import '../models/request_model.dart';
+import '../screens/go_online_screen.dart';
+import 'package:collection/collection.dart';
+
 
 class RideRequestListController extends BaseController {
   final EnhancedPusherManager _pusherManager = EnhancedPusherManager();
@@ -24,6 +27,8 @@ class RideRequestListController extends BaseController {
   @override
   void onInit() {
     super.onInit();
+
+    _subscribedChannels.clear();
     _initializePushNotifications();
     _restoreOnlineStatus();
     _handleInitialRequest();
@@ -119,7 +124,8 @@ class RideRequestListController extends BaseController {
         FSnackbar.show(title: "Offline", message: response['message'] ?? "You are now offline", isError: true);
 
         // Navigate back to GoOnlineScreen when successfully offline
-        Get.offAllNamed('/go-online');
+        // Get.offAllNamed('/go-online');
+        Get.offAll(() => GoOnlineScreen());
       }
 
     } catch (e, s) {
@@ -142,7 +148,10 @@ class RideRequestListController extends BaseController {
         print("📍 Location service started");
 
         // ✅ ADD: Start background service
-        await PusherBackgroundService().startBackgroundMode(driverId);
+        await PusherBackgroundService().startBackgroundMode(
+          driverId,
+          userType: 'driver', // ✅ ADD THIS LINE
+        );
         await _subscribeToChannels(driverId);
       });
     } catch (e) {
@@ -162,7 +171,7 @@ class RideRequestListController extends BaseController {
         _clearAllRequests();
 
         // ✅ ADD: Stop background service
-        await PusherBackgroundService().stopBackgroundMode();
+        PusherBackgroundService().stopBackgroundMode();
       });
     } catch (e) {
       print('❌ Error going offline: $e');
@@ -286,46 +295,57 @@ class RideRequestListController extends BaseController {
     try {
       final request = RequestModel.fromJson(data);
 
-      // Check for existing request with same ID
       final existingIndex = requests.indexWhere((r) => r.id == request.id);
 
       if (existingIndex >= 0) {
-        // UPDATE EXISTING REQUEST
         final oldRequest = requests[existingIndex];
-        requests[existingIndex] = request;
 
-        print("🔄 Updated existing request: ${request.id}, Passenger: ${request.passengerName}");
-
-        // Show update notification
-        FSnackbar.show(
-          title: 'Ride Request Updated',
-          message: '${request.passengerName} updated their request - ${request.offerAmount} PKR',
-        );
+        // ✅ Only update if data actually changed (ignoring createdAt)
+        if (!_isSameRequestData(oldRequest, request)) {
+          requests[existingIndex] = request;
+          print("🔄 Updated existing request: ${request.id}");
+          FSnackbar.show(
+            title: 'Ride Request Updated',
+            message:
+            '${request.passengerName} updated their request - ${request.offerAmount} PKR',
+          );
+        } else {
+          print("⏸ No actual change in request ${request.id}, skipping update");
+        }
       } else {
-        // ADD NEW REQUEST
         requests.add(request);
-        print("✅ Added new request: ${request.id}, Passenger: ${request.passengerName}");
-
-        // Show new request notification
-        // FSnackbar.show(
-        //   title: 'New Ride Request',
-        //   message: 'From ${request.passengerName} - ${request.offerAmount} PKR',
-        // );
+        print("✅ Added new request: ${request.id}");
       }
-
     } catch (e, s) {
       print("❌ Error parsing ride request: $e");
       print("📦 Raw data: $data");
       print(s);
 
-      // Show error notification
       FSnackbar.show(
           title: 'Error',
           message: 'Failed to process ride request',
-          isError: true
-      );
+          isError: true);
     }
   }
+
+  bool _isSameRequestData(RequestModel oldRequest, RequestModel newRequest) {
+    final oldJson = Map<String, dynamic>.from(oldRequest.toJson());
+    final newJson = Map<String, dynamic>.from(newRequest.toJson());
+
+    // Remove volatile fields
+    oldJson.remove('createdAt');
+    oldJson.remove('distanceKm');
+    newJson.remove('createdAt');
+    newJson.remove('distanceKm');
+
+    // Use DeepCollectionEquality to handle nested maps/lists
+    final equality = const DeepCollectionEquality();
+
+    return equality.equals(oldJson, newJson);
+  }
+
+
+
 
   void _handleBidAccepted(Map<String, dynamic> eventData) {
     print("✅ bid-accepted event received: $eventData");
@@ -336,6 +356,7 @@ class RideRequestListController extends BaseController {
         requests.removeWhere((r) => r.id == rideId);
       }
       _clearAllRequests();
+      _unsubscribeFromChannels();
       Get.offNamed('/go-to-pickup', arguments: {"rideData": eventData});
     } catch (e, s) {
       print("❌ Error handling bid-accepted: $e");
@@ -354,6 +375,7 @@ class RideRequestListController extends BaseController {
 
   @override
   void onClose() {
+    _unsubscribeFromChannels();
     _clearAllRequests();
     super.onClose();
   }

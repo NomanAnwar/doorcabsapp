@@ -1,4 +1,3 @@
-// pusher_channels.dart
 import 'dart:convert';
 import 'package:pusher_channels_flutter/pusher_channels_flutter.dart';
 import '../../../utils/http/http_client.dart';

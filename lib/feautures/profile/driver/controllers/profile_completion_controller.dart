@@ -28,6 +28,7 @@ class ProfileCompletionController extends GetxController {
   }
 
   // Computed property → all steps done?
+
   bool get allStepsCompleted =>
       basicInfoDone.value &&
           cnicDone.value &&

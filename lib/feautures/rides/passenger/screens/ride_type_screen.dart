@@ -6,7 +6,7 @@ import 'package:doorcab/utils/theme/custom_theme/text_theme.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../../utils/system_ui_mixin.dart';
+import '../../../shared/services/storage_service.dart';
 import '../controllers/ride_type_controller.dart';
 import '../models/ride_type_screen_model.dart';
 
@@ -336,7 +336,7 @@ class RideTypeScreen extends StatelessWidget{
                 Text(
                   courier.categoryName,
                   style: FTextTheme.lightTextTheme.labelSmall!.copyWith(
-                    fontSize: FTextTheme.lightTextTheme.labelSmall!.fontSize! *
+                    fontSize: 10 *
                         screenWidth /
                         baseWidth,
                     fontWeight: FontWeight.w600,
@@ -377,7 +377,7 @@ class RideTypeScreen extends StatelessWidget{
                 Text(
                   freight.categoryName,
                   style: FTextTheme.lightTextTheme.labelSmall!.copyWith(
-                    fontSize: FTextTheme.lightTextTheme.labelSmall!.fontSize! *
+                    fontSize: 10 *
                         screenWidth /
                         baseWidth,
                     fontWeight: FontWeight.w600,
@@ -418,7 +418,7 @@ class RideTypeScreen extends StatelessWidget{
                 Text(
                   cityToCity.categoryName,
                   style: FTextTheme.lightTextTheme.labelSmall!.copyWith(
-                    fontSize: FTextTheme.lightTextTheme.labelSmall!.fontSize! *
+                    fontSize: 10 *
                         screenWidth /
                         baseWidth,
                     fontWeight: FontWeight.w600,
@@ -459,7 +459,7 @@ class RideTypeScreen extends StatelessWidget{
                 Text(
                   instantRide.categoryName,
                   style: FTextTheme.lightTextTheme.labelSmall!.copyWith(
-                    fontSize: FTextTheme.lightTextTheme.labelSmall!.fontSize! *
+                    fontSize: 10 *
                         screenWidth /
                         baseWidth,
                     fontWeight: FontWeight.w600,
@@ -503,7 +503,7 @@ class RideTypeScreen extends StatelessWidget{
                 Text(
                   delivery.categoryName,
                   style: FTextTheme.lightTextTheme.labelSmall!.copyWith(
-                    fontSize: FTextTheme.lightTextTheme.labelSmall!.fontSize! *
+                    fontSize: 10 *
                         screenWidth /
                         baseWidth,
                     fontWeight: FontWeight.w600,
@@ -522,10 +522,10 @@ class RideTypeScreen extends StatelessWidget{
     if (scheduleRide != null) {
       widgets.addAll([
         _buildTappableContainer(
-          top: sh(632),
-          left: sw(150),
-          width: sw(265),
-          height: sh(95),
+          top: sh(642),
+          left: sw(140),
+          width: sw(275),
+          height: sh(105),
           onTap: () => _navigateToService(scheduleRide, context),
           borderRadius: BorderRadius.circular(10.0),
           child: Container(
@@ -533,7 +533,7 @@ class RideTypeScreen extends StatelessWidget{
               color: FColors.primaryColor.withOpacity(0.4),
               borderRadius: BorderRadius.circular(10.0),
             ),
-            padding: EdgeInsets.symmetric(horizontal: sw(6  ), vertical: sw(6)),
+            padding: EdgeInsets.symmetric(horizontal: sw(6), vertical: sw(6)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -592,7 +592,7 @@ class RideTypeScreen extends StatelessWidget{
           ),
         ),
         _buildTappableContainer(
-          top: sh(653),
+          top: sh(669),
           left: sw(140),
           width: sw(125),
           height: sh(113),
@@ -718,7 +718,7 @@ class RideTypeScreen extends StatelessWidget{
           children: [
             // Header image
             Positioned(
-              top: sh(50),
+              top: sh(30),
               left: 0,
               right: 0,
               child: SizedBox(
@@ -733,7 +733,7 @@ class RideTypeScreen extends StatelessWidget{
 
             // Menu button
             Positioned(
-              top: 33,
+              top: 23,
               right: 10,
               child: Container(
                 width: 39,
@@ -792,9 +792,10 @@ class RideTypeScreen extends StatelessWidget{
             // Tagline
             Positioned(
               top: sh(287),
-              left: sw(62),
+              left: sw(12),
+              right: sw(12),
               child: SizedBox(
-                width: sw(303),
+                width: screenWidth,
                 height: sh(30),
                 child: Text(
                   "Pakistan's 1st Actual Ride Hailing App",
@@ -804,6 +805,8 @@ class RideTypeScreen extends StatelessWidget{
                         baseWidth,
                   ),
                   textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ),
@@ -818,6 +821,11 @@ class RideTypeScreen extends StatelessWidget{
               context,
             ),
 
+            // ActiveRidesCard(
+            //   controller: controller,
+            // ),
+
+
             // Ad banner
             Positioned(
               top: sh(776),
@@ -831,6 +839,18 @@ class RideTypeScreen extends StatelessWidget{
                 ),
               ),
             ),
+
+            // ActiveRidesCard
+            Positioned(
+              top: sh(26),
+              left: sw(22),
+              child: Container(
+                  width: sw(200),
+                  height: sh(141),
+                  child: ActiveRidesCard(controller: controller)
+              ),
+            ),
+
 
             // ✅ Optional: Show loading indicator for cities if still loading
             // if (controller.isLoadingCities.value)
@@ -852,3 +872,392 @@ class RideTypeScreen extends StatelessWidget{
     );
   }
 }
+
+
+// Active Rides Floating Card Widget - UPDATED FOR API
+class ActiveRidesCard extends StatelessWidget {
+  final RideTypeController controller;
+
+  const ActiveRidesCard({super.key, required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final baseWidth = 440.0;
+
+    double sw(double w) => w * screenWidth / baseWidth;
+    double sh(double h) => h * MediaQuery.of(context).size.height / 956.0;
+
+    return Obx(() {
+      final activeRides = controller.activeRides;
+
+      if (activeRides.isEmpty) return const SizedBox.shrink();
+
+      return Container(
+        width: double.infinity,
+        height: sh(100),
+        padding: EdgeInsets.all(sw(12)),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(sw(12)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: sw(8),
+              offset: const Offset(0, 4),
+            ),
+          ],
+          border: Border.all(color: FColors.primaryColor.withOpacity(0.3)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
+              children: [
+                Icon(Icons.directions_car, color: FColors.primaryColor, size: sw(18)),
+                SizedBox(width: sw(8)),
+                Text(
+                  'Active Rides (${activeRides.length})',
+                  style: TextStyle(
+                    fontSize: sw(14),
+                    fontWeight: FontWeight.w600,
+                    color: FColors.primaryColor,
+                  ),
+                ),
+                const Spacer(),
+                if (activeRides.length >= 3) // Max 3 rides as per your requirement
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: sw(8), vertical: sh(2)),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(sw(8)),
+                    ),
+                    child: Text(
+                      'Max 3',
+                      style: TextStyle(
+                        fontSize: sw(10),
+                        color: Colors.orange,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            SizedBox(height: sh(8)),
+
+            // Active rides list - UPDATED FOR API DATA STRUCTURE
+            ...activeRides.asMap().entries.map((entry) {
+              final index = entry.key;
+              final ride = entry.value;
+              final rideId = ride['rideId'] ?? 'Unknown';
+              final driver = ride['bid']?['driver'] ?? {};
+              final firstName = driver['name']?['firstName'] ?? 'Driver';
+              final lastName = driver['name']?['lastName'] ?? '';
+              final driverName = '$firstName $lastName'.trim();
+              final vehicle = driver['vehicle'] ?? 'Vehicle';
+              final vehiclePlate = driver['vehiclePlate'] ?? 'vehiclePlate';
+              final rideType = ride['rideType'] ?? 'Ride';
+
+              return Container(
+                margin: EdgeInsets.only(bottom: sh(4)),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => controller.navigateToActiveRide(ride),
+                    borderRadius: BorderRadius.circular(sw(8)),
+                    child: Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.all(sw(10)),
+                      decoration: BoxDecoration(
+                        color: FColors.phoneInputField.withOpacity(0.5),
+                        borderRadius: BorderRadius.circular(sw(8)),
+                      ),
+                      child: Row(
+                        children: [
+                          // Ride indicator
+                          Container(
+                            width: sw(6),
+                            height: sh(10),
+                            decoration: BoxDecoration(
+                              color: _getRideColor(index),
+                              borderRadius: BorderRadius.circular(sw(3)),
+                            ),
+                          ),
+                          SizedBox(width: sw(10)),
+
+                          // Ride info - UPDATED FOR API DATA
+                          // Expanded(
+                          //   child: Column(
+                          //     crossAxisAlignment: CrossAxisAlignment.start,
+                          //     children: [
+                          //       Text(
+                          //         '$driverName • $vehicle',
+                          //         style: TextStyle(
+                          //           fontSize: sw(12),
+                          //           fontWeight: FontWeight.w500,
+                          //         ),
+                          //         maxLines: 1,
+                          //         overflow: TextOverflow.ellipsis,
+                          //       ),
+                          //       SizedBox(height: sh(2)),
+                          //       Text(
+                          //         '$rideType •  ${vehiclePlate}',
+                          //         style: TextStyle(
+                          //           fontSize: sw(10),
+                          //           color: Colors.grey[600],
+                          //         ),
+                          //       ),
+                          //     ],
+                          //   ),
+                          // ),
+
+                          // With this updated version:
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  ride['bid'] != null
+                                      ? '$driverName • $vehicle'
+                                      : 'Waiting for driver...',
+                                  style: TextStyle(
+                                    fontSize: sw(12),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                SizedBox(height: sh(2)),
+                                Text(
+                                  ride['bid'] != null
+                                      ? '$rideType • ${vehiclePlate}'
+                                      : 'Status: ${ride['status']?.toString().toUpperCase() ?? 'PENDING'}',
+                                  style: TextStyle(
+                                    fontSize: sw(10),
+                                    color: ride['bid'] != null ? Colors.grey[600] : Colors.orange,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          /// Go to ride button
+                          // Icon(
+                          //   Icons.arrow_forward_ios,
+                          //   size: sw(14),
+                          //   color: FColors.primaryColor,
+                          // ),
+
+                          ride['bid'] != null
+                              ? Icon(
+                            Icons.arrow_forward_ios,
+                            size: sw(14),
+                            color: FColors.primaryColor,
+                          )
+                              : Container(
+                            padding: EdgeInsets.symmetric(horizontal: sw(8), vertical: sh(2)),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(sw(12)),
+                            ),
+                            child: Text(
+                              'View',
+                              style: TextStyle(
+                                fontSize: sw(10),
+                                color: Colors.orange,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ],
+        ),
+      );
+    });
+  }
+
+  // Helper method for different colors for each ride
+  Color _getRideColor(int index) {
+    final colors = [
+      FColors.primaryColor,
+      FColors.secondaryColor,
+      Color(0xFF4CAF50), // Green
+    ];
+    return colors[index % colors.length];
+  }
+}
+
+
+// Active Rides Floating Card Widget
+// class ActiveRidesCard extends StatelessWidget {
+//   final RideTypeController controller;
+//
+//   const ActiveRidesCard({super.key, required this.controller});
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     final screenWidth = MediaQuery.of(context).size.width;
+//     final baseWidth = 440.0;
+//
+//     double sw(double w) => w * screenWidth / baseWidth;
+//     double sh(double h) => h * MediaQuery.of(context).size.height / 956.0;
+//
+//     return Obx(() {
+//       final activeRides = controller.activeRides;
+//
+//       if (activeRides.isEmpty) return const SizedBox.shrink();
+//
+//       return Positioned(
+//         bottom: sh(100), // Position above the ad banner
+//         left: sw(20),
+//         right: sw(20),
+//         child: Container(
+//           width: double.infinity,
+//           height: sh(100),
+//           padding: EdgeInsets.all(sw(12)),
+//           decoration: BoxDecoration(
+//             color: Colors.white,
+//             borderRadius: BorderRadius.circular(sw(12)),
+//             boxShadow: [
+//               BoxShadow(
+//                 color: Colors.black.withOpacity(0.1),
+//                 blurRadius: sw(8),
+//                 offset: const Offset(0, 4),
+//               ),
+//             ],
+//             border: Border.all(color: FColors.primaryColor.withOpacity(0.3)),
+//           ),
+//           child: Column(
+//             crossAxisAlignment: CrossAxisAlignment.start,
+//             children: [
+//               // Header
+//               Row(
+//                 children: [
+//                   Icon(Icons.directions_car, color: FColors.primaryColor, size: sw(18)),
+//                   SizedBox(width: sw(8)),
+//                   Text(
+//                     'Active Rides (${activeRides.length})',
+//                     style: TextStyle(
+//                       fontSize: sw(14),
+//                       fontWeight: FontWeight.w600,
+//                       color: FColors.primaryColor,
+//                     ),
+//                   ),
+//                   const Spacer(),
+//                   if (activeRides.length >= StorageService.kMaxActiveRides)
+//                     Container(
+//                       padding: EdgeInsets.symmetric(horizontal: sw(8), vertical: sh(2)),
+//                       decoration: BoxDecoration(
+//                         color: Colors.orange.withOpacity(0.1),
+//                         borderRadius: BorderRadius.circular(sw(8)),
+//                       ),
+//                       child: Text(
+//                         'Max ${StorageService.kMaxActiveRides}',
+//                         style: TextStyle(
+//                           fontSize: sw(10),
+//                           color: Colors.orange,
+//                           fontWeight: FontWeight.w500,
+//                         ),
+//                       ),
+//                     ),
+//                 ],
+//               ),
+//               SizedBox(height: sh(8)),
+//
+//               // Active rides list
+//               ...activeRides.asMap().entries.map((entry) {
+//                 final index = entry.key;
+//                 final ride = entry.value;
+//                 final rideId = ride['rideId'] ?? 'Unknown';
+//                 final driverName = ride['rideData']?['bid']?['driver']?['name']?['firstName'] ?? 'Driver';
+//                 final vehicle = ride['rideData']?['bid']?['driver']?['vehicle'] ?? 'Vehicle';
+//
+//                 return Container(
+//                   margin: EdgeInsets.only(bottom: sh(4)),
+//                   child: Material(
+//                     color: Colors.transparent,
+//                     child: InkWell(
+//                       onTap: () => controller.navigateToActiveRide(ride),
+//                       borderRadius: BorderRadius.circular(sw(8)),
+//                       child: Container(
+//                         width: double.infinity,
+//                         padding: EdgeInsets.all(sw(10)),
+//                         decoration: BoxDecoration(
+//                           color: FColors.phoneInputField.withOpacity(0.5),
+//                           borderRadius: BorderRadius.circular(sw(8)),
+//                         ),
+//                         child: Row(
+//                           children: [
+//                             // Ride indicator
+//                             Container(
+//                               width: sw(6),
+//                               height: sh(10),
+//                               decoration: BoxDecoration(
+//                                 color: _getRideColor(index),
+//                                 borderRadius: BorderRadius.circular(sw(3)),
+//                               ),
+//                             ),
+//                             SizedBox(width: sw(10)),
+//
+//                             // Ride info
+//                             Expanded(
+//                               child: Column(
+//                                 crossAxisAlignment: CrossAxisAlignment.start,
+//                                 children: [
+//                                   // Text(
+//                                   //   '$driverName • $vehicle',
+//                                   //   style: TextStyle(
+//                                   //     fontSize: sw(12),
+//                                   //     fontWeight: FontWeight.w500,
+//                                   //   ),
+//                                   //   maxLines: 1,
+//                                   //   overflow: TextOverflow.ellipsis,
+//                                   // ),
+//                                   // SizedBox(height: sh(2)),
+//                                   Text(
+//                                     'Ride ID: ${rideId.substring(0, 8)}...',
+//                                     style: TextStyle(
+//                                       fontSize: sw(10),
+//                                       color: Colors.grey[600],
+//                                     ),
+//                                   ),
+//                                 ],
+//                               ),
+//                             ),
+//
+//                             // Go to ride button
+//                             Icon(
+//                               Icons.arrow_forward_ios,
+//                               size: sw(14),
+//                               color: FColors.primaryColor,
+//                             ),
+//                           ],
+//                         ),
+//                       ),
+//                     ),
+//                   ),
+//                 );
+//               }).toList(),
+//             ],
+//           ),
+//         ),
+//       );
+//     });
+//   }
+//
+//   // Helper method for different colors for each ride
+//   Color _getRideColor(int index) {
+//     final colors = [
+//       FColors.primaryColor,
+//       FColors.secondaryColor,
+//       Color(0xFF4CAF50), // Green
+//     ];
+//     return colors[index % colors.length];
+//   }
+// }

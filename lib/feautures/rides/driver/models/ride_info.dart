@@ -15,6 +15,7 @@ class RideInfo {
   final String? phone;
   final String? passengerProfileImage;
   final String? passengerRating;
+  final String? passengerTotalRating;
 
   RideInfo({
     required this.rideId,
@@ -32,6 +33,7 @@ class RideInfo {
     this.phone,
     this.passengerProfileImage,
     this.passengerRating,
+    this.passengerTotalRating,
   });
 
   factory RideInfo.fromMap(Map<String, dynamic> m) {
@@ -79,6 +81,7 @@ class RideInfo {
       passengerProfileImage:
       passenger is Map ? passenger['profileImage']?.toString() : null,
       passengerRating: passenger is Map ? passenger['avgRating']?.toString() : null,
+      passengerTotalRating: passenger is Map ? passenger['total_ratings']?.toString() : null,
     );
   }
 }

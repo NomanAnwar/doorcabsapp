@@ -71,6 +71,13 @@ class UploadVehicleController extends GetxController {
 
   Future<void> _loadBrands() async {
     try {
+      final token = StorageService.getAuthToken();
+      if (token == null) {
+        print("❌ User token not found for active rides API");
+        return;
+      }
+
+      FHttpHelper.setAuthToken(token, useBearer: true);
       final response = await FHttpHelper.get("brand/brandName");
 
       if (response["success"] == true && response["brands"] != null) {
@@ -90,6 +97,13 @@ class UploadVehicleController extends GetxController {
 
   Future<void> _loadColors() async {
     try {
+      final token = StorageService.getAuthToken();
+      if (token == null) {
+        print("❌ User token not found for active rides API");
+        return;
+      }
+
+      FHttpHelper.setAuthToken(token, useBearer: true);
       final response = await FHttpHelper.get("brand/colors");
 
       if (response["success"] == true && response["colors"] != null) {
@@ -114,6 +128,14 @@ class UploadVehicleController extends GetxController {
       // Clear current models and reset model selection
       models.clear();
       model.value = '';
+
+      final token = StorageService.getAuthToken();
+      if (token == null) {
+        print("❌ User token not found for active rides API");
+        return;
+      }
+
+      FHttpHelper.setAuthToken(token, useBearer: true);
 
       final response = await FHttpHelper.get("brand/brandName");
 

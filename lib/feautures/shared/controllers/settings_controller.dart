@@ -1,3 +1,4 @@
+import 'package:doorcab/common/widgets/snakbar/snackbar.dart';
 import 'package:doorcab/feautures/shared/screens/rules_terms_screen.dart';
 import 'package:doorcab/feautures/shared/services/storage_service.dart';
 import 'package:doorcab/feautures/start/views/getting_started_screen.dart';
@@ -148,14 +149,20 @@ class SettingsController extends GetxController {
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Get.back();
-              // Perform logout logic
-              Get.snackbar(
-                'Logout',
+
+              // Clear all user data from storage
+              await StorageService.logout();
+              // await StorageService.clearAll();
+
+              // Show logout confirmation
+              FSnackbar.show(title:
+                'Logout',message:
                 'Logged out successfully',
-                snackPosition: SnackPosition.BOTTOM,
               );
+
+              // Navigate to GettingStartedScreen and remove all previous screens
               Get.offAll(() => GettingStartedScreen());
             },
             child: const Text(
@@ -168,10 +175,14 @@ class SettingsController extends GetxController {
     );
   }
 
+
+
   void deleteAccount() {
-    Get.to(() => const DeleteAccountScreen(),
+    Get.to(() => DeleteAccountScreen(),
       transition: Transition.rightToLeft,
       duration: const Duration(milliseconds: 300),
     );
   }
+
+
 }
